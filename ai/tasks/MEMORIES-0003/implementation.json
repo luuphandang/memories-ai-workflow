@@ -129,11 +129,13 @@
         "apps/public-web/public/marketing/hero-thiep-qr.png",
         "apps/public-web/public/marketing/sec-dat-lam-rieng.png",
         "apps/public-web/public/marketing/sec-qr-phone.png",
+        "apps/public-web/test/card-catalog.spec.tsx",
         "apps/public-web/test/cart-item-personalization.spec.tsx",
         "apps/public-web/test/cart-view.spec.tsx",
         "apps/public-web/test/custom-order-form.spec.tsx",
         "apps/public-web/test/editor-view.spec.tsx",
         "apps/public-web/test/gift-catalog.spec.tsx",
+        "apps/public-web/test/routes.spec.tsx",
         "apps/public-web/test/site-header.spec.tsx",
         "docs/prototype-inventory.md",
         "packages/api-client/src/index.ts",
@@ -172,6 +174,10 @@
   ],
   "decisions": [
     {
+      "decision": "Post-review remediation made /tao-thiep responsive with a viewport-scaled logical canvas, compact header, mobile/tablet tool and properties drawers, touch-sized controls and scale-correct pointer deltas; replaced the runtime logo with the byte-identical official file; fixed Tabs focus movement; and generated a 33-entry fidelity matrix at 375x812, 768x1024 and 1440x900 including empty, modal, validation, cart and editor states.",
+      "reason": "This directly resolves every finding in review cycle 1 and supplies the same-viewport evidence required to verify acceptance criteria 10, 12, 13, 15 and 17."
+    },
+    {
       "decision": "Scope the MEMORIES public theme by overriding shared semantic tokens (--background/--primary/etc.) only inside apps/public-web/app/globals.css, after importing the shared tokens.css. Raw --memories-* brand values live in the shared packages/design-system/src/tokens.css as additive, new-named variables.",
       "reason": "apps/public-web and apps/admin-web are separate Next.js apps that each import the same shared tokens.css into their own globals.css; overriding semantic tokens only in public-web's own stylesheet satisfies 'scope by theme/class or public layout' and cannot leak into admin-web's separate build. Verified with a full admin-web build/lint/typecheck."
     },
@@ -206,6 +212,8 @@
     "The /tao-thiep starting-template picker's 6 curated options reuse the existing CARD_TEMPLATES mock data's background/foreground/name fields rather than introducing a separate fixture, since task.md does not require a distinct data model for editor starting points."
   ],
   "validation_commands": [
+    { "repo": "frontend", "command": "python3 ai/skills/review-frontend-ui-fidelity/scripts/check_fidelity_matrix.py worktrees/MEMORIES-0003/.ai/validation/skills/fidelity/matrix.json", "result": "PASSED (33 entries)" },
+    { "repo": "frontend", "command": "shasum prototype/logo/logo.png worktrees/MEMORIES-0003/frontend/apps/public-web/public/brand/memories-logo.png", "result": "pass (both 2deb51bf757cce4a2fd038496cc2034844200a89)" },
     { "repo": "frontend", "command": "npm run lint --workspace=@memories/public-web", "result": "pass" },
     { "repo": "frontend", "command": "npm run typecheck --workspace=@memories/public-web", "result": "pass" },
     { "repo": "frontend", "command": "npm run test --workspace=@memories/public-web", "result": "pass (7 files, 18 tests)" },
