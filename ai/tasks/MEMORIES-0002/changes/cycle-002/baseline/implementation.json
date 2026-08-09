@@ -1,0 +1,588 @@
+{
+  "task_id": "MEMORIES-0002",
+  "status": "implemented",
+  "implementation_cycle": 2,
+  "change_cycle": 1,
+  "summary": "Resolved all 9 findings in fix-request-review-1.md for the identity-access/user-profiles backend foundation (Account/AuthIdentity/UserProfile/RefreshSession/Role/Permission, phone+password login, portal authorization, request context, audit metadata, Account/UserProfile CRUD). Items 1-8 (live Account status/tokenVersion check on every protected request, PortalGuard on the UserProfile admin API, atomic compare-and-swap refresh rotation, userProfileId retained across refresh, OriginGuard CSRF/origin protection on /auth/refresh, RequestContext-sourced audit actor, UserProfile.dateOfBirth date-only transformer, and removing the fake generic PATCH /accounts/:accountId) were already implemented in the worktree carried over from implementation cycle 1's later attempts; this cycle verified each by code inspection and passing tests. Item 9 (missing deterministic validation evidence) was resolved by actually running the full configured validation matrix: lint, typecheck, unit tests, build, architecture boundary check, migration run+revert against a disposable empty database, and E2E tests against the real docker-compose test stack. Running the E2E suite surfaced one genuine regression -- auth-flow.e2e-spec.ts's refresh/logout tests predated the OriginGuard fix and never set an Origin header, so they failed 403 once CORS_ORIGIN was configured -- which was fixed by adding an Origin header to every refresh call and a new explicit valid/invalid-origin test. Per requirement-addendum.md cycle 1, this epic is backend-only from this cycle forward; no frontend work was in scope or attempted.",
+  "repositories": [
+    {
+      "name": "backend",
+      "changed_files": [
+        "apps/api/test/auth-flow.e2e-spec.ts",
+        "apps/api/test/media-upload-flow.e2e-spec.ts",
+        "apps/api/src/business-modules.ts",
+        "apps/cli/src/business-modules.ts",
+        "apps/cli/src/cli-runner.service.ts",
+        "apps/cli/src/commands/seed.command.ts",
+        "apps/scheduler/src/business-modules.ts",
+        "apps/worker/src/business-modules.ts",
+        "docs/architecture/module-boundaries.md",
+        "docs/guides/authentication-flow.md",
+        "libs/modules/identity-access/src/identity-access.module.ts",
+        "libs/modules/identity-access/src/public-api.ts",
+        "libs/modules/identity-access/src/application/ports/authentication-provider.port.ts",
+        "libs/modules/identity-access/src/application/ports/password-hasher.port.ts",
+        "libs/modules/identity-access/src/application/ports/phone-normalizer.port.ts",
+        "libs/modules/identity-access/src/application/use-cases/change-account-password.use-case.ts",
+        "libs/modules/identity-access/src/application/use-cases/change-account-phone.use-case.ts",
+        "libs/modules/identity-access/src/application/use-cases/change-account-status.use-case.ts",
+        "libs/modules/identity-access/src/application/use-cases/create-account.use-case.ts",
+        "libs/modules/identity-access/src/application/use-cases/delete-account.use-case.ts",
+        "libs/modules/identity-access/src/application/use-cases/get-account.use-case.ts",
+        "libs/modules/identity-access/src/application/use-cases/list-accounts.use-case.ts",
+        "libs/modules/identity-access/src/application/use-cases/login.use-case.ts",
+        "libs/modules/identity-access/src/application/use-cases/logout.use-case.ts",
+        "libs/modules/identity-access/src/application/use-cases/refresh-session.use-case.ts",
+        "libs/modules/identity-access/src/application/use-cases/seed-roles-and-permissions.use-case.ts",
+        "libs/modules/identity-access/src/domain/accounts/account-status.ts",
+        "libs/modules/identity-access/src/domain/accounts/account.repository.ts",
+        "libs/modules/identity-access/src/domain/accounts/account.ts",
+        "libs/modules/identity-access/src/domain/auth-identities/auth-identity.repository.ts",
+        "libs/modules/identity-access/src/domain/auth-identities/auth-identity.ts",
+        "libs/modules/identity-access/src/domain/auth-identities/auth-provider.ts",
+        "libs/modules/identity-access/src/domain/permissions/permission.repository.ts",
+        "libs/modules/identity-access/src/domain/permissions/permission.ts",
+        "libs/modules/identity-access/src/domain/permissions/role-permission.repository.ts",
+        "libs/modules/identity-access/src/domain/roles/account-role.repository.ts",
+        "libs/modules/identity-access/src/domain/roles/role.repository.ts",
+        "libs/modules/identity-access/src/domain/roles/role.ts",
+        "libs/modules/identity-access/src/domain/sessions/portal.ts",
+        "libs/modules/identity-access/src/domain/sessions/refresh-session.repository.ts",
+        "libs/modules/identity-access/src/domain/sessions/refresh-session.ts",
+        "libs/modules/identity-access/src/domain/value-objects/phone-number.vo.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/account-role.orm-entity.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/account.mapper.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/account.orm-entity.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/auth-identity.mapper.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/auth-identity.orm-entity.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/permission.mapper.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/permission.orm-entity.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/refresh-session.mapper.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/refresh-session.orm-entity.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/role-permission.orm-entity.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/role.mapper.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/role.orm-entity.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/typeorm-account-role.repository.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/typeorm-account.repository.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/typeorm-auth-identity.repository.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/typeorm-permission.repository.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/typeorm-refresh-session.repository.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/typeorm-role-permission.repository.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/typeorm-role.repository.ts",
+        "libs/modules/identity-access/src/infrastructure/security/account-lookup.service.ts",
+        "libs/modules/identity-access/src/infrastructure/security/account-phone-search.service.ts",
+        "libs/modules/identity-access/src/infrastructure/security/local-authentication.provider.ts",
+        "libs/modules/identity-access/src/infrastructure/security/permission-checker.service.ts",
+        "libs/modules/identity-access/src/infrastructure/security/phone-normalizer.ts",
+        "libs/modules/identity-access/src/infrastructure/security/scrypt-password-hasher.ts",
+        "libs/modules/identity-access/src/presentation/http/account-response.dto.ts",
+        "libs/modules/identity-access/src/presentation/http/account.controller.ts",
+        "libs/modules/identity-access/src/presentation/http/auth-response.dto.ts",
+        "libs/modules/identity-access/src/presentation/http/auth.controller.ts",
+        "libs/modules/identity-access/src/presentation/http/change-account-password.dto.ts",
+        "libs/modules/identity-access/src/presentation/http/change-account-phone.dto.ts",
+        "libs/modules/identity-access/src/presentation/http/change-account-status.dto.ts",
+        "libs/modules/identity-access/src/presentation/http/create-account.dto.ts",
+        "libs/modules/identity-access/src/presentation/http/list-accounts.dto.ts",
+        "libs/modules/identity-access/src/presentation/http/login.dto.ts",
+        "libs/modules/identity-access/test/account.spec.ts",
+        "libs/modules/identity-access/test/auth-identity.spec.ts",
+        "libs/modules/identity-access/test/create-account.use-case.spec.ts",
+        "libs/modules/identity-access/test/local-authentication.provider.spec.ts",
+        "libs/modules/identity-access/test/login.use-case.spec.ts",
+        "libs/modules/identity-access/test/permission-checker.service.spec.ts",
+        "libs/modules/identity-access/test/phone-normalizer.spec.ts",
+        "libs/modules/identity-access/test/phone-number.spec.ts",
+        "libs/modules/identity-access/test/scrypt-password-hasher.spec.ts",
+        "libs/modules/identity-access/test/seed-roles-and-permissions.use-case.spec.ts",
+        "libs/modules/user-profiles/src/application/use-cases/create-user-profile.use-case.ts",
+        "libs/modules/user-profiles/src/application/use-cases/delete-user-profile.use-case.ts",
+        "libs/modules/user-profiles/src/application/use-cases/get-user-profile.use-case.ts",
+        "libs/modules/user-profiles/src/application/use-cases/list-user-profiles.use-case.ts",
+        "libs/modules/user-profiles/src/application/use-cases/update-user-profile.use-case.ts",
+        "libs/modules/user-profiles/src/domain/user-profile.repository.ts",
+        "libs/modules/user-profiles/src/domain/user-profile.ts",
+        "libs/modules/user-profiles/src/infrastructure/contracts/user-profile-lookup.service.ts",
+        "libs/modules/user-profiles/src/infrastructure/contracts/user-profile-provisioner.service.ts",
+        "libs/modules/user-profiles/src/infrastructure/persistence/typeorm-user-profile.repository.ts",
+        "libs/modules/user-profiles/src/infrastructure/persistence/user-profile.mapper.ts",
+        "libs/modules/user-profiles/src/infrastructure/persistence/user-profile.orm-entity.ts",
+        "libs/modules/user-profiles/src/presentation/http/create-user-profile.dto.ts",
+        "libs/modules/user-profiles/src/presentation/http/list-user-profiles.dto.ts",
+        "libs/modules/user-profiles/src/presentation/http/update-user-profile.dto.ts",
+        "libs/modules/user-profiles/src/presentation/http/user-profile-response.dto.ts",
+        "libs/modules/user-profiles/src/presentation/http/user-profile.controller.ts",
+        "libs/modules/user-profiles/src/public-api.ts",
+        "libs/modules/user-profiles/src/user-profiles.module.ts",
+        "libs/modules/user-profiles/test/create-user-profile.use-case.spec.ts",
+        "libs/modules/user-profiles/test/user-profile.spec.ts",
+        "libs/modules/user-profiles/tsconfig.lib.json",
+        "libs/platform/configuration/src/config/auth.config.ts",
+        "libs/platform/configuration/src/schemas/env.schema.ts",
+        "libs/platform/database/src/audit.orm-entity.ts",
+        "libs/platform/database/src/migrations/1722540000000-CreateIdentityAccessSchema.ts",
+        "libs/platform/database/src/migrations/1722550000000-CreateUserProfilesSchema.ts",
+        "libs/platform/database/src/public-api.ts",
+        "libs/platform/security/src/authorization.contract.ts",
+        "libs/platform/security/src/identity.contracts.ts",
+        "libs/platform/security/src/jwt-auth.guard.ts",
+        "libs/platform/security/src/origin.guard.ts",
+        "libs/platform/security/src/portal.guard.ts",
+        "libs/platform/security/src/public-api.ts",
+        "libs/platform/security/src/refresh-cookie.helper.ts",
+        "libs/platform/security/src/request-context.middleware.ts",
+        "libs/platform/security/src/request-context.ts",
+        "libs/platform/security/src/security.module.ts",
+        "libs/platform/security/test/jwt-auth.guard.spec.ts",
+        "libs/platform/security/test/origin.guard.spec.ts",
+        "libs/platform/security/test/portal.guard.spec.ts",
+        "libs/shared/kernel/src/entities/auditable-props.ts",
+        "libs/shared/kernel/src/public-api.ts",
+        "nest-cli.json",
+        "package.json",
+        "package-lock.json",
+        "tsconfig.json"
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "Treated fix-request-review-1.md items 1-8 as already resolved by the worktree state inherited from implementation cycle 1, rather than re-implementing them.",
+      "reason": "Code inspection of jwt-auth.guard.ts, portal.guard.ts, origin.guard.ts, request-context.ts, refresh-session.use-case.ts, create-account.use-case.ts and family, and user-profile.mapper.ts showed each finding's exact described defect already fixed, with doc comments explicitly citing the relevant task.md section/AC. .ai/metrics/agent-attempts.jsonl confirms cycle 1 had two long implementation attempts (~1400s and ~1080s) after this same review, consistent with the fixes being made then. Re-implementing would risk regressing already-correct, well-tested code."
+    },
+    {
+      "decision": "Fixed a test-only regression in apps/api/test/auth-flow.e2e-spec.ts: added an Origin header to every /auth/refresh call via a new refresh() helper, and added an explicit test for missing/disallowed Origin.",
+      "reason": "Running the full test:e2e suite (required to close review item 9) showed 5 real failures: refresh/logout tests written before OriginGuard existed never sent an Origin header, so OriginGuard's CSRF/origin protection (a correct, intentional fix for item 5) rejected them with 403 once CORS_ORIGIN was configured in .env. This was a genuine test gap, not a production defect -- fixed by making the tests simulate a real browser's Origin header instead of relaxing the guard."
+    },
+    {
+      "decision": "Killed a stray leftover process (PID 68449, dist/apps/worker/main) that was bound to port 9464 and causing media-upload-flow.e2e-spec.ts to fail with EADDRINUSE.",
+      "reason": "The process's elapsed time and command line matched an orphaned worker app from a prior interrupted implementation attempt (agent-attempts.jsonl shows 'interrupted'/'failed' statuses for cycle-1 attempts), not anything the user was actively using. Killing it is safe, local, and reversible; the app restarts cleanly whenever needed."
+    },
+    {
+      "decision": "Kept AccountController without a generic PATCH /accounts/:accountId route; only the specific status/phone/password sub-routes exist.",
+      "reason": "task.md §2 explicitly forbids Account from carrying profile data, and §16 explicitly forbids updating password or phone through a generic update DTO. With those two fields carved out, Account (id/status/tokenVersion/audit) has no remaining field for a generic update to legitimately touch. task.md's route list is presented as a proposal ('Route đề xuất'), so AC30 is satisfied by the three dedicated, permission-scoped PATCH endpoints plus create/read/list/delete."
+    },
+    {
+      "decision": "Treated AC10/AC11 (portal-specific web login) as satisfied by backend E2E coverage of POST /auth/login with portal=PUBLIC/ADMIN, and AC19 (access token kept in memory) as not applicable to this cycle.",
+      "reason": "requirement-addendum.md cycle 1 made MEMORIES-0002 backend-only; there is no frontend in scope to originate a 'web' login request or to choose where to store the access token. The backend enforces everything it controls (portal mapping, token issuance) and imposes no constraint against in-memory storage; the storage choice itself is a frontend concern out of scope."
+    }
+  ],
+  "assumptions": [
+    "The docker-compose test infrastructure containers (memories-test-postgres on :15432, memories-test-redis on :16379, memories-test-minio on :19000) referenced by .env were already running and owned by the user's environment, not started or stopped by this implementation run.",
+    "AC13 ('Account phải có portal.public.access để đăng nhập public nếu hệ thống áp dụng kiểm soát explicit cho public portal') is satisfied because this system does apply explicit portal control uniformly (PORTAL_PERMISSION maps both PUBLIC and ADMIN through the same permission check in LoginUseCase) -- there is no implicit-allow path for PUBLIC."
+  ],
+  "validation_commands": [
+    {
+      "repo": "backend",
+      "command": "npm run lint",
+      "result": "pass"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run typecheck",
+      "result": "pass"
+    },
+    {
+      "repo": "backend",
+      "command": "npm test",
+      "result": "pass (51 suites, 232 tests)"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run build",
+      "result": "pass"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run test:architecture",
+      "result": "pass (0 violations, 382 modules, 1300 dependencies)"
+    },
+    {
+      "repo": "backend",
+      "command": "DATABASE_NAME=memories_migration_check npm run migration:run (fresh empty database)",
+      "result": "pass (all 5 migrations applied)"
+    },
+    {
+      "repo": "backend",
+      "command": "DATABASE_NAME=memories_migration_check npm run migration:revert (x2)",
+      "result": "pass (CreateUserProfilesSchema and CreateIdentityAccessSchema both reverted cleanly; temp database dropped)"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run test:e2e (docker-compose test stack: postgres/redis/minio)",
+      "result": "pass (4 suites, 35 tests) after fixing OriginGuard test gap and clearing a stray port-9464 process"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run export:openapi",
+      "result": "pass (openapi.json generated with /auth, /accounts, /user-profiles routes documented)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_port_bindings.py worktrees/MEMORIES-0002/backend",
+      "result": "pass (28 injected Symbol tokens)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_module_wiring.py worktrees/MEMORIES-0002/backend",
+      "result": "pass (27 use-case/controller classes)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/implement-auth-security-change/scripts/check_auth_invariants.py worktrees/MEMORIES-0002/backend",
+      "result": "pass"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py ai/tasks/MEMORIES-0002/execution-plan.json",
+      "result": "pass (20 slices)"
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "criterion": "1. Account được sử dụng làm principal xác thực duy nhất cho cả public-web và admin-web.",
+      "status": "passed",
+      "evidence": "Single Account aggregate (libs/modules/identity-access/src/domain/accounts/account.ts) with portal chosen per login request (LoginDto.portal), not per Account type."
+    },
+    {
+      "criterion": "2. Không tạo Account riêng cho public và admin.",
+      "status": "passed",
+      "evidence": "No portal-specific Account subtype or table; auth-flow.e2e-spec.ts logs the same Account into both PUBLIC and ADMIN portals via role grants."
+    },
+    {
+      "criterion": "3. UserProfile được đặt trong module `user-profiles`, không nằm trong module `customers`.",
+      "status": "passed",
+      "evidence": "libs/modules/user-profiles/src/domain/user-profile.ts; no `customers` module exists in this epic."
+    },
+    {
+      "criterion": "4. Customer không được tạo tự động khi tạo Account.",
+      "status": "passed",
+      "evidence": "CreateAccountUseCase creates only Account, AuthIdentity, UserProfile and AccountRole; no Customer model/table exists."
+    },
+    {
+      "criterion": "5. Account, AuthIdentity và UserProfile được triển khai đầy đủ theo các layer hiện tại.",
+      "status": "passed",
+      "evidence": "domain/application/infrastructure/presentation present for all three (account.ts, auth-identity.ts, user-profile.ts + repositories, mappers, orm-entities, use-cases, controllers)."
+    },
+    {
+      "criterion": "6. Một Account có thể có nhiều AuthIdentity.",
+      "status": "passed",
+      "evidence": "AuthIdentityOrmEntity has no unique constraint on accountId alone, only (provider, identifier) and (provider, providerSubject); DeleteAccountUseCase iterates findAllByAccountId (plural)."
+    },
+    {
+      "criterion": "7. Một Account chỉ có tối đa một UserProfile.",
+      "status": "passed",
+      "evidence": "Partial unique index UQ_profile_user_profiles_account_id ON (account_id) WHERE deleted_at IS NULL, verified by running the CreateUserProfilesSchema migration; auth-flow.e2e-spec.ts asserts a second profile for the same account returns 409."
+    },
+    {
+      "criterion": "8. LOCAL AuthIdentity sử dụng phone đã normalize và password hash.",
+      "status": "passed",
+      "evidence": "PhoneNormalizer + ScryptPasswordHasher used in CreateAccountUseCase; phone-normalizer.spec.ts and scrypt-password-hasher.spec.ts pass."
+    },
+    {
+      "criterion": "9. Login bằng email không còn hoạt động.",
+      "status": "passed",
+      "evidence": "LoginDto (login.dto.ts) has only phone/password/portal fields, no email; grep for mock/email-login logic in identity-access/user-profiles found nothing."
+    },
+    {
+      "criterion": "10. Public web đăng nhập với portal `PUBLIC`.",
+      "status": "passed",
+      "evidence": "Reinterpreted backend-only per requirement-addendum.md cycle 1 (no frontend in scope): auth-flow.e2e-spec.ts 'logs in a default account on the PUBLIC portal' passes against POST /auth/login {portal: 'PUBLIC'}."
+    },
+    {
+      "criterion": "11. Admin web đăng nhập với portal `ADMIN`.",
+      "status": "passed",
+      "evidence": "Reinterpreted backend-only per requirement-addendum.md cycle 1: auth-flow.e2e-spec.ts 'logs in an account granted the ADMIN role on the ADMIN portal' passes against POST /auth/login {portal: 'ADMIN'}."
+    },
+    {
+      "criterion": "12. Backend tự map portal sang permission tương ứng.",
+      "status": "passed",
+      "evidence": "PORTAL_PERMISSION map in domain/sessions/portal.ts, applied in login.use-case.ts and refresh-session.use-case.ts; client never supplies a permission code (LoginDto has no such field)."
+    },
+    {
+      "criterion": "13. Account phải có `portal.public.access` để đăng nhập public.",
+      "status": "passed",
+      "evidence": "LoginUseCase checks hasPermissions(accountId, [PORTAL_PERMISSION.PUBLIC]) unconditionally; PUBLIC_USER default role seeded with portal.public.access."
+    },
+    {
+      "criterion": "14. Account phải có `portal.admin.access` để đăng nhập admin.",
+      "status": "passed",
+      "evidence": "Same check for PORTAL_PERMISSION.ADMIN; e2e test confirms a PUBLIC-only account gets 403 attempting ADMIN login."
+    },
+    {
+      "criterion": "15. Account thiếu permission portal không được phát token hoặc tạo refresh session cho portal đó.",
+      "status": "passed",
+      "evidence": "LoginUseCase throws ForbiddenException before entering unitOfWork.withTransaction (no session/token created) when hasPortalAccess is false."
+    },
+    {
+      "criterion": "16. Không controller hoặc use case nào hard-code role để kiểm tra quyền truy cập portal.",
+      "status": "passed",
+      "evidence": "LoginUseCase and PortalGuard operate on PermissionChecker/portal claim only; no role-name string comparison found in either."
+    },
+    {
+      "criterion": "17. Role chỉ là nhóm permission.",
+      "status": "passed",
+      "evidence": "Role domain model (role.ts) carries only code/name; behavior comes entirely from RolePermission grants, no role-specific logic branches."
+    },
+    {
+      "criterion": "18. Account inactive, locked hoặc deleted không thể login hoặc refresh.",
+      "status": "passed",
+      "evidence": "Account.canAuthenticate() checked in both LoginUseCase and RefreshSessionUseCase; e2e tests cover INACTIVE/LOCKED/deleted login and locked-account refresh."
+    },
+    {
+      "criterion": "19. Access token tiếp tục được lưu trong memory.",
+      "status": "not_tested",
+      "evidence": "Frontend storage concern; no frontend in scope since requirement-addendum.md cycle 1. Backend does not persist or dictate client-side token storage."
+    },
+    {
+      "criterion": "20. Refresh token tiếp tục được lưu trong HttpOnly cookie.",
+      "status": "passed",
+      "evidence": "buildRefreshCookieOptions (refresh-cookie.helper.ts) sets httpOnly:true; e2e asserts set-cookie header matches /HttpOnly/i."
+    },
+    {
+      "criterion": "21. Refresh session được gắn với portal.",
+      "status": "passed",
+      "evidence": "RefreshSession domain props include portal; refresh-session.orm-entity.ts persists it; RefreshSessionUseCase preserves the original session's portal on rotation."
+    },
+    {
+      "criterion": "22. JWT hoặc session có thể phân biệt public và admin portal.",
+      "status": "passed",
+      "evidence": "Access/refresh token payloads include a portal claim (issueAccessToken/issueRefreshToken calls in login/refresh use cases)."
+    },
+    {
+      "criterion": "23. Token public không thể truy cập admin API nếu không hợp lệ về audience hoặc portal.",
+      "status": "passed",
+      "evidence": "PortalGuard + @RequirePortal('ADMIN') on AccountController and UserProfileController; e2e 'rejects a PUBLIC-portal token even when the underlying account also holds admin permissions' passes for both controllers (fix-request item 2)."
+    },
+    {
+      "criterion": "24. Password không được lưu dưới dạng plain text.",
+      "status": "passed",
+      "evidence": "ScryptPasswordHasher.hash used for all password storage; AuthIdentity only stores passwordHash."
+    },
+    {
+      "criterion": "25. Password hash không xuất hiện trong API response, log hoặc audit record.",
+      "status": "passed",
+      "evidence": "AccountResponseDto/toAccountResponseDto never include passwordHash; e2e asserts JSON.stringify(listRes.body) does not match /passwordHash/i."
+    },
+    {
+      "criterion": "26. Account, AuthIdentity và UserProfile có đầy đủ audit fields.",
+      "status": "passed",
+      "evidence": "All three extend AuditableProps/AuditableOrmEntity (created_by/at, updated_by/at, deleted_by/at) verified in the applied migrations."
+    },
+    {
+      "criterion": "27. Audit actor được lấy từ request context.",
+      "status": "passed",
+      "evidence": "Fix-request item 6: all identity-access use cases (create/change-status/change-password/delete-account) now call RequestContext.currentActorId() instead of accepting a client actorId field."
+    },
+    {
+      "criterion": "28. Hai request đồng thời không bị lẫn context.",
+      "status": "passed",
+      "evidence": "RequestContext is AsyncLocalStorage-backed (request-context.ts); e2e 'resolves each of several concurrent logins to its own account, never crossing subjects' passes with 5 concurrent logins."
+    },
+    {
+      "criterion": "29. Tạo Account, AuthIdentity, UserProfile và default role được thực hiện trong cùng transaction.",
+      "status": "passed",
+      "evidence": "CreateAccountUseCase wraps all steps in one unitOfWork.withTransaction; verified UserProfileProvisioner participates in the same DB transaction because both modules' repositories resolve the active connection via the shared AsyncLocalStorage-backed TypeOrmQueryRunnerContext."
+    },
+    {
+      "criterion": "30. Account CRUD API hoạt động và được bảo vệ bằng permission.",
+      "status": "passed",
+      "evidence": "create/list/get/change-status/change-phone/change-password/delete all implemented and permission-guarded (see decisions re: no generic PATCH); fix-request item 8 resolved by removing the non-functional generic update rather than leaving a fake 200."
+    },
+    {
+      "criterion": "31. UserProfile CRUD API hoạt động và được bảo vệ bằng permission.",
+      "status": "passed",
+      "evidence": "create/list/get/update/delete implemented in UserProfileController, all @RequirePermissions-gated and PortalGuard('ADMIN')-gated (fix-request item 2)."
+    },
+    {
+      "criterion": "32. Xóa hoặc khóa Account làm mất hiệu lực session hiện tại.",
+      "status": "passed",
+      "evidence": "ChangeAccountStatusUseCase/DeleteAccountUseCase revoke all refresh sessions; JwtAuthGuard additionally checks live Account status/tokenVersion on every request so an already-issued access token stops working immediately (fix-request item 1), not just at natural expiry -- covered by e2e 'rejects an already-issued access token immediately once the Account is locked'."
+    },
+    {
+      "criterion": "33. Không sử dụng TypeORM relation trực tiếp xuyên module.",
+      "status": "passed",
+      "evidence": "npm run test:architecture passes with 0 violations across 382 modules; UserProfile/Account cross-module lookups go through AccountLookup/UserProfileLookup ports, not TypeORM relations."
+    },
+    {
+      "criterion": "34. Không trả ORM entity trực tiếp từ controller.",
+      "status": "passed",
+      "evidence": "Every controller maps through a response DTO (toAccountResponseDto, toResponseDto for UserProfile) built from a use-case output type, never the ORM entity."
+    },
+    {
+      "criterion": "35. Swagger/OpenAPI được cập nhật.",
+      "status": "passed",
+      "evidence": "npm run export:openapi succeeds; generated openapi.json documents all /auth, /accounts, /user-profiles routes with @ApiTags/@ApiResponse/@ApiBearerAuth decorators present on both controllers."
+    },
+    {
+      "criterion": "36 (thay thế theo requirement-addendum.md cycle 1). Swagger/OpenAPI backend phản ánh đúng các endpoint auth/account/user-profile hiện có.",
+      "status": "passed",
+      "evidence": "Same openapi.json evidence as AC35; no frontend API client exists or is required in this backend-only epic."
+    },
+    {
+      "criterion": "37. Migration chạy thành công trên database trống.",
+      "status": "passed",
+      "evidence": "npm run migration:run against a freshly created, empty PostgreSQL database (memories_migration_check) applied all 5 migrations successfully; database dropped after verification."
+    },
+    {
+      "criterion": "38. Seed Role và Permission chạy nhiều lần không tạo dữ liệu trùng.",
+      "status": "passed",
+      "evidence": "SeedRolesAndPermissionsUseCase uses find-or-create for permissions/roles; seed-roles-and-permissions.use-case.spec.ts passes, and auth-flow.e2e-spec.ts calls seed.execute() at suite start without unique-constraint failures against a database already containing prior runs' seeded rows."
+    },
+    {
+      "criterion": "39 (thay thế theo requirement-addendum.md cycle 1). Mock authentication được xóa khỏi backend.",
+      "status": "passed",
+      "evidence": "grep for mock-related auth code in identity-access/user-profiles/api returned nothing; login exclusively resolves through LocalAuthenticationProvider against real AuthIdentity/Account records."
+    },
+    {
+      "criterion": "40. Unit test, integration test, E2E test, lint, typecheck và build đều thành công.",
+      "status": "passed",
+      "evidence": "npm run lint, typecheck, test (232 tests/51 suites), build, test:architecture, migration:run+revert and test:e2e (35 tests/4 suites) all pass in this cycle -- see validation_commands."
+    },
+    {
+      "criterion": "slice:module-boundary",
+      "status": "passed",
+      "evidence": "AC3, AC33 — identity-access owns Account/AuthIdentity/RefreshSession/Role/Permission/portal auth; user-profiles owns UserProfile; no customers/staff module touched. npm run test:architecture: 0 violations. Cross-module access only via ACCOUNT_LOOKUP/ACCOUNT_PHONE_SEARCH/USER_PROFILE_LOOKUP ports (libs/platform/security/src/identity.contracts.ts), never a TypeORM relation."
+    },
+    {
+      "criterion": "slice:account-domain-model",
+      "status": "passed",
+      "evidence": "AC1, AC5, AC18 — Account aggregate (domain/accounts/account.ts) holds only status+tokenVersion, no profile/credential data; portal is chosen per login request, not per Account type. Account.canAuthenticate() blocks INACTIVE/LOCKED/deleted accounts from login and refresh (e2e-covered)."
+    },
+    {
+      "criterion": "slice:authidentity-model",
+      "status": "passed",
+      "evidence": "AC6, AC8, AC24, AC25 — AuthIdentityOrmEntity unique constraints are (provider, identifier) and (provider, provider_subject), not accountId alone, so one Account can hold multiple AuthIdentity rows. PhoneNormalizer + ScryptPasswordHasher used for LOCAL; passwordHash is never included in any response DTO (e2e-asserted)."
+    },
+    {
+      "criterion": "slice:userprofile-domain-model",
+      "status": "passed",
+      "evidence": "AC3, AC7 — user-profile.ts lives in libs/modules/user-profiles. Partial unique index UQ_profile_user_profiles_account_id ON (account_id) WHERE deleted_at IS NULL enforces at most one active profile per Account; verified by this cycle's migration-run and by auth-flow.e2e-spec.ts asserting 409 on a duplicate."
+    },
+    {
+      "criterion": "slice:customer-v-staff-boundary",
+      "status": "passed",
+      "evidence": "AC4 — CreateAccountUseCase creates only Account, AuthIdentity, UserProfile and a default AccountRole; grep across identity-access/user-profiles finds no Customer/Staff model. docs/architecture/module-boundaries.md documents the future customers/staff extension pattern (accountId/userProfileId reference, never owning profile data)."
+    },
+    {
+      "criterion": "slice:auditable-entity-foundation",
+      "status": "passed",
+      "evidence": "AC26, AC27 — Account/AuthIdentity/UserProfile all carry created_by/at, updated_by/at, deleted_by/at (verified in the applied migrations' DDL). Audit actor is resolved via RequestContext.currentActorId() in every identity-access/user-profiles use case, not a client-suppliable field (fix-request item 6)."
+    },
+    {
+      "criterion": "slice:database-migration",
+      "status": "passed",
+      "evidence": "AC7, AC37, AC38 — this cycle's validate-code run applied all 5 migrations to the shared throwaway database (migration-run), reverted the latest one (migration-revert), then re-applied (migration-run) — all passed. SeedRolesAndPermissionsUseCase is find-or-create and safe to call repeatedly (seed-roles-and-permissions.use-case.spec.ts, plus every e2e suite run reuses it without unique-constraint errors)."
+    },
+    {
+      "criterion": "slice:transaction-t-o-account",
+      "status": "passed",
+      "evidence": "AC29 — CreateAccountUseCase wraps Account + AuthIdentity + UserProfile + default-role creation in one unitOfWork.withTransaction; UserProfileProvisioner participates in the same DB transaction via the shared AsyncLocalStorage-backed TypeOrmQueryRunnerContext, not a second transaction."
+    },
+    {
+      "criterion": "slice:login-b-ng-phone-v-password",
+      "status": "passed",
+      "evidence": "AC9, AC10, AC12, AC13, AC14, AC15 — LoginDto has only phone/password/portal (no email field exists). PORTAL_PERMISSION maps portal to a permission code checked before any session/token is created (LoginUseCase throws before entering the transaction if the check fails). auth-flow.e2e-spec.ts covers PUBLIC and ADMIN portal login end to end."
+    },
+    {
+      "criterion": "slice:ph-n-bi-t-authentication-v-authorization",
+      "status": "passed",
+      "evidence": "AC12, AC13, AC14, AC15, AC16 — LocalAuthenticationProvider verifies credentials; PermissionChecker.hasPermissions(accountId, PORTAL_PERMISSION[portal]) separately verifies portal access afterward. Neither LoginUseCase nor PortalGuard contains a role-name string comparison (grep-verified)."
+    },
+    {
+      "criterion": "slice:authentication-provider-abstraction",
+      "status": "passed",
+      "evidence": "AuthenticationProvider port (application/ports/authentication-provider.port.ts) + AuthenticationProviderRegistry, registered via the AUTHENTICATION_PROVIDERS multi-provider token in identity-access.module.ts. LocalAuthenticationProvider is the only implementation wired in (local-authentication.provider.ts, covered by local-authentication.provider.spec.ts); LoginUseCase resolves by AuthProvider through the registry, no provider-specific switch/case. Google/Apple/Facebook remain contract-only per task.md scope, documented with an add-a-provider how-to in docs/guides/authentication-flow.md."
+    },
+    {
+      "criterion": "slice:rbac-foundation",
+      "status": "passed",
+      "evidence": "AC16, AC17 — Role (role.ts) carries only code/name; all behavior comes from RolePermission grants via PermissionCheckerService, no role-specific branching found. Default PUBLIC_USER role is seeded (not hard-coded in a use case) by SeedRolesAndPermissionsUseCase."
+    },
+    {
+      "criterion": "slice:jwt-payload-v-session",
+      "status": "passed",
+      "evidence": "AC19 (not_tested — frontend token-storage concern, out of scope per requirement-addendum.md cycle 1), AC20, AC21, AC22, AC23, AC32 — refresh cookie is HttpOnly (refresh-cookie.helper.ts, e2e-asserted); RefreshSession persists portal; access/refresh payloads carry a portal claim; PortalGuard + @RequirePortal('ADMIN') block PUBLIC-portal tokens from admin routes even when the account also holds admin permissions (fix-request item 2, e2e-covered). JwtAuthGuard checks live Account status/tokenVersion on every request, so lock/delete/password-change invalidates an already-issued access token immediately, not just at natural expiry (fix-request item 1, e2e-covered)."
+    },
+    {
+      "criterion": "slice:request-context",
+      "status": "passed",
+      "evidence": "AC27, AC28 — RequestContext is AsyncLocalStorage-backed (request-context.ts); auth-flow.e2e-spec.ts 'resolves each of several concurrent logins to its own account, never crossing subjects' passes with 5 concurrent logins."
+    },
+    {
+      "criterion": "slice:audit-behavior",
+      "status": "passed",
+      "evidence": "AC26, AC27 — audit actor/timestamp are written in the same transaction as the domain change; actor is resolved from RequestContext, never client input. grep across identity-access/user-profiles audit paths finds no password/token/cookie value written to an audit field."
+    },
+    {
+      "criterion": "slice:account-crud-api",
+      "status": "passed",
+      "evidence": "AC30 — AccountController implements create/list/get/change-status/change-phone/change-password/delete, all @RequirePermissions-gated; no generic PATCH exists (fix-request item 8 — the non-functional generic update endpoint was removed rather than left as a fake 200, per review.json's own offered alternative)."
+    },
+    {
+      "criterion": "slice:userprofile-crud-api",
+      "status": "passed",
+      "evidence": "AC31 — UserProfileController implements create/list/get/update/delete, all @RequirePermissions- and PortalGuard('ADMIN')-gated (fix-request item 2 closed the earlier PUBLIC-token bypass)."
+    },
+    {
+      "criterion": "slice:validation-v-security",
+      "status": "passed",
+      "evidence": "AC13, AC14, AC18, AC23, AC24, AC25 — refresh cookie is HttpOnly/Secure per AUTH_REFRESH_COOKIE_SECURE; OriginGuard enforces the CORS_ORIGIN allowlist on POST /auth/refresh (fix-request item 4, e2e-covered for both valid and disallowed Origin); JwtAuthGuard checks live Account status on every protected request; login/refresh rely on ValidationPipe (whitelist + forbid unknown fields) and @nestjs/throttler rate limiting wired in SecurityModule/main.ts."
+    },
+    {
+      "criterion": "slice:tests",
+      "status": "passed",
+      "evidence": "AC40 — this cycle's ai/bin/validate run (see .ai/validation/backend.json, generated this cycle) passed all 9 required commands: lint, typecheck, 232 unit tests (51 suites), build, test:architecture (0 violations), migration-run, migration-revert, migration-run again, and test:e2e (35 tests, 4 suites) against the real docker-compose infrastructure stack. The 3 'Frontend test...' bullets under this slice's original requirement_details are out of scope per requirement-addendum.md cycle 1 (epic is backend-only) and were correctly not attempted."
+    },
+    {
+      "criterion": "slice:documentation",
+      "status": "passed",
+      "evidence": "Updated this cycle: docs/guides/authentication-flow.md now includes a mermaid ERD for the identity/profile schemas (grounded in the applied migrations' actual DDL) plus concrete 'how to add a new authentication provider' and 'how to add a new portal' how-tos referencing the real AuthenticationProvider port/registry and Portal enum/PortalGuard. docs/architecture/module-boundaries.md (identity-access vs user-profiles vs customers/staff) was already current from cycle 1. .env.example carries all AUTH_* variables with no placeholder secrets committed."
+    }
+  ],
+  "knowledge_updates": [
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "suggestion",
+      "summary": "Consider documenting the AccountController contract decision explicitly (no generic PATCH /accounts/:accountId; status/phone/password each have a dedicated endpoint because Account carries no other mutable field) so future reviewers don't re-flag the missing route as a defect."
+    },
+    {
+      "target": "ai/repos/backend/testing.md",
+      "type": "suggestion",
+      "summary": "Note that any E2E test hitting POST /auth/refresh must set an Origin header matching a CORS_ORIGIN allowlist entry (OriginGuard), since supertest sends no Origin by default and the app enforces this whenever CORS_ORIGIN is configured."
+    }
+  ],
+  "applied_skills": [
+    {
+      "name": "decompose-implementation-task",
+      "sha256": "0d8e89a94111bd5679c8c5ef6c8f5ce250621909f51704bf676af966f2fd4673",
+      "checks_completed": [
+        "Confirmed execution-plan.json maps every task.md section to exactly one slice, ordered and independently verifiable",
+        "Ran scripts/validate_execution_plan.py ai/tasks/MEMORIES-0002/execution-plan.json -> pass (20 slices)",
+        "Kept implementation-progress.json.current_slice aligned with plan state (null at handoff; all slices verified complete)"
+      ]
+    },
+    {
+      "name": "implement-nestjs-vertical-slice",
+      "sha256": "46320b8e5f671d095152f339031d0470207a8caa7de73e0e219b45b683321335",
+      "checks_completed": [
+        "Verified layer matrix completeness (domain/application/infrastructure/wiring/persistence/presentation/verification) for Account, AuthIdentity, UserProfile, RefreshSession, Role, Permission by direct file inspection",
+        "Traced ACCOUNT_LOOKUP/PERMISSION_CHECKER/USER_PROFILE_PROVISIONER/USER_PROFILE_LOOKUP ports from consumer to concrete Nest provider to @Global() exporting module",
+        "Ran scripts/check_port_bindings.py worktrees/MEMORIES-0002/backend -> pass (28 injected Symbol tokens)",
+        "Ran scripts/check_module_wiring.py worktrees/MEMORIES-0002/backend -> pass (27 use-case/controller classes)",
+        "Ran npm run build and npm run test:architecture (both pass) confirming runtime Nest graph resolvability and module boundaries beyond a bare tsc compile"
+      ]
+    },
+    {
+      "name": "implement-auth-security-change",
+      "sha256": "8de0236f5e04b9c74a738f6ffc71224070c4ddd230cbccbe88fe8e1144627332",
+      "checks_completed": [
+        "Verified session/authorization invariants: locked/inactive/deleted accounts rejected on login and refresh; access tokens invalidated live via tokenVersion+isActive check, not only at expiry",
+        "Verified identity/credential rules: normalized phone as canonical identifier, scrypt password hashing, no passwordHash in responses/logs",
+        "Verified security-verification coverage via auth-flow.e2e-spec.ts: valid/invalid login, no-enumeration wrong-password vs unknown-phone, locked/inactive/deleted accounts, portal privilege escalation attempts, concurrent refresh race, transaction rollback on provisioning failure (create-account.use-case.spec.ts)",
+        "Ran scripts/check_auth_invariants.py worktrees/MEMORIES-0002/backend -> pass",
+        "Added and verified a new negative/CSRF test (missing/disallowed Origin on /auth/refresh) after finding the existing suite lacked one"
+      ]
+    }
+  ]
+}

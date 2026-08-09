@@ -1,0 +1,13 @@
+{
+  "generated_at": null,
+  "task_id": "{{TASK_ID}}",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "active_change": null,
+  "requirement_precedence": "task.md then requirement addenda by ascending cycle; newest explicit conflict wins",
+  "files": [],
+  "requirements": [
+    "ai/tasks/{{TASK_ID}}/task.md"
+  ],
+  "repositories": {}
+}

@@ -1,0 +1,30 @@
+version: 1
+id: {{TASK_ID}}
+title: "{{TITLE}}"
+jira:
+  type: {{JIRA_TYPE}}
+  parent_id: {{PARENT_ID_YAML}}
+  epic_id: {{EPIC_ID_YAML}}
+priority: medium
+status: ready
+children: []
+worktrees: []
+agents:
+  implementer: claude
+  reviewer: codex
+skills:
+  implement: [decompose-implementation-task]
+  review: [review-vertical-slice-completeness]
+scope:
+  execution_plan_required: true
+review:
+  max_cycles: 5
+  fail_on: [blocker, major]
+validation: {}
+report:
+  language: vi
+  include_diff_stat: true
+  include_changed_files: true
+  include_test_results: true
+  include_review_findings: true
+  include_knowledge_updates: true

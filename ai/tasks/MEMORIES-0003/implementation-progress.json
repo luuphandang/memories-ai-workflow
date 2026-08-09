@@ -1,0 +1,91 @@
+{
+  "task_id": "MEMORIES-0003",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "updated_at": "2026-08-10T00:20:00+07:00",
+  "completed_criteria": [
+    "slice:inventory-v-mapping",
+    "slice:design-foundation-tr-c-page",
+    "slice:public-shell-v-navigation",
+    "slice:shared-feature-components-v-mock-model",
+    "slice:tri-n-khai-page-theo-vertical-slice",
+    "slice:asset-management",
+    "slice:responsive-accessibility-v-fidelity",
+    "slice:test-v-validation"
+  ],
+  "changed_files": [
+    "apps/public-web/components/cart/cart-item-row.tsx",
+    "apps/public-web/components/cart/gift-card-picker-dialog.tsx",
+    "apps/public-web/components/cart/wrap-picker-dialog.tsx",
+    "apps/public-web/components/card-templates/card-catalog.tsx",
+    "apps/public-web/components/gift-products/gift-catalog.tsx",
+    "apps/public-web/components/editor/editor-view.tsx",
+    "apps/public-web/components/editor/use-card-editor.ts",
+    "apps/public-web/components/icons.tsx",
+    "apps/public-web/lib/store/shop-store.tsx",
+    "apps/public-web/test/cart-item-personalization.spec.tsx",
+    "apps/public-web/test/gift-catalog.spec.tsx",
+    "apps/public-web/test/editor-view.spec.tsx",
+    "packages/ui/package.json",
+    "packages/ui/tsconfig.json",
+    "packages/ui/vitest.config.ts",
+    "packages/ui/test/setup.ts",
+    "packages/ui/test/icon-button.spec.tsx",
+    "packages/ui/test/badge.spec.tsx",
+    "packages/ui/test/quantity-input.spec.tsx",
+    "packages/ui/test/tabs.spec.tsx",
+    "packages/ui/test/dialog.spec.tsx",
+    "packages/ui/test/drawer.spec.tsx",
+    "packages/ui/test/carousel.spec.tsx",
+    "packages/ui/test/select.spec.tsx",
+    "packages/ui/test/form-field.spec.tsx",
+    "docs/prototype-inventory.md"
+  ],
+  "decisions": [
+    {
+      "decision": "This attempt (3rd implementation attempt on this task) closed the 3 gates the fix-request flagged as missing (tri-n-khai-page-theo-vertical-slice, responsive-accessibility-v-fidelity, test-v-validation) with real additional implementation rather than relabeling the prior attempt's partial evidence.",
+      "reason": "Delivery-gate fix-request instructions explicitly forbid weakening/bypassing the gates; the prior attempt's 3 'partial' criteria had concrete, actionable gaps (documented in its own evidence text and docs/prototype-inventory.md), so this attempt did the described follow-up work instead of just rewriting the status field."
+    },
+    {
+      "decision": "Added packages/ui vitest+jsdom+testing-library config (vitest.config.ts, test/setup.ts, package.json 'test' script and devDependencies) and 25 unit tests across all 9 new primitives, reusing versions already present in the hoisted root node_modules (no npm install / network access used).",
+      "reason": "This was the last pre-existing gap in test-v-validation: the 9 new packages/ui primitives were previously only exercised indirectly via app-level tests, not at their owning package, contradicting task.md's 'test owner package once' rule."
+    },
+    {
+      "decision": "Replaced gio-hang's inline wrap/gift-card <select> controls with WrapPickerDialog/GiftCardPickerDialog (visual grid modals using the existing Dialog primitive) and added a personalization-edit Dialog (recipient/date/message/note) wired to a new ShopProvider.updatePersonalization action.",
+      "reason": "Closes the two gio-hang fidelity gaps the prior attempt documented (inline selects instead of the prototype's picker modals; no personalization-edit modal) for slice:tri-n-khai-page-theo-vertical-slice."
+    },
+    {
+      "decision": "Refactored CardCatalog (/mau-thiep) and GiftCatalog (/qua-ky-niem) so the filter fieldset markup is shared between a `hidden lg:flex` desktop sidebar and a `lg:hidden` trigger button + bottom Drawer, instead of always rendering the filters as a stacked block above the results.",
+      "reason": "Closes the previously-documented responsive-fidelity gap where the mobile filter panel rendered as a stacked block instead of the prototype's slide-up drawer; reuses the existing Drawer primitive (focus-trap, Escape/overlay dismiss) rather than adding new UI machinery."
+    },
+    {
+      "decision": "Added a starting-template picker Dialog shown on /tao-thiep entry when no ?template= is present (STARTER_TEMPLATES from the existing CARD_TEMPLATES mock, plus a 'start blank' action), and bring-to-front/send-to-back layer-order buttons in the properties panel, backed by new useCardEditor.bringToFront/sendToBack actions.",
+      "reason": "Closes 2 of the 3 editor gaps documented against the original engine (starting-template picker modal, z-order controls). Multi-select and a persistent layers-list panel remain out of scope for this attempt — task.md's acceptance criterion for /tao-thiep asks for the prototype's core actions, which are now covered; the remaining gap is documented in docs/prototype-inventory.md, not hidden."
+    }
+  ],
+  "validation": [
+    { "repo": "frontend", "command": "npm run lint --workspace=@memories/public-web", "result": "pass" },
+    { "repo": "frontend", "command": "npm run typecheck --workspace=@memories/public-web", "result": "pass" },
+    { "repo": "frontend", "command": "npm run test --workspace=@memories/public-web", "result": "pass (7 files, 18 tests)" },
+    { "repo": "frontend", "command": "npm run build --workspace=@memories/public-web", "result": "pass (22 routes incl. all 6 required prototype routes)" },
+    { "repo": "frontend", "command": "npm run lint --workspace=@memories/admin-web", "result": "pass (unaffected)" },
+    { "repo": "frontend", "command": "npm run typecheck --workspace=@memories/admin-web", "result": "pass" },
+    { "repo": "frontend", "command": "npm run build --workspace=@memories/admin-web", "result": "pass (25 routes)" },
+    { "repo": "frontend", "command": "npm run lint --workspace=@memories/ui", "result": "pass" },
+    { "repo": "frontend", "command": "npm run typecheck --workspace=@memories/ui", "result": "pass" },
+    { "repo": "frontend", "command": "npm run test --workspace=@memories/ui", "result": "pass (9 files, 25 tests)" },
+    { "repo": "frontend", "command": "python3 ai/skills/establish-frontend-design-system/scripts/check_design_system_usage.py worktrees/MEMORIES-0003/frontend", "result": "PASSED" },
+    { "repo": "frontend", "command": "python3 ai/skills/migrate-prototype-nextjs-page/scripts/check_prototype_migration.py worktrees/MEMORIES-0003/frontend", "result": "PASSED" },
+    { "repo": "frontend", "command": "python3 ai/skills/implement-nextjs-vertical-slice/scripts/check_frontend_security.py worktrees/MEMORIES-0003/frontend", "result": "PASSED" }
+  ],
+  "current_slice": "test-v-validation",
+  "current_step": "All 8 execution-plan slices now have status 'passed' with concrete evidence. Writing final ai/tasks/MEMORIES-0003/implementation.json (status: implemented) and running build_evidence_matrix.py to confirm no missing criteria before finishing.",
+  "remaining_steps": [
+    "None blocking. Documented, non-blocking residual gaps for a possible future task: /tao-thiep still lacks multi-select and a persistent layers-list panel (z-order controls and a starting-template modal were added this attempt); gio-hang's cart-line items don't show a checkout-progress stepper (out of scope, /checkout itself is out of scope); dat-lam-rieng's portfolio cards have no image-carousel detail modal."
+  ],
+  "notes": [
+    "This is the 3rd implementation attempt on MEMORIES-0003. Attempt 1's parallel research agents failed on an external session-limit event (no code impact). Attempt 2 implemented all 6 routes + design foundation + shell but left 3 slices as 'partial' with honestly-documented gaps. This attempt (3rd) closed those exact 3 gaps with real code (see decisions above) rather than reclassifying existing partial work.",
+    "No new npm dependencies were installed; packages/ui's new test tooling reuses versions already hoisted to the workspace root node_modules by apps/public-web's existing devDependencies.",
+    "docs/prototype-inventory.md was updated to reflect the closed gaps and the remaining (now smaller, explicitly listed) scope reductions."
+  ]
+}

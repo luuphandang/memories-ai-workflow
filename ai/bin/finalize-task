@@ -1,0 +1,291 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+import subprocess
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib.ai_common import (
+    AI_ROOT,
+    configured_fail_severities,
+    ensure_task,
+    now_iso,
+    read_json,
+    read_yaml,
+    render,
+    report_config,
+    require_file,
+    requirement_documents,
+    runtime_dir,
+    run_delivery_quality_gates,
+    validate_json,
+    write_json,
+    write_yaml,
+)
+
+
+def bullets(items: list[str], empty_text: str) -> str:
+    return "\n".join(f"- {item}" for item in items) if items else f"- {empty_text}"
+
+
+def section(title: str, body: str) -> str:
+    return f"## {title}\n\n{body}" if body.strip() else ""
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Generate report and move a technically-passed task to user acceptance"
+    )
+    parser.add_argument("task_id")
+    parser.add_argument("--report-only", action="store_true")
+    parser.add_argument("--force", action="store_true")
+    args = parser.parse_args()
+
+    td = ensure_task(args.task_id)
+    task = read_yaml(td / "task.yaml")
+    state = read_yaml(td / "state.yaml")
+    report = report_config(task)
+    fail_on = configured_fail_severities(task)
+
+    implementation_path = require_file(
+        td / "implementation.json",
+        "Claude implementation handoff",
+        f"run ./ai/bin/ai task implement {args.task_id}",
+    )
+    review_path = require_file(
+        td / "review.json",
+        "Codex review output",
+        f"run ./ai/bin/ai task review {args.task_id}",
+    )
+    validate_json(implementation_path, AI_ROOT / "schemas" / "implementation.schema.json")
+    validate_json(review_path, AI_ROOT / "schemas" / "review.schema.json")
+    implementation = read_json(implementation_path)
+    review_data = read_json(review_path)
+    run_delivery_quality_gates(args.task_id, implementation, review_data)
+
+    summary_path = runtime_dir(args.task_id) / "validation" / "summary.json"
+    if not summary_path.exists() and not (args.report_only or args.force):
+        require_file(
+            summary_path,
+            "validation summary",
+            f"run ./ai/bin/ai task validate-code {args.task_id}",
+        )
+    validation = read_json(summary_path) if summary_path.exists() else {
+        "passed": False,
+        "repositories": [],
+        "dry_run": False,
+    }
+
+    current_implementation_cycle = int(state.get("implementation_cycle", 1))
+    current_change_cycle = int(state.get("change_cycle", 0))
+    cycles_match = (
+        implementation.get("implementation_cycle") == current_implementation_cycle
+        and implementation.get("change_cycle") == current_change_cycle
+        and review_data.get("implementation_cycle") == current_implementation_cycle
+        and review_data.get("change_cycle") == current_change_cycle
+        and validation.get("implementation_cycle") == current_implementation_cycle
+        and validation.get("change_cycle") == current_change_cycle
+    )
+    blocking_findings = [
+        item
+        for item in review_data.get("findings", [])
+        if item.get("severity") in fail_on
+    ]
+    gates_passed = (
+        review_data.get("verdict") == "pass"
+        and validation.get("passed") is True
+        and validation.get("dry_run") is not True
+        and cycles_match
+        and not blocking_findings
+    )
+    if not gates_passed and not (args.report_only or args.force):
+        details = []
+        if validation.get("dry_run") is True:
+            details.append("validation summary is from --dry-run")
+        if blocking_findings:
+            details.append(
+                "blocking findings exist for review.fail_on=" + ",".join(fail_on)
+            )
+        if not cycles_match:
+            details.append("cycle identity does not match the current task state")
+        suffix = f" ({'; '.join(details)})" if details else ""
+        raise SystemExit(
+            "Cannot prepare acceptance: review/validation gates must pass" + suffix
+        )
+
+    language = report["language"]
+    vi = language == "vi"
+    empty_text = "Không có." if vi else "None."
+
+    repository_lines: list[str] = []
+    for repository in implementation.get("repositories", []):
+        repository_lines.extend(
+            [
+                f"### {repository['name']}",
+                "",
+                bullets(
+                    [f"`{path}`" for path in repository.get("changed_files", [])],
+                    empty_text,
+                ),
+                "",
+            ]
+        )
+
+    diff_lines: list[str] = []
+    for repository in validation.get("repositories", []):
+        diff_stat = repository.get("git", {}).get("diff_stat", "").strip()
+        diff_lines.extend(
+            [
+                f"### {repository.get('repo')}",
+                "",
+                f"```text\n{diff_stat or empty_text}\n```",
+                "",
+            ]
+        )
+
+    validation_lines = [
+        "| Repository | Passed | Commands |",
+        "|---|---:|---|",
+    ]
+    for repository in validation.get("repositories", []):
+        commands = ", ".join(
+            f"{item.get('name')}={item.get('status')}"
+            for item in repository.get("commands", [])
+        )
+        validation_lines.append(
+            f"| {repository.get('repo')} | "
+            f"{'Yes' if repository.get('passed') else 'No'} | {commands} |"
+        )
+    if len(validation_lines) == 2:
+        validation_lines.append(f"| - | No | {empty_text} |")
+
+    counts = {key: 0 for key in ("blocker", "major", "minor", "note")}
+    for finding in review_data.get("findings", []):
+        severity = finding.get("severity", "note")
+        counts[severity] = counts.get(severity, 0) + 1
+    review_lines = [review_data.get("summary", ""), ""]
+    review_lines.extend(f"- {key}: {value}" for key, value in counts.items())
+    for finding in review_data.get("findings", []):
+        location = f"{finding.get('repo')}:{finding.get('file')}"
+        if finding.get("line"):
+            location += f":{finding.get('line')}"
+        review_lines.extend(
+            [
+                "",
+                f"### [{finding.get('severity')}] {finding.get('title')}",
+                "",
+                f"- Location: `{location}`",
+                f"- Evidence: {finding.get('evidence')}",
+                f"- Expected fix: {finding.get('expected_fix')}",
+            ]
+        )
+
+    approved_targets = {
+        item["target"]
+        for item in review_data.get("knowledge_updates", [])
+        if item.get("approved")
+    }
+    updates: list[dict] = []
+    for item in implementation.get("knowledge_updates", []):
+        updates.append(
+            {
+                "target": item["target"],
+                "type": item.get("type", "proposal"),
+                "summary": item.get("summary", ""),
+                "content": item.get("content", ""),
+                "approved": item["target"] in approved_targets,
+            }
+        )
+    write_json(td / "knowledge-updates.json", {"task_id": args.task_id, "updates": updates})
+
+    acceptance = (
+        read_yaml(td / "acceptance.yaml")
+        if (td / "acceptance.yaml").exists()
+        else {"status": "pending"}
+    )
+    report_status = state.get("status", "incomplete")
+    if gates_passed and not args.report_only and state.get("status") != "completed":
+        report_status = "awaiting_user_acceptance"
+
+    if report_status == "awaiting_user_acceptance":
+        notice = (
+            "**Kết quả đã đạt cổng kỹ thuật nhưng chưa được xem là hoàn thành.** "
+            f"Người dùng cần kiểm tra và chạy `./ai/bin/ai task accept {args.task_id}`. "
+            "Nếu chưa đúng, dùng `request-change` thay vì accept."
+            if vi
+            else "**The task passed the technical gates but is not complete yet.** "
+            f"The user must verify it and run `./ai/bin/ai task accept {args.task_id}`. "
+            "Use `request-change` instead of accept when corrections are needed."
+        )
+    elif acceptance.get("status") == "accepted":
+        notice = "Người dùng đã xác nhận vòng hiện hành." if vi else "The user accepted the current cycle."
+    else:
+        notice = (
+            "Báo cáo được sinh khi cổng kỹ thuật chưa hoàn tất hoặc ở chế độ report-only."
+            if vi
+            else "This report was generated before all technical gates passed or in report-only mode."
+        )
+
+    requirement_docs = requirement_documents(args.task_id, include_user_request=False)
+    values = {
+        "TASK_ID": args.task_id,
+        "TITLE": task.get("title", ""),
+        "STATUS": report_status,
+        "IMPLEMENTATION_CYCLE": str(state.get("implementation_cycle", 1)),
+        "CHANGE_CYCLE": str(state.get("change_cycle", 0)),
+        "IMPLEMENTATION_STATUS": implementation.get("status", "unknown"),
+        "REVIEW_VERDICT": review_data.get("verdict", "unknown"),
+        "USER_ACCEPTANCE": acceptance.get("status", "pending"),
+        "ACCEPTANCE_NOTICE": notice,
+        "REQUIREMENT_DOCUMENTS": bullets(
+            [f"`{path}`" for path in requirement_docs], empty_text
+        ),
+        "IMPLEMENTATION_SUMMARY": implementation.get(
+            "summary", "Không có mô tả." if vi else "No summary."
+        ),
+        "CHANGED_FILES_SECTION": section(
+            "Repository đã thay đổi" if vi else "Changed repositories",
+            "\n".join(repository_lines) or f"- {empty_text}",
+        ) if report["include_changed_files"] else "",
+        "DIFF_STAT_SECTION": section(
+            "Git diff stat" if vi else "Git diff stat",
+            "\n".join(diff_lines) or f"- {empty_text}",
+        ) if report["include_diff_stat"] else "",
+        "VALIDATION_SECTION": section(
+            "Validation", "\n".join(validation_lines)
+        ) if report["include_test_results"] else "",
+        "REVIEW_SECTION": section(
+            "Codex review", "\n".join(review_lines).strip() or f"- {empty_text}"
+        ) if report["include_review_findings"] else "",
+        "KNOWLEDGE_SECTION": section(
+            "Knowledge updates",
+            bullets(
+                [
+                    f"{item['target']} — "
+                    f"{'approved' if item['approved'] else 'not approved'} — "
+                    f"{item['summary']}"
+                    for item in updates
+                ],
+                empty_text,
+            ),
+        ) if report["include_knowledge_updates"] else "",
+    }
+    template_name = "final-report.md" if vi else "final-report.en.md"
+    template = (AI_ROOT / "templates" / template_name).read_text(encoding="utf-8")
+    (td / "final-report.md").write_text(render(template, values), encoding="utf-8")
+
+    if gates_passed and not args.report_only and state.get("status") != "completed":
+        state["status"] = "awaiting_user_acceptance"
+        state.setdefault("timestamps", {})["awaiting_user_acceptance_at"] = now_iso()
+        state.setdefault("user_acceptance", {})["status"] = "pending"
+        state["last_error"] = None
+        write_yaml(td / "state.yaml", state)
+        subprocess.run([str(AI_ROOT / "bin" / "rebuild-indexes")], check=False)
+
+    print(td / "final-report.md")
+
+
+if __name__ == "__main__":
+    main()

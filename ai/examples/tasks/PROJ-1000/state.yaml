@@ -1,0 +1,19 @@
+task_id: PROJ-1000
+status: completed
+implementation_cycle: 1
+review_cycle: 0
+review_cycles_total: 0
+change_cycle: 0
+active_change: null
+timestamps:
+  created_at: '2026-07-18T14:00:00+07:00'
+agents:
+  implementation: claude
+  review: codex
+repositories: {}
+user_acceptance:
+  status: accepted
+  accepted_at: '2026-07-18T15:30:00+07:00'
+  accepted_by: example-user
+  accepted_change_cycle: 0
+last_error: null

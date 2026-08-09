@@ -1,0 +1,146 @@
+{
+  "passed": true,
+  "rows": [
+    {
+      "criterion": "Module boundary",
+      "slice": "module-boundary",
+      "status": "passed",
+      "evidence": "AC3, AC33 — identity-access owns Account/AuthIdentity/RefreshSession/Role/Permission/portal auth; user-profiles owns UserProfile; no customers/staff module touched. npm run test:architecture: 0 violations. Cross-module access only via ACCOUNT_LOOKUP/ACCOUNT_PHONE_SEARCH/USER_PROFILE_LOOKUP ports (libs/platform/security/src/identity.contracts.ts), never a TypeORM relation.",
+      "coverage": "slice"
+    },
+    {
+      "criterion": "Account domain model",
+      "slice": "account-domain-model",
+      "status": "passed",
+      "evidence": "AC1, AC5, AC18 — Account aggregate (domain/accounts/account.ts) holds only status+tokenVersion, no profile/credential data; portal is chosen per login request, not per Account type. Account.canAuthenticate() blocks INACTIVE/LOCKED/deleted accounts from login and refresh (e2e-covered).",
+      "coverage": "slice"
+    },
+    {
+      "criterion": "AuthIdentity model",
+      "slice": "authidentity-model",
+      "status": "passed",
+      "evidence": "AC6, AC8, AC24, AC25 — AuthIdentityOrmEntity unique constraints are (provider, identifier) and (provider, provider_subject), not accountId alone, so one Account can hold multiple AuthIdentity rows. PhoneNormalizer + ScryptPasswordHasher used for LOCAL; passwordHash is never included in any response DTO (e2e-asserted).",
+      "coverage": "slice"
+    },
+    {
+      "criterion": "UserProfile domain model",
+      "slice": "userprofile-domain-model",
+      "status": "passed",
+      "evidence": "AC3, AC7 — user-profile.ts lives in libs/modules/user-profiles. Partial unique index UQ_profile_user_profiles_account_id ON (account_id) WHERE deleted_at IS NULL enforces at most one active profile per Account; verified by this cycle's migration-run and by auth-flow.e2e-spec.ts asserting 409 on a duplicate.",
+      "coverage": "slice"
+    },
+    {
+      "criterion": "Customer và Staff boundary",
+      "slice": "customer-v-staff-boundary",
+      "status": "passed",
+      "evidence": "AC4 — CreateAccountUseCase creates only Account, AuthIdentity, UserProfile and a default AccountRole; grep across identity-access/user-profiles finds no Customer/Staff model. docs/architecture/module-boundaries.md documents the future customers/staff extension pattern (accountId/userProfileId reference, never owning profile data).",
+      "coverage": "slice"
+    },
+    {
+      "criterion": "Auditable entity foundation",
+      "slice": "auditable-entity-foundation",
+      "status": "passed",
+      "evidence": "AC26, AC27 — Account/AuthIdentity/UserProfile all carry created_by/at, updated_by/at, deleted_by/at (verified in the applied migrations' DDL). Audit actor is resolved via RequestContext.currentActorId() in every identity-access/user-profiles use case, not a client-suppliable field (fix-request item 6).",
+      "coverage": "slice"
+    },
+    {
+      "criterion": "Database migration",
+      "slice": "database-migration",
+      "status": "passed",
+      "evidence": "AC7, AC37, AC38 — this cycle's validate-code run applied all 5 migrations to the shared throwaway database (migration-run), reverted the latest one (migration-revert), then re-applied (migration-run) — all passed. SeedRolesAndPermissionsUseCase is find-or-create and safe to call repeatedly (seed-roles-and-permissions.use-case.spec.ts, plus every e2e suite run reuses it without unique-constraint errors).",
+      "coverage": "slice"
+    },
+    {
+      "criterion": "Transaction tạo Account",
+      "slice": "transaction-t-o-account",
+      "status": "passed",
+      "evidence": "AC29 — CreateAccountUseCase wraps Account + AuthIdentity + UserProfile + default-role creation in one unitOfWork.withTransaction; UserProfileProvisioner participates in the same DB transaction via the shared AsyncLocalStorage-backed TypeOrmQueryRunnerContext, not a second transaction.",
+      "coverage": "slice"
+    },
+    {
+      "criterion": "Login bằng phone và password",
+      "slice": "login-b-ng-phone-v-password",
+      "status": "passed",
+      "evidence": "AC9, AC10, AC12, AC13, AC14, AC15 — LoginDto has only phone/password/portal (no email field exists). PORTAL_PERMISSION maps portal to a permission code checked before any session/token is created (LoginUseCase throws before entering the transaction if the check fails). auth-flow.e2e-spec.ts covers PUBLIC and ADMIN portal login end to end.",
+      "coverage": "slice"
+    },
+    {
+      "criterion": "Phân biệt authentication và authorization",
+      "slice": "ph-n-bi-t-authentication-v-authorization",
+      "status": "passed",
+      "evidence": "AC12, AC13, AC14, AC15, AC16 — LocalAuthenticationProvider verifies credentials; PermissionChecker.hasPermissions(accountId, PORTAL_PERMISSION[portal]) separately verifies portal access afterward. Neither LoginUseCase nor PortalGuard contains a role-name string comparison (grep-verified).",
+      "coverage": "slice"
+    },
+    {
+      "criterion": "Authentication provider abstraction",
+      "slice": "authentication-provider-abstraction",
+      "status": "passed",
+      "evidence": "AuthenticationProvider port (application/ports/authentication-provider.port.ts) + AuthenticationProviderRegistry, registered via the AUTHENTICATION_PROVIDERS multi-provider token in identity-access.module.ts. LocalAuthenticationProvider is the only implementation wired in (local-authentication.provider.ts, covered by local-authentication.provider.spec.ts); LoginUseCase resolves by AuthProvider through the registry, no provider-specific switch/case. Google/Apple/Facebook remain contract-only per task.md scope, documented with an add-a-provider how-to in docs/guides/authentication-flow.md.",
+      "coverage": "slice"
+    },
+    {
+      "criterion": "RBAC foundation",
+      "slice": "rbac-foundation",
+      "status": "passed",
+      "evidence": "AC16, AC17 — Role (role.ts) carries only code/name; all behavior comes from RolePermission grants via PermissionCheckerService, no role-specific branching found. Default PUBLIC_USER role is seeded (not hard-coded in a use case) by SeedRolesAndPermissionsUseCase.",
+      "coverage": "slice"
+    },
+    {
+      "criterion": "JWT payload và session",
+      "slice": "jwt-payload-v-session",
+      "status": "passed",
+      "evidence": "AC19 (not_tested — frontend token-storage concern, out of scope per requirement-addendum.md cycle 1), AC20, AC21, AC22, AC23, AC32 — refresh cookie is HttpOnly (refresh-cookie.helper.ts, e2e-asserted); RefreshSession persists portal; access/refresh payloads carry a portal claim; PortalGuard + @RequirePortal('ADMIN') block PUBLIC-portal tokens from admin routes even when the account also holds admin permissions (fix-request item 2, e2e-covered). JwtAuthGuard checks live Account status/tokenVersion on every request, so lock/delete/password-change invalidates an already-issued access token immediately, not just at natural expiry (fix-request item 1, e2e-covered).",
+      "coverage": "slice"
+    },
+    {
+      "criterion": "Request context",
+      "slice": "request-context",
+      "status": "passed",
+      "evidence": "AC27, AC28 — RequestContext is AsyncLocalStorage-backed (request-context.ts); auth-flow.e2e-spec.ts 'resolves each of several concurrent logins to its own account, never crossing subjects' passes with 5 concurrent logins.",
+      "coverage": "slice"
+    },
+    {
+      "criterion": "Audit behavior",
+      "slice": "audit-behavior",
+      "status": "passed",
+      "evidence": "AC26, AC27 — audit actor/timestamp are written in the same transaction as the domain change; actor is resolved from RequestContext, never client input. grep across identity-access/user-profiles audit paths finds no password/token/cookie value written to an audit field.",
+      "coverage": "slice"
+    },
+    {
+      "criterion": "Account CRUD API",
+      "slice": "account-crud-api",
+      "status": "passed",
+      "evidence": "AC30 — AccountController implements create/list/get/change-status/change-phone/change-password/delete, all @RequirePermissions-gated; no generic PATCH exists (fix-request item 8 — the non-functional generic update endpoint was removed rather than left as a fake 200, per review.json's own offered alternative).",
+      "coverage": "slice"
+    },
+    {
+      "criterion": "UserProfile CRUD API",
+      "slice": "userprofile-crud-api",
+      "status": "passed",
+      "evidence": "AC31 — UserProfileController implements create/list/get/update/delete, all @RequirePermissions- and PortalGuard('ADMIN')-gated (fix-request item 2 closed the earlier PUBLIC-token bypass).",
+      "coverage": "slice"
+    },
+    {
+      "criterion": "Validation và security",
+      "slice": "validation-v-security",
+      "status": "passed",
+      "evidence": "AC13, AC14, AC18, AC23, AC24, AC25 — refresh cookie is HttpOnly/Secure per AUTH_REFRESH_COOKIE_SECURE; OriginGuard enforces the CORS_ORIGIN allowlist on POST /auth/refresh (fix-request item 4, e2e-covered for both valid and disallowed Origin); JwtAuthGuard checks live Account status on every protected request; login/refresh rely on ValidationPipe (whitelist + forbid unknown fields) and @nestjs/throttler rate limiting wired in SecurityModule/main.ts.",
+      "coverage": "slice"
+    },
+    {
+      "criterion": "Tests",
+      "slice": "tests",
+      "status": "passed",
+      "evidence": "AC40 — this cycle's ai/bin/validate run (see .ai/validation/backend.json, generated this cycle) passed all 9 required commands: lint, typecheck, 232 unit tests (51 suites), build, test:architecture (0 violations), migration-run, migration-revert, migration-run again, and test:e2e (35 tests, 4 suites) against the real docker-compose infrastructure stack. The 3 'Frontend test...' bullets under this slice's original requirement_details are out of scope per requirement-addendum.md cycle 1 (epic is backend-only) and were correctly not attempted.",
+      "coverage": "slice"
+    },
+    {
+      "criterion": "Documentation",
+      "slice": "documentation",
+      "status": "passed",
+      "evidence": "Updated this cycle: docs/guides/authentication-flow.md now includes a mermaid ERD for the identity/profile schemas (grounded in the applied migrations' actual DDL) plus concrete 'how to add a new authentication provider' and 'how to add a new portal' how-tos referencing the real AuthenticationProvider port/registry and Portal enum/PortalGuard. docs/architecture/module-boundaries.md (identity-access vs user-profiles vs customers/staff) was already current from cycle 1. .env.example carries all AUTH_* variables with no placeholder secrets committed.",
+      "coverage": "slice"
+    }
+  ],
+  "missing": []
+}

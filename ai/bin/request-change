@@ -1,0 +1,219 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+import shutil
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib.ai_common import (
+    AI_ROOT,
+    archive_if_exists,
+    ensure_task,
+    now_iso,
+    read_yaml,
+    render,
+    runtime_dir,
+    verify_registered_worktrees,
+    write_yaml,
+)
+
+
+def reset_generated_outputs(
+    td: Path,
+    task_id: str,
+    implementation_cycle: int,
+    change_cycle: int,
+) -> None:
+    values = {"TASK_ID": task_id}
+    for name in (
+        "context.lock.json",
+        "implementation.json",
+        "implementation-progress.json",
+        "execution-plan.json",
+        "review.json",
+        "knowledge-updates.json",
+    ):
+        template = (AI_ROOT / "templates" / name).read_text(encoding="utf-8")
+        target = td / name
+        target.write_text(render(template, values), encoding="utf-8")
+        if name in ("implementation.json", "implementation-progress.json", "execution-plan.json", "review.json"):
+            import json
+            data = json.loads(target.read_text(encoding="utf-8"))
+            data["implementation_cycle"] = implementation_cycle
+            data["change_cycle"] = change_cycle
+            target.write_text(
+                json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+    runtime = runtime_dir(task_id)
+    for directory in (runtime / "validation", runtime / "exchange"):
+        if directory.exists():
+            shutil.rmtree(directory)
+        directory.mkdir(parents=True, exist_ok=True)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Create a correction or post-completion requirement-change cycle "
+            "without creating a worktree"
+        )
+    )
+    parser.add_argument("task_id")
+    parser.add_argument("--title", required=True)
+    parser.add_argument(
+        "--kind",
+        choices=["auto", "correction", "requirement_change"],
+        default="auto",
+    )
+    parser.add_argument("--from-file")
+    args = parser.parse_args()
+
+    td = ensure_task(args.task_id)
+    state = read_yaml(td / "state.yaml")
+    from_status = state.get("status")
+
+    if args.kind == "auto":
+        if from_status == "completed":
+            kind = "requirement_change"
+        elif from_status in ("awaiting_user_acceptance", "reviewing"):
+            kind = "correction"
+        else:
+            raise SystemExit(
+                "Auto kind only supports completed or awaiting_user_acceptance/reviewing states"
+            )
+    else:
+        kind = args.kind
+
+    if kind == "correction" and from_status not in (
+        "awaiting_user_acceptance",
+        "reviewing",
+    ):
+        raise SystemExit(
+            f"Correction requires awaiting_user_acceptance/reviewing, found {from_status}"
+        )
+    if kind == "requirement_change" and from_status != "completed":
+        raise SystemExit(
+            f"Requirement change after acceptance requires completed, found {from_status}"
+        )
+
+    verified = verify_registered_worktrees(args.task_id, require_same_branch=True)
+    cycle = int(state.get("change_cycle", 0)) + 1
+    cycle_name = f"cycle-{cycle:03d}"
+    cycle_dir = td / "changes" / cycle_name
+    if cycle_dir.exists():
+        raise SystemExit(f"Change cycle already exists: {cycle_dir}")
+
+    (cycle_dir / "baseline").mkdir(parents=True)
+    (cycle_dir / "attachments").mkdir(parents=True)
+    for source_name in (
+        "implementation.json",
+        "implementation-progress.json",
+        "execution-plan.json",
+        "review.json",
+        "final-report.md",
+        "acceptance.yaml",
+        "context.lock.json",
+        "knowledge-updates.json",
+    ):
+        archive_if_exists(td / source_name, cycle_dir / "baseline" / source_name)
+    archive_if_exists(
+        runtime_dir(args.task_id) / "validation",
+        cycle_dir / "baseline" / "validation",
+    )
+    archive_if_exists(
+        runtime_dir(args.task_id) / "exchange",
+        cycle_dir / "baseline" / "exchange",
+    )
+
+    values = {
+        "TASK_ID": args.task_id,
+        "CYCLE": str(cycle),
+        "KIND": kind,
+        "CHANGE_TITLE": args.title.replace('"', '\\"'),
+        "NOW": now_iso(),
+        "FROM_STATUS": str(from_status),
+    }
+    template_mapping = (
+        ("metadata.yaml", "metadata.yaml"),
+        ("user-request.md", "user-request.md"),
+        ("requirement-addendum.md", "requirement-addendum.md"),
+        ("attachments-README.md", "attachments/README.md"),
+    )
+    for template_name, target_name in template_mapping:
+        template = (
+            AI_ROOT / "templates" / "change" / template_name
+        ).read_text(encoding="utf-8")
+        target = cycle_dir / target_name
+        target.write_text(render(template, values), encoding="utf-8")
+
+    if args.from_file:
+        source = Path(args.from_file)
+        if not source.is_file():
+            raise SystemExit(f"Input file not found: {source}")
+        with (cycle_dir / "user-request.md").open("a", encoding="utf-8") as handle:
+            handle.write(
+                "\n## Nội dung được nhập từ file\n\n"
+                + source.read_text(encoding="utf-8")
+                + "\n"
+            )
+
+    acceptance = {
+        "task_id": args.task_id,
+        "status": "pending",
+        "accepted_at": None,
+        "accepted_by": None,
+        "accepted_change_cycle": None,
+        "accepted_review_cycle": None,
+        "note": "",
+    }
+    write_yaml(td / "acceptance.yaml", acceptance)
+    next_implementation_cycle = int(state.get("implementation_cycle", 1)) + 1
+    reset_generated_outputs(
+        td,
+        args.task_id,
+        implementation_cycle=next_implementation_cycle,
+        change_cycle=cycle,
+    )
+
+    state["change_cycle"] = cycle
+    state["implementation_cycle"] = next_implementation_cycle
+    state["review_cycle"] = 0
+    state["implementation_attempt"] = 0
+    state.pop("claude_session_id", None)
+    state.pop("last_implementation_log", None)
+    state["active_change"] = {
+        "cycle": cycle,
+        "kind": kind,
+        "path": f"ai/tasks/{args.task_id}/changes/{cycle_name}",
+        "title": args.title,
+    }
+    state["status"] = (
+        "changes_requested_by_user" if kind == "correction" else "reopened"
+    )
+    state["user_acceptance"] = {
+        "status": "pending",
+        "accepted_at": None,
+        "accepted_by": None,
+        "accepted_change_cycle": None,
+        "previous_acceptance_superseded": kind == "requirement_change",
+    }
+    state.setdefault("timestamps", {})["change_requested_at"] = now_iso()
+    state["last_error"] = None
+    write_yaml(td / "state.yaml", state)
+
+    print(f"Created {kind} cycle: {cycle_dir}")
+    print("Reused registered worktrees:")
+    for item in verified:
+        print(f"- {item['repo']}: {item['path']} ({item['branch']})")
+    print(
+        f"Edit {cycle_dir / 'user-request.md'} and "
+        f"{cycle_dir / 'requirement-addendum.md'}, then run prepare-context."
+    )
+
+
+if __name__ == "__main__":
+    main()

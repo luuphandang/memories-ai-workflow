@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+import argparse
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib.ai_common import AI_ROOT, now_iso, render, task_dir, validate_task_id, read_yaml, write_yaml, runtime_dir
+
+
+def main() -> None:
+    p = argparse.ArgumentParser(description="Create an AI task folder for a Jira epic/story/task")
+    p.add_argument("task_id")
+    p.add_argument("--title", required=True)
+    p.add_argument("--type", choices=["epic", "story", "task"], required=True)
+    p.add_argument("--parent")
+    p.add_argument("--epic")
+    p.add_argument("--priority", default="medium", choices=["lowest","low","medium","high","highest","critical"])
+    p.add_argument("--repos", default="", help="Comma-separated repo names registered later as worktrees")
+    args = p.parse_args()
+    validate_task_id(args.task_id)
+
+    if args.type == "epic" and (args.parent or args.epic): p.error("Epic must not have --parent or --epic")
+    if args.type == "story" and not args.parent: p.error("Story requires --parent <EPIC-ID>")
+    if args.type == "task" and not args.parent: p.error("Task requires --parent <STORY-ID>")
+    epic_id = args.task_id if args.type == "epic" else (args.epic or (args.parent if args.type == "story" else None))
+    if args.type == "task" and not epic_id: p.error("Task requires --epic <EPIC-ID>")
+
+    td = task_dir(args.task_id)
+    if td.exists(): raise SystemExit(f"Task already exists: {td}")
+    td.mkdir(parents=True)
+    (td / "changes").mkdir()
+
+    values = {"TASK_ID":args.task_id,"TITLE":args.title,"JIRA_TYPE":args.type,"PARENT_ID":args.parent or "-","EPIC_ID":epic_id or "-","PARENT_ID_YAML":"null" if not args.parent else args.parent,"EPIC_ID_YAML":"null" if not epic_id else epic_id,"NOW":now_iso(),"IMPLEMENTATION_CYCLE":"1","CHANGE_CYCLE":"0"}
+    templates = AI_ROOT / "templates"
+    for name in ["task.md","task.yaml","context.yaml","state.yaml","final-report.md","acceptance.yaml"]:
+        (td/name).write_text(render((templates/name).read_text(encoding="utf-8"), values), encoding="utf-8")
+    for name in ["context.lock.json","implementation.json","review.json","knowledge-updates.json","implementation-progress.json","execution-plan.json"]:
+        (td/name).write_text(render((templates/name).read_text(encoding="utf-8"), values), encoding="utf-8")
+
+    task = read_yaml(td/"task.yaml"); task["priority"] = args.priority
+    repos=[r.strip() for r in args.repos.split(",") if r.strip()]
+    task["validation"]={repo:["lint","typecheck","test","build"] for repo in repos}; write_yaml(td/"task.yaml",task)
+    context=read_yaml(td/"context.yaml")
+    context["repositories"]={repo:[{"path":f"ai/repos/{repo}/INDEX.md","reason":"Repository knowledge index","load":"initial"},{"path":f"ai/repos/{repo}/architecture.md","reason":"Architecture when needed","load":"on-demand"},{"path":f"ai/repos/{repo}/testing.md","reason":"Testing rules","load":"on-demand"}] for repo in repos}
+    write_yaml(td/"context.yaml",context); runtime_dir(args.task_id)
+
+    if args.parent:
+        parent_dir=task_dir(args.parent)
+        if parent_dir.exists():
+            parent=read_yaml(parent_dir/"task.yaml"); children=parent.setdefault("children",[])
+            if args.task_id not in children: children.append(args.task_id); write_yaml(parent_dir/"task.yaml",parent)
+    print(f"Created {args.type}: {td}")
+    print(f"Next: edit {td/'task.md'} and register worktrees when applicable.")
+
+if __name__ == "__main__": main()

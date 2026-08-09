@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+import argparse
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib.ai_common import AI_ROOT, ensure_task, read_yaml, write_yaml, safe_workspace_path, relative_to_root, git_value, runtime_dir
+
+
+def main() -> None:
+    p=argparse.ArgumentParser(description="Register a developer-created Git worktree")
+    p.add_argument("task_id"); p.add_argument("--repo",required=True); p.add_argument("--path",required=True)
+    p.add_argument("--base-ref",default="origin/develop"); p.add_argument("--read-only",action="store_true"); p.add_argument("--allow-missing",action="store_true")
+    args=p.parse_args(); td=ensure_task(args.task_id); wp=safe_workspace_path(args.path)
+    if not wp.exists() and not args.allow_missing: raise SystemExit(f"Worktree path does not exist: {wp}")
+    if wp.exists() and git_value(wp,["rev-parse","--is-inside-work-tree"],"false")!="true": raise SystemExit(f"Not a Git worktree: {wp}")
+    task=read_yaml(td/"task.yaml")
+    entry={"repo":args.repo,"path":relative_to_root(wp),"base_ref":args.base_ref,"writable":not args.read_only}
+    task["worktrees"]=[x for x in task.get("worktrees",[]) if x.get("repo")!=args.repo]+[entry]
+    task.setdefault("validation",{}).setdefault(args.repo,["lint","typecheck","test","build"]); write_yaml(td/"task.yaml",task)
+    context=read_yaml(td/"context.yaml")
+    knowledge=AI_ROOT/"repos"/args.repo
+    candidates=[
+        ("INDEX.md","Repository knowledge index","initial"),
+        ("architecture.md","Architecture and module boundaries","on-demand"),
+        ("conventions.md","Repository conventions","on-demand"),
+        ("testing.md","Testing requirements","on-demand"),
+        ("source-map.md","Source navigation map","on-demand"),
+    ]
+    context.setdefault("repositories",{})[args.repo]=[
+        {"path":f"ai/repos/{args.repo}/{name}","reason":reason,"load":load}
+        for name,reason,load in candidates if (knowledge/name).is_file()
+    ]
+    write_yaml(td/"context.yaml",context)
+    branch=git_value(wp,["branch","--show-current"]) if wp.exists() else "missing"
+    state=read_yaml(td/"state.yaml")
+    state.setdefault("repositories",{})[args.repo]={"path":entry["path"],"base_ref":args.base_ref,"base_sha":git_value(wp,["rev-parse","HEAD"]) if wp.exists() else "missing","branch":branch,"registered_branch":branch}
+    write_yaml(td/"state.yaml",state); runtime_dir(args.task_id); print(f"Registered {args.repo}: {entry['path']}")
+if __name__=="__main__": main()

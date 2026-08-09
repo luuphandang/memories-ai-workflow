@@ -1,0 +1,26 @@
+version: 1
+package_manager: npm
+commands:
+  install-check:
+    command: npm ci
+    required: false
+    timeout_seconds: 600
+  lint:
+    command: npm run lint --workspaces --if-present
+    required: true
+    timeout_seconds: 300
+  typecheck:
+    command: npm run typecheck --workspaces --if-present
+    required: true
+    timeout_seconds: 300
+  test:
+    command: npm run test --workspaces --if-present
+    required: true
+    timeout_seconds: 900
+  build:
+    command: npm run build --workspaces --if-present
+    required: true
+    timeout_seconds: 1200
+# Cập nhật theo package.json thực tế (npm workspaces: apps/public-web, apps/admin-web, packages/*).
+# `build` build tất cả app/package cùng lúc; dùng "npm run build:public" / "build:admin" để build
+# riêng từng app khi cần.

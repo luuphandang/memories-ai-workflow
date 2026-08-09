@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "task_id", "implementation_cycle", "change_cycle", "updated_at",
+    "completed_criteria", "changed_files", "decisions", "validation",
+    "current_slice", "current_step", "remaining_steps", "notes"
+  ],
+  "properties": {
+    "task_id": {"type": "string"},
+    "implementation_cycle": {"type": "integer", "minimum": 1},
+    "change_cycle": {"type": "integer", "minimum": 0},
+    "updated_at": {"type": ["string", "null"]},
+    "completed_criteria": {"type": "array", "items": {"type": "string"}},
+    "changed_files": {"type": "array", "items": {"type": "string"}},
+    "decisions": {"type": "array", "items": {"type": "string"}},
+    "validation": {"type": "array", "items": {"type": "string"}},
+    "current_slice": {"type": ["string", "null"]},
+    "current_step": {"type": "string"},
+    "remaining_steps": {"type": "array", "items": {"type": "string"}},
+    "notes": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}

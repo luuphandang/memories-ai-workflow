@@ -1,0 +1,9 @@
+# Memories Frontend Conventions
+
+- Component naming/structure: file/folder theo route group App Router (`(dashboard)/orders/page.tsx`, v.v.); component dùng chung đặt ở `packages/ui/src/components/*.tsx` (PascalCase export, ví dụ `Button`, `Card`/`CardHeader`/`CardTitle`/`CardContent`), dùng CVA (`class-variance-authority`) cho variant.
+- Hook/state rules: chỉ đánh dấu `'use client'` ở component thật sự cần state/context/hook trình duyệt (`useRouter`, `useSyncExternalStore`, form, toast) — server component là mặc định; state dùng context thuần (`packages/auth`) hoặc TanStack Query, không dùng thư viện state global khác.
+- Styling: Tailwind CSS qua preset dùng chung `packages/design-system/tailwind-preset.js`; helper `cn()` (`packages/utilities`) để merge className có điều kiện.
+- Form/validation: React Hook Form + Zod (`zodResolver`), schema dùng chung đặt ở `packages/validation` (ví dụ `loginSchema`/`registerSchema` tại `packages/validation/src/auth.ts`); `packages/forms/src/form-field.tsx` (`FormField`) là component label+input+error dùng lại; `packages/forms/src/api-error-mapping.ts`'s `applyApiErrorToForm()` map `ApiClientError.fieldErrors` vào từng field form (fallback `root` error nếu không khớp field nào).
+- Error/loading/empty state: mỗi app có `app/error.tsx`/`app/loading.tsx`/`app/not-found.tsx` ở cấp root (quy ước Next.js App Router); thông báo lỗi/thành công dùng `toast` (`packages/ui`'s `useToast`, Radix Toast).
+- i18n/date/number: `packages/i18n` đã code đầy đủ (`t(locale, key)` type-safe, dictionary `en`/`vi`) nhưng CHƯA được import/sử dụng ở app nào — cả 2 app hiện hardcode text tiếng Việt trực tiếp trong JSX (`<html lang="vi">` cố định); coi package này là hạ tầng sẵn có cho tương lai, không phải convention đang áp dụng thật.
+- Import/format: ESLint `import/order` (warn) + `import/no-cycle` (error) qua `packages/eslint-config`; Prettier cho format; `next lint --max-warnings 0` chạy riêng cho từng app.

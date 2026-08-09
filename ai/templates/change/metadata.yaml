@@ -1,0 +1,10 @@
+version: 1
+task_id: {{TASK_ID}}
+cycle: {{CYCLE}}
+kind: {{KIND}}
+title: "{{CHANGE_TITLE}}"
+created_at: "{{NOW}}"
+created_from_status: "{{FROM_STATUS}}"
+status: draft
+requirement_precedence: latest_addendum_wins_on_explicit_conflict
+worktree_policy: reuse_registered_worktrees

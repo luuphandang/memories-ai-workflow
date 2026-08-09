@@ -1,0 +1,152 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+import subprocess
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib.ai_common import (
+    AI_ROOT,
+    configured_fail_severities,
+    ensure_task,
+    now_iso,
+    read_json,
+    read_yaml,
+    require_file,
+    runtime_dir,
+    run_delivery_quality_gates,
+    validate_json,
+    write_yaml,
+)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Record explicit user acceptance and complete the current task cycle"
+    )
+    parser.add_argument("task_id")
+    parser.add_argument("--accepted-by", default="user")
+    parser.add_argument("--note", default="")
+    args = parser.parse_args()
+
+    td = ensure_task(args.task_id)
+    task = read_yaml(td / "task.yaml")
+    state = read_yaml(td / "state.yaml")
+    if state.get("status") != "awaiting_user_acceptance":
+        raise SystemExit(
+            "Task must be awaiting_user_acceptance, found: "
+            f"{state.get('status')}\nNext: run the missing implement/validate/review/report steps first."
+        )
+
+    implementation_path = require_file(
+        td / "implementation.json",
+        "Claude implementation handoff",
+        f"run ./ai/bin/ai task implement {args.task_id}",
+    )
+    review_path = require_file(
+        td / "review.json",
+        "Codex review output",
+        f"run ./ai/bin/ai task review {args.task_id}",
+    )
+    summary_path = require_file(
+        runtime_dir(args.task_id) / "validation" / "summary.json",
+        "validation summary",
+        f"run ./ai/bin/ai task validate-code {args.task_id}",
+    )
+    validate_json(implementation_path, AI_ROOT / "schemas" / "implementation.schema.json")
+    validate_json(review_path, AI_ROOT / "schemas" / "review.schema.json")
+    implementation = read_json(implementation_path)
+    review = read_json(review_path)
+    summary = read_json(summary_path)
+    run_delivery_quality_gates(args.task_id, implementation, review)
+
+    current_implementation_cycle = int(state.get("implementation_cycle", 1))
+    current_change_cycle = int(state.get("change_cycle", 0))
+    cycles_match = (
+        implementation.get("implementation_cycle") == current_implementation_cycle
+        and implementation.get("change_cycle") == current_change_cycle
+        and review.get("implementation_cycle") == current_implementation_cycle
+        and review.get("change_cycle") == current_change_cycle
+        and summary.get("implementation_cycle") == current_implementation_cycle
+        and summary.get("change_cycle") == current_change_cycle
+    )
+    fail_on = configured_fail_severities(task)
+    blocking_findings = [
+        item for item in review.get("findings", []) if item.get("severity") in fail_on
+    ]
+    gates_passed = (
+        review.get("verdict") == "pass"
+        and summary.get("passed") is True
+        and summary.get("dry_run") is not True
+        and cycles_match
+        and not blocking_findings
+    )
+    if not gates_passed:
+        reasons = []
+        if summary.get("dry_run") is True:
+            reasons.append("validation was only a dry-run")
+        if blocking_findings:
+            reasons.append("configured blocking review findings remain")
+        if not cycles_match:
+            reasons.append("outputs belong to a different cycle")
+        raise SystemExit(
+            "Acceptance blocked: current review/validation gates are not satisfied"
+            + (f" ({'; '.join(reasons)})" if reasons else "")
+        )
+
+    now = now_iso()
+    acceptance = {
+        "task_id": args.task_id,
+        "status": "accepted",
+        "accepted_at": now,
+        "accepted_by": args.accepted_by,
+        "accepted_change_cycle": current_change_cycle,
+        "accepted_review_cycle": int(state.get("review_cycle", 0)),
+        "note": args.note,
+    }
+    write_yaml(td / "acceptance.yaml", acceptance)
+    validate_json(td / "acceptance.yaml", AI_ROOT / "schemas" / "user-acceptance.schema.json")
+
+    active_change = state.get("active_change") or {}
+    if active_change.get("path"):
+        metadata_path = Path(active_change["path"])
+        if not metadata_path.is_absolute():
+            metadata_path = AI_ROOT.parent / metadata_path
+        metadata_path = metadata_path / "metadata.yaml"
+        if metadata_path.exists():
+            metadata = read_yaml(metadata_path)
+            metadata["status"] = "accepted"
+            write_yaml(metadata_path, metadata)
+
+    state["status"] = "completed"
+    state["active_change"] = None
+    state.setdefault("timestamps", {})["completed_at"] = now
+    state["user_acceptance"] = {
+        "status": "accepted",
+        "accepted_at": now,
+        "accepted_by": args.accepted_by,
+        "accepted_change_cycle": current_change_cycle,
+    }
+    state["last_error"] = None
+    write_yaml(td / "state.yaml", state)
+
+    report_result = subprocess.run(
+        [str(AI_ROOT / "bin" / "finalize-task"), args.task_id, "--report-only"],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
+    )
+    if report_result.returncode != 0:
+        raise SystemExit(
+            "Task was accepted, but final report regeneration failed:\n"
+            + report_result.stdout
+        )
+    subprocess.run([str(AI_ROOT / "bin" / "rebuild-indexes")], check=False)
+    print(f"Accepted and completed: {args.task_id}")
+
+
+if __name__ == "__main__":
+    main()

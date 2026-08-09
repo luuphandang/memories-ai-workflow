@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implement Next.js Vertical Slice"
+  short_description: "Complete Next.js UI and client integration slices"
+  default_prompt: "Use $implement-nextjs-vertical-slice to implement and verify this frontend feature end to end."

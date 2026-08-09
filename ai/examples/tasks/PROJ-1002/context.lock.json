@@ -1,0 +1,15 @@
+{
+  "generated_at": "2026-07-18T15:00:00+07:00",
+  "task_id": "PROJ-1002",
+  "implementation_cycle": 3,
+  "change_cycle": 2,
+  "active_change": null,
+  "requirement_precedence": "task.md then requirement addenda by ascending cycle; newest explicit conflict wins",
+  "files": [],
+  "requirements": [
+    "ai/examples/tasks/PROJ-1002/task.md",
+    "ai/examples/tasks/PROJ-1002/changes/cycle-001/requirement-addendum.md",
+    "ai/examples/tasks/PROJ-1002/changes/cycle-002/requirement-addendum.md"
+  ],
+  "repositories": {}
+}

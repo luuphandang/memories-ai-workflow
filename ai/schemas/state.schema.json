@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "task_id",
+    "status",
+    "implementation_cycle",
+    "review_cycle",
+    "review_cycles_total",
+    "change_cycle",
+    "timestamps",
+    "agents",
+    "repositories",
+    "user_acceptance"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "backlog",
+        "ready",
+        "prepared",
+        "implementing",
+        "interrupted",
+        "validating",
+        "reviewing",
+        "changes_requested_by_codex",
+        "awaiting_user_acceptance",
+        "changes_requested_by_user",
+        "completed",
+        "reopened",
+        "needs_input",
+        "blocked",
+        "failed"
+      ]
+    },
+    "implementation_cycle": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "review_cycle": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "review_cycles_total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "change_cycle": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "active_change": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "timestamps": {
+      "type": "object"
+    },
+    "agents": {
+      "type": "object"
+    },
+    "repositories": {
+      "type": "object"
+    },
+    "user_acceptance": {
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "pending",
+            "accepted",
+            "superseded"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "last_error": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "automation": {
+      "type": "object",
+      "properties": {
+        "status": {"type": "string"},
+        "started_at": {"type": "string"},
+        "finished_at": {"type": "string"},
+        "max_attempts": {"type": "integer", "minimum": 1},
+        "attempts": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

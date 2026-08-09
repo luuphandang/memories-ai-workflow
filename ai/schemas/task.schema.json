@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AI Task",
+  "type": "object",
+  "required": [
+    "version",
+    "id",
+    "title",
+    "jira",
+    "status",
+    "worktrees",
+    "agents",
+    "skills",
+    "scope",
+    "review",
+    "validation",
+    "report"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]+-[0-9]+$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "jira": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "epic",
+            "story",
+            "task"
+          ]
+        },
+        "parent_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "epic_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "priority": {
+      "enum": [
+        "lowest",
+        "low",
+        "medium",
+        "high",
+        "highest",
+        "critical"
+      ]
+    },
+    "status": {
+      "type": "string"
+    },
+    "children": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "worktrees": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "repo",
+          "path",
+          "base_ref",
+          "writable"
+        ],
+        "properties": {
+          "repo": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "base_ref": {
+            "type": "string"
+          },
+          "writable": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "agents": {
+      "type": "object",
+      "required": [
+        "implementer",
+        "reviewer"
+      ]
+    },
+    "skills": {
+      "type": "object",
+      "required": ["implement", "review"],
+      "properties": {
+        "implement": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}},
+        "review": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}}
+      },
+      "additionalProperties": false
+    },
+    "scope": {
+      "type": "object",
+      "required": ["execution_plan_required"],
+      "properties": {"execution_plan_required": {"type": "boolean"}},
+      "additionalProperties": false
+    },
+    "review": {
+      "type": "object",
+      "required": [
+        "max_cycles",
+        "fail_on"
+      ],
+      "properties": {
+        "max_cycles": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "fail_on": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "blocker",
+              "major",
+              "minor",
+              "note"
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "validation": {
+      "type": "object"
+    },
+    "git": {
+      "type": "object",
+      "deprecated": true,
+      "description": "Legacy compatibility only. Git write permissions are global safety invariants and cannot be enabled per task.",
+      "properties": {
+        "allow_commit": {
+          "const": false
+        },
+        "allow_push": {
+          "const": false
+        },
+        "allow_branch_change": {
+          "const": false
+        },
+        "allow_worktree_management": {
+          "const": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "report": {
+      "type": "object",
+      "required": [
+        "language",
+        "include_diff_stat",
+        "include_changed_files",
+        "include_test_results",
+        "include_review_findings",
+        "include_knowledge_updates"
+      ],
+      "properties": {
+        "language": {
+          "enum": [
+            "vi",
+            "en"
+          ]
+        },
+        "include_diff_stat": {
+          "type": "boolean"
+        },
+        "include_changed_files": {
+          "type": "boolean"
+        },
+        "include_test_results": {
+          "type": "boolean"
+        },
+        "include_review_findings": {
+          "type": "boolean"
+        },
+        "include_knowledge_updates": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}

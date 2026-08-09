@@ -1,0 +1,4 @@
+interface:
+  display_name: "Decompose Implementation Task"
+  short_description: "Split large work into verifiable vertical slices"
+  default_prompt: "Use $decompose-implementation-task to turn this task into an executable vertical-slice plan."

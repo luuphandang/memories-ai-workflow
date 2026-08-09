@@ -1,0 +1,28 @@
+.env.ai
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Repository thật và worktree không thuộc AI control plane
+apps/*
+!apps/.gitkeep
+worktrees/*
+!worktrees/.gitkeep
+
+# Runtime có thể chứa log và output cục bộ
+ai/runtime/locks/*
+ai/runtime/logs/*
+ai/runtime/sessions/*
+ai/runtime/cache/*
+!ai/runtime/locks/.gitkeep
+!ai/runtime/logs/.gitkeep
+!ai/runtime/sessions/.gitkeep
+!ai/runtime/cache/.gitkeep
+
+# Task exchange/runtime có thể được điều chỉnh theo policy dự án
+worktrees/**/.ai/
+
+# Prototype chứa UI mock
+prototype/*
+!prototype/.gitkeep

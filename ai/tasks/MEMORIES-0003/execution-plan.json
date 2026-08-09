@@ -1,0 +1,249 @@
+{
+  "task_id": "MEMORIES-0003",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "status": "ready",
+  "slices": [
+    {
+      "id": "inventory-v-mapping",
+      "title": "Inventory và mapping",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Inventory và mapping"
+      ],
+      "requirement_details": {
+        "Inventory và mapping": [
+          "Đọc đủ 6 prototype và các file JavaScript/tài nguyên đi kèm.",
+          "Ghi mapping prototype → route → layout → feature/component → interaction → asset/mock data.",
+          "Xác định phần trùng lặp và khác biệt có chủ đích giữa header/footer/style của các prototype.",
+          "Dùng `prototype/qua-ky-niem/qua-ky-niem.html` làm nguồn chính cho public header/footer; chỉ lấy bổ sung từ prototype khác khi không xung đột.",
+          "Ghi rõ các hành vi không thể hoặc không nên chuyển đổi và lý do."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "design-foundation-tr-c-page",
+      "title": "Design foundation trước page",
+      "depends_on": [
+        "inventory-v-mapping"
+      ],
+      "acceptance_criteria": [
+        "Design foundation trước page"
+      ],
+      "requirement_details": {
+        "Design foundation trước page": [
+          "Chuẩn hóa palette LUUMORY tối thiểu: ivory paper, warm cream, dusty rose, burgundy memory, sage green, old ink, antique gold, soft blue, smoky purple, light peach, paper brown và bright white.",
+          "Bổ sung semantic tokens cho background, foreground, surface/card, primary, secondary, muted, border/input/ring, success, warning và destructive; component sử dụng semantic token thay vì lặp mã màu.",
+          "Chuẩn hóa font heading/body/accent từ prototype bằng cơ chế font của Next.js hoặc giải pháp local ổn định, có fallback rõ ràng và không lặp import Google Fonts trong từng page.",
+          "Chuẩn hóa radius, shadow, container width, section spacing, transition và breakpoint cần dùng chung.",
+          "Expose token qua `packages/design-system/src/tokens.css` và `tailwind-preset.js`; bảo toàn khả năng build của cả public-web và admin-web.",
+          "Xác định và triển khai các primitive còn thiếu được dùng lặp lại, ví dụ `IconButton`, `Badge`, `QuantityInput`, `Tabs`, `Dialog/Modal`, `Drawer`, `Carousel`, `Select` hoặc `FormField`; ưu tiên primitive accessible và API nhất quán.",
+          "Không đưa component chỉ có ý nghĩa nghiệp vụ như `ProductCard`, `SiteHeader`, `CartSummary` vào `packages/ui`.",
+          "Khai báo brand constants dùng chung cho tên `MEMORIES`, logo `/brand/memories-logo.png`, site name và contact placeholder; không lặp literal thương hiệu ở từng page/component."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "public-shell-v-navigation",
+      "title": "Public shell và navigation",
+      "depends_on": [
+        "design-foundation-tr-c-page"
+      ],
+      "acceptance_criteria": [
+        "Public shell và navigation"
+      ],
+      "requirement_details": {
+        "Public shell và navigation": [
+          "Tạo route group/layout cho các trang public site, dùng chung `SiteHeader` và `SiteFooter`.",
+          "Tách menu, footer links, contact/social data khỏi JSX khi dữ liệu được lặp hoặc cần cấu hình.",
+          "Header hỗ trợ active route, mobile navigation, cart count mock, keyboard/focus management và các trạng thái chưa đăng nhập/đã đăng nhập ở mức presentation.",
+          "Footer responsive và dùng route nội bộ thực tế; link chưa có đích phải thể hiện rõ trạng thái placeholder.",
+          "`/tao-thiep` sử dụng editor layout riêng; không ép public header/footer làm giảm diện tích editor."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "shared-feature-components-v-mock-model",
+      "title": "Shared feature components và mock model",
+      "depends_on": [
+        "inventory-v-mapping",
+        "design-foundation-tr-c-page"
+      ],
+      "acceptance_criteria": [
+        "Shared feature components và mock model"
+      ],
+      "requirement_details": {
+        "Shared feature components và mock model": [
+          "Tách component dùng chung giữa các page: section heading, breadcrumb, product/template card, price, badge, filter controls, empty state, modal/drawer, quantity control và CTA khi thực sự có cùng contract.",
+          "Tách mock data khỏi page/component; khai báo TypeScript type/interface cho template, product, cart item, option, review và custom-order data.",
+          "Dùng ID/slug ổn định và cấu trúc gần response API dự kiến, nhưng không giả lập API/network layer khi chưa cần.",
+          "Có fixture cho trạng thái có dữ liệu, rỗng, danh sách dài, còn/hết hàng, giá thường/khuyến mãi và option bắt buộc/không bắt buộc.",
+          "Không lưu access token hoặc dữ liệu nhạy cảm vào browser storage. Chỉ dùng storage cho draft không nhạy cảm nếu prototype yêu cầu, có guard cho SSR và có thao tác xóa/reset rõ ràng."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "tri-n-khai-page-theo-vertical-slice",
+      "title": "Triển khai page theo vertical slice",
+      "depends_on": [
+        "public-shell-v-navigation",
+        "shared-feature-components-v-mock-model",
+        "asset-management"
+      ],
+      "acceptance_criteria": [
+        "Triển khai page theo vertical slice"
+      ],
+      "requirement_details": {
+        "Triển khai page theo vertical slice": [
+          "`/`: giữ hero, các section giới thiệu thiệp/quà/làm riêng/câu chuyện và CTA chính.",
+          "`/mau-thiep`: triển khai danh sách, tìm kiếm/lọc/sắp xếp hoặc modal/preview nếu có trong prototype; có empty state.",
+          "`/qua-ky-niem`: triển khai catalog, filter/sort, product state và quick-view/add-to-cart mock theo prototype.",
+          "`/dat-lam-rieng`: triển khai form/stepper, validation, upload preview ở mức local, summary, modal xác nhận và trạng thái draft theo phạm vi an toàn.",
+          "`/gio-hang`: triển khai cập nhật số lượng, xóa/khôi phục nếu có, option, promo/shipping mock, empty cart và order summary.",
+          "`/tao-thiep`: chuyển editor từ HTML/JavaScript sang React component/state/hook; hỗ trợ các thao tác chính thể hiện trong prototype và các screenshot tham chiếu, không nhúng nguyên `luumory-app.js` hoặc `support.js`."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "asset-management",
+      "title": "Asset management",
+      "depends_on": [
+        "inventory-v-mapping",
+        "design-foundation-tr-c-page"
+      ],
+      "acceptance_criteria": [
+        "Asset management"
+      ],
+      "requirement_details": {
+        "Asset management": [
+          "Di chuyển asset cần dùng vào `apps/public-web/public` theo nhóm có ý nghĩa; cập nhật đường dẫn theo quy ước Next.js.",
+          "Dedupe logo và ảnh trùng lặp; không đổi nội dung file chỉ để tạo thêm bản sao.",
+          "Dùng `next/image` khi phù hợp, khai báo dimensions/sizes để hạn chế layout shift.",
+          "Ảnh nội dung có `alt` phù hợp; ảnh trang trí dùng alt rỗng hoặc CSS background đúng ngữ nghĩa.",
+          "Không dùng remote image không ổn định để lấp dữ liệu thiếu.",
+          "Dùng `prototype/logo/logo.png` làm logo frontend duy nhất; copy nguyên bản sang `apps/public-web/public/brand/memories-logo.png`, khai báo kích thước/tỷ lệ hiển thị phù hợp và dùng alt/accessibility label mang tên `MEMORIES`.",
+          "Không đưa các logo LUUMORY khác từ thư mục con của prototype vào runtime, trừ khi có yêu cầu thay thế logo chính thức mới."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "responsive-accessibility-v-fidelity",
+      "title": "Responsive, accessibility và fidelity",
+      "depends_on": [
+        "tri-n-khai-page-theo-vertical-slice"
+      ],
+      "acceptance_criteria": [
+        "Responsive, accessibility và fidelity"
+      ],
+      "requirement_details": {
+        "Responsive, accessibility và fidelity": [
+          "Kiểm tra tối thiểu tại mobile 375px, tablet 768px và desktop 1440px.",
+          "Không có horizontal overflow ngoài chủ đích; nội dung dài và danh sách rỗng không phá layout.",
+          "Menu, dialog/drawer, tab, carousel, stepper, filter và editor control sử dụng được bằng bàn phím với focus visible.",
+          "Control có accessible name, trạng thái `aria-*` phù hợp và vùng thông báo cho validation/toast khi cần.",
+          "So sánh với prototype theo viewport tương ứng; lưu evidence/screenshot cho các route và trạng thái quan trọng nếu công cụ workflow hỗ trợ.",
+          "Chấp nhận khác biệt kỹ thuật cần thiết cho accessibility/responsive, nhưng không tự ý redesign."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "test-v-validation",
+      "title": "Test và validation",
+      "depends_on": [
+        "responsive-accessibility-v-fidelity"
+      ],
+      "acceptance_criteria": [
+        "Test và validation"
+      ],
+      "requirement_details": {
+        "Test và validation": [
+          "Test route render và các interaction có rủi ro chính bằng Vitest + Testing Library.",
+          "Test shared primitive/component một lần tại owner package; test page tập trung vào integration/behavior, không lặp implementation detail.",
+          "Bao phủ tối thiểu mobile-menu, filter/empty-state, cart quantity/remove, custom-order validation và editor action quan trọng.",
+          "Không có lỗi runtime, hydration error hoặc warning nghiêm trọng trên browser console.",
+          "Chạy đầy đủ `lint`, `typecheck`, `test`, `build` của frontend và deterministic checker từ các skill bắt buộc."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "task_id",
+    "status",
+    "accepted_at",
+    "accepted_by",
+    "accepted_change_cycle",
+    "accepted_review_cycle",
+    "note"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "pending",
+        "accepted",
+        "superseded"
+      ]
+    },
+    "accepted_at": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "accepted_by": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "accepted_change_cycle": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "accepted_review_cycle": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "note": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

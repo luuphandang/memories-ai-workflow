@@ -1,0 +1,24 @@
+{"review_coverage":{"review_passes":[],"changed_files":[],"risk_areas":[],"prior_findings":[],"completion_statement":false},
+  "task_id": "PROJ-1002",
+  "verdict": "pass",
+  "reviewed_repositories": [],
+  "findings": [],
+  "validation_assessment": {
+    "passed": true,
+    "missing": []
+  },
+  "acceptance_criteria": [],
+  "knowledge_updates": [],
+  "applied_skills": [
+    {
+      "name": "review-vertical-slice-completeness",
+      "sha256": "example-lock-hash",
+      "checks_completed": [
+        "Built the acceptance-evidence matrix for the example task"
+      ]
+    }
+  ],
+  "summary": "Ví dụ review đã pass.",
+  "implementation_cycle": 3,
+  "change_cycle": 2
+}

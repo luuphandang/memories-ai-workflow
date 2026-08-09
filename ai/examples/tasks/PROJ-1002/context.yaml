@@ -1,0 +1,20 @@
+version: 1
+mandatory:
+- path: ai/shared/policies/security.md
+  reason: Security boundaries
+  load: initial
+- path: ai/shared/workflows/requirement-change.md
+  reason: Change cycle rules
+  load: initial
+- path: ai/shared/workflows/user-acceptance.md
+  reason: Acceptance gate
+  load: initial
+repositories: {}
+domains:
+- path: ai/domains/example/INDEX.md
+  reason: Neutral domain example
+  load: on-demand
+exclude:
+- '**/node_modules/**'
+- '**/.env*'
+- ai/tasks/*/changes/*/baseline/**

@@ -1,0 +1,44 @@
+# AI Control Plane
+
+`ai/` là nguồn sự thật cho cách Claude, Codex và người dùng phối hợp. Source gốc nằm trong `apps/`; worktree nằm trong `worktrees/<JIRA-ID>/<repo-name>/`.
+
+## Thành phần
+
+| Thư mục | Mục đích |
+|---|---|
+| `agents/` | Vai trò và ranh giới của từng agent |
+| `skills/` | Quy trình kỹ thuật tái sử dụng, reference và checker deterministic |
+| `config/` | Cấu hình Claude Code và Codex |
+| `shared/` | Policy, workflow, quality và glossary dùng chung |
+| `repos/` | Kiến thức bền vững theo repository |
+| `domains/example/` | Domain trung lập để sao chép cho tính năng thật |
+| `tasks/` | Hồ sơ thực thi cố định theo Jira ID, gồm changes và acceptance |
+| `indexes/` | Chỉ mục trạng thái được sinh tự động |
+| `schemas/` | JSON Schema cho dữ liệu trao đổi/trạng thái |
+| `templates/` | Mẫu task, acceptance và change cycle |
+| `bin/` | Script điều phối và self-check |
+| `runtime/` | Lock, log, session và cache cục bộ |
+| `examples/` | Ví dụ epic → story → task và change cycle |
+
+## Source of truth
+
+1. Yêu cầu gốc: `tasks/<ID>/task.md`.
+2. Yêu cầu thay đổi: `tasks/<ID>/changes/cycle-NNN/requirement-addendum.md`.
+3. Context: `context.yaml`, `context.lock.json`.
+4. Kế hoạch vertical slice: `execution-plan.json`.
+5. Claude handoff: `implementation.json`.
+6. Validation: `worktrees/<ID>/.ai/validation/`.
+7. Codex review: `review.json`.
+8. Nghiệm thu: `acceptance.yaml`.
+9. Trạng thái: `state.yaml`.
+10. Báo cáo: `final-report.md`.
+
+Task không `completed` chỉ vì Codex pass; phải có user acceptance.
+
+Skill lock dùng aggregate SHA-256 của `SKILL.md`, references, scripts và `agents/openai.yaml`; sửa bất kỳ file skill nào đều yêu cầu chạy lại `prepare-context`.
+
+Chạy pipeline tự động bằng `./ai/bin/ai task run <ID>`. Command không tự accept và không thay đổi requirement/max cycle.
+
+## Kiểm thử control plane
+
+`./ai/bin/ai self-check --smoke` chạy pipeline mô phỏng trong workspace tạm, không gọi agent và không sửa task/worktree thật.

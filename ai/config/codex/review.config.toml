@@ -1,0 +1,7 @@
+# The `review` profile's settings, read from here by `codex --profile review`
+# (via `--profile <name>` -> `<name>.config.toml` in CODEX_HOME). Must NOT
+# also be declared as [profiles.review] in config.toml — newer codex versions
+# reject that as an ambiguous legacy duplicate.
+approval_policy = "never"
+sandbox_mode = "read-only"
+model_reasoning_effort = "high"

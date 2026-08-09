@@ -1,0 +1,53 @@
+version: 1
+package_manager: npm
+commands:
+  install-check:
+    command: npm ci
+    required: false
+    timeout_seconds: 600
+  lint:
+    command: npm run lint
+    required: true
+    timeout_seconds: 300
+  typecheck:
+    command: npm run typecheck
+    required: true
+    timeout_seconds: 300
+  test:
+    command: npm run test
+    required: true
+    timeout_seconds: 900
+  build:
+    command: npm run build
+    required: true
+    timeout_seconds: 900
+  test-architecture:
+    command: npm run test:architecture
+    required: true
+    timeout_seconds: 300
+  test-e2e:
+    command: npm run test:e2e
+    required: true
+    timeout_seconds: 900
+    # Requires the local infrastructure stack (Postgres/Redis/MinIO — see
+    # `docker/docker-compose.yml --profile infrastructure`) and a populated `.env` in
+    # apps/backend, same precondition as CI's ci.yml. Promoted from optional to required after
+    # the round-2 Codex review: this is the only test that exercises the real
+    # create -> upload -> confirm -> BullMQ worker -> ready/failed flow end to end.
+  migration-run:
+    command: npm run migration:run
+    required: true
+    timeout_seconds: 300
+    # Same infrastructure precondition as test-e2e. Required after MEMORIES-0002 cycle-1 review
+    # flagged that AC37 ("migration runs on an empty database") was only ever self-reported,
+    # never captured as deterministic evidence for the cycle being reviewed.
+  migration-revert:
+    command: npm run migration:revert
+    required: true
+    timeout_seconds: 300
+    # Task-level validation order runs migration-run, then this, then migration-run again
+    # before test-e2e — proves both up() and down() work, while still leaving the shared
+    # throwaway database fully migrated for test-e2e (and for whatever runs against it next).
+# Cập nhật theo apps/backend/package.json thực tế (NestJS monorepo, npm workspaces).
+# `build` dùng "nest build" mặc định (project gốc "api" trong nest-cli.json); build từng app
+# riêng qua "npm run build:worker" / "build:realtime" / "build:scheduler" / "build:cli" khi cần.

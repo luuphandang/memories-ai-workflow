@@ -1,0 +1,219 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib.ai_common import (
+    AI_ROOT,
+    enforce_global_git_policy,
+    ensure_task,
+    git_value,
+    now_iso,
+    read_yaml,
+    requirement_documents,
+    runtime_dir,
+    safe_workspace_path,
+    sha256_file,
+    skill_manifest,
+    write_json,
+    write_yaml,
+    validate_json,
+)
+
+
+def iter_context_items(context: dict):
+    yield from context.get("mandatory", [])
+    for items in context.get("repositories", {}).values():
+        yield from items
+    yield from context.get("domains", [])
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Validate and lock task context")
+    parser.add_argument("task_id")
+    parser.add_argument("--allow-placeholders", action="store_true")
+    args = parser.parse_args()
+
+    td = ensure_task(args.task_id)
+    task = read_yaml(td / "task.yaml")
+    validate_json(td / "task.yaml", AI_ROOT / "schemas" / "task.schema.json")
+    enforce_global_git_policy(task)
+    context = read_yaml(td / "context.yaml")
+    validate_json(td / "context.yaml", AI_ROOT / "schemas" / "context.schema.json")
+    state = read_yaml(td / "state.yaml")
+
+    files: list[dict] = []
+    missing: list[str] = []
+
+    worktree_repos = {item["repo"] for item in task.get("worktrees", [])}
+    context_repos = set(context.get("repositories", {}))
+    for repo in sorted(worktree_repos - context_repos):
+        missing.append(f"context.repositories.{repo} (registered worktree has no repository knowledge)")
+    for repo in sorted(worktree_repos & context_repos):
+        if not context.get("repositories", {}).get(repo):
+            missing.append(f"context.repositories.{repo} (knowledge list is empty)")
+
+    required_skills = {
+        role: task.get("skills", {}).get(role, []) for role in ("implement", "review")
+    }
+    locked_skills: dict[str, dict] = {}
+    for name in sorted(set(required_skills["implement"] + required_skills["review"])):
+        skill_path = AI_ROOT / "skills" / name / "SKILL.md"
+        if not skill_path.is_file():
+            missing.append(f"ai/skills/{name}/SKILL.md (required skill missing)")
+            continue
+        locked_skills[name] = skill_manifest(name)
+
+    execution_plan = td / "execution-plan.json"
+    if task.get("scope", {}).get("execution_plan_required", False):
+        if not execution_plan.is_file():
+            missing.append(f"ai/tasks/{args.task_id}/execution-plan.json (run prepare-plan)")
+        else:
+            try:
+                validate_json(execution_plan, AI_ROOT / "schemas" / "execution-plan.schema.json")
+                plan = __import__("json").loads(execution_plan.read_text(encoding="utf-8"))
+                if plan.get("implementation_cycle") != int(state.get("implementation_cycle", 1)) or plan.get("change_cycle") != int(state.get("change_cycle", 0)):
+                    missing.append(f"ai/tasks/{args.task_id}/execution-plan.json (belongs to another cycle; run prepare-plan --force)")
+                if plan.get("status") == "draft":
+                    missing.append(f"ai/tasks/{args.task_id}/execution-plan.json (draft; run prepare-plan --force or refine it)")
+            except Exception as exc:
+                missing.append(f"ai/tasks/{args.task_id}/execution-plan.json ({exc})")
+
+    for item in iter_context_items(context):
+        raw = item.get("path", "")
+        if "replace this neutral" in item.get("reason", "").lower() and not args.allow_placeholders:
+            missing.append(raw + " (context reason is still a neutral placeholder)")
+            continue
+        if "[BỔ SUNG" in raw:
+            if not args.allow_placeholders:
+                missing.append(raw)
+            continue
+        path = safe_workspace_path(raw)
+        if not path.is_file():
+            missing.append(raw)
+            continue
+        files.append(
+            {
+                "path": raw,
+                "sha256": sha256_file(path),
+                "load": item.get("load", "initial"),
+                "category": "knowledge",
+            }
+        )
+
+    requirement_docs = requirement_documents(args.task_id, include_user_request=True)
+    active = state.get("active_change") or {}
+    active_path = active.get("path", "")
+    for raw in requirement_docs:
+        path = safe_workspace_path(raw)
+        if not path.is_file():
+            missing.append(raw)
+            continue
+        if (
+            active_path
+            and raw.startswith(active_path)
+            and "[BỔ SUNG" in path.read_text(encoding="utf-8")
+            and not args.allow_placeholders
+        ):
+            missing.append(raw + " (contains unresolved markers)")
+            continue
+        files.append(
+            {
+                "path": raw,
+                "sha256": sha256_file(path),
+                "load": "initial",
+                "category": "requirement",
+            }
+        )
+
+    repositories: dict[str, dict] = {}
+    for wt in task.get("worktrees", []):
+        worktree_path = safe_workspace_path(wt["path"])
+        if not worktree_path.exists():
+            missing.append(wt["path"])
+            continue
+
+        branch = git_value(worktree_path, ["branch", "--show-current"])
+        previous = state.get("repositories", {}).get(wt["repo"], {})
+        registered_branch = previous.get("registered_branch") or previous.get("branch")
+        if (
+            registered_branch not in (None, "", "unknown", "missing")
+            and branch != registered_branch
+        ):
+            missing.append(
+                f"{wt['path']} (branch changed: expected {registered_branch}, found {branch})"
+            )
+            continue
+
+        repositories[wt["repo"]] = {
+            "path": wt["path"],
+            "base_ref": wt["base_ref"],
+            "head_sha": git_value(worktree_path, ["rev-parse", "HEAD"]),
+            "branch": branch,
+            "registered_branch": registered_branch or branch,
+            "status": git_value(worktree_path, ["status", "--short"], ""),
+        }
+
+    if missing:
+        raise SystemExit(
+            "Missing/unresolved context or worktree:\n- " + "\n- ".join(missing)
+        )
+
+    task_text = (td / "task.md").read_text(encoding="utf-8")
+    acceptance_count = sum(1 for line in task_text.splitlines() if __import__("re").match(r"^\s*[-*]\s+\[\s\]", line))
+    risk_keywords = {
+        "database": ("database", "migration", "typeorm", "postgres"),
+        "api": ("api", "endpoint", "controller"),
+        "security": ("auth", "jwt", "permission", "password", "security"),
+        "background": ("queue", "worker", "job", "bullmq"),
+        "ui": ("frontend", "website", "page", "ui"),
+    }
+    lowered_task = task_text.lower()
+    dimensions = sorted(name for name, words in risk_keywords.items() if any(word in lowered_task for word in words))
+    lock = {
+        "generated_at": now_iso(),
+        "task_id": args.task_id,
+        "implementation_cycle": state.get("implementation_cycle", 1),
+        "change_cycle": state.get("change_cycle", 0),
+        "active_change": state.get("active_change"),
+        "requirement_precedence": (
+            "task.md then requirement addenda by ascending cycle; "
+            "newest explicit conflict wins"
+        ),
+        "files": files,
+        "requirements": requirement_docs,
+        "repositories": repositories,
+        "skills": {"required": required_skills, "locked": locked_skills},
+        "execution_plan": f"ai/tasks/{args.task_id}/execution-plan.json" if execution_plan.is_file() else None,
+        "scope_assessment": {
+            "acceptance_items": acceptance_count,
+            "risk_dimensions": dimensions,
+            "large": task.get("jira", {}).get("type") == "epic" or acceptance_count > 20 or len(dimensions) >= 3,
+        },
+    }
+    write_json(td / "context.lock.json", lock)
+    write_json(runtime_dir(args.task_id) / "input" / "context-manifest.json", lock)
+
+    state["status"] = "prepared"
+    state.setdefault("timestamps", {})["context_prepared_at"] = now_iso()
+    state["repositories"] = repositories
+    state["last_error"] = None
+    active_change = state.get("active_change") or {}
+    if active_change.get("path"):
+        metadata_path = safe_workspace_path(active_change["path"]) / "metadata.yaml"
+        if metadata_path.exists():
+            metadata = read_yaml(metadata_path)
+            metadata["status"] = "active"
+            write_yaml(metadata_path, metadata)
+    write_yaml(td / "state.yaml", state)
+    print(
+        f"Context locked: {len(files)} files, {len(repositories)} repositories, "
+        f"{len(requirement_docs)} requirement documents"
+    )
+
+
+if __name__ == "__main__":
+    main()

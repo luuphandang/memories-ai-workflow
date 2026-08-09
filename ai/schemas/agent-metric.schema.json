@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["generated_at", "agent", "phase", "attempt", "implementation_cycle", "change_cycle", "status", "duration_seconds", "resumed", "usage"],
+  "properties": {
+    "generated_at": {"type": "string"},
+    "agent": {"enum": ["claude", "codex"]},
+    "phase": {"enum": ["implement", "review"]},
+    "attempt": {"type": "integer", "minimum": 0},
+    "implementation_cycle": {"type": "integer", "minimum": 1},
+    "change_cycle": {"type": "integer", "minimum": 0},
+    "status": {"type": "string"},
+    "duration_seconds": {"type": "number", "minimum": 0},
+    "resumed": {"type": "boolean"},
+    "session_id": {"type": ["string", "null"]},
+    "usage": {"type": "object"},
+    "output_bytes": {"type": "integer", "minimum": 0}
+  },
+  "additionalProperties": true
+}

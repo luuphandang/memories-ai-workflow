@@ -1,0 +1,166 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+import subprocess
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib.ai_common import AI_ROOT, ensure_task, now_iso, read_json, read_yaml, runtime_dir, write_yaml
+
+
+def invoke(args: list[str]) -> int:
+    print("RUN:", " ".join(args), flush=True)
+    result = subprocess.run(args, text=True, check=False)
+    return result.returncode
+
+
+def validation_fix_request(task_id: str, attempt: int) -> Path:
+    runtime = runtime_dir(task_id)
+    summary_path = runtime / "validation" / "summary.json"
+    summary = read_json(summary_path) if summary_path.exists() else {}
+    lines = [
+        f"# Validation fix request — {task_id} — automation attempt {attempt}", "",
+        "Fix the required validation failures below without weakening or bypassing validation.",
+        "Inspect the full current-cycle validation artifacts and update implementation.json.", "",
+    ]
+    for repo in summary.get("repositories", []):
+        for item in repo.get("commands", []):
+            if item.get("required") and item.get("status") not in {"passed", "planned"}:
+                lines.extend([f"## {repo.get('repo')} — {item.get('name')}", "", f"- Command: `{item.get('command', '')}`", f"- Status: {item.get('status')}", f"- Output tail:\n\n```text\n{item.get('output_tail', '')[-4000:]}\n```", ""])
+    path = runtime / "input" / f"fix-request-validation-attempt-{attempt:03d}.md"
+    path.write_text("\n".join(lines), encoding="utf-8")
+    return path
+
+
+def delivery_gate_fix_request(task_id: str, attempt: int) -> Path:
+    runtime = runtime_dir(task_id)
+    gate_path = runtime / "validation" / "skills" / "delivery-gates.json"
+    gate = read_json(gate_path) if gate_path.exists() else {}
+    lines = [
+        f"# Delivery-gate fix request — {task_id} — automation attempt {attempt}", "",
+        "Fix the implementation handoff or implementation defects reported below without weakening or bypassing the gates.",
+        "For acceptance-evidence failures, use the exact criterion strings from execution-plan.json or add one passed `slice:<slice-id>` entry with concrete evidence for each fully completed slice.", "",
+        "## Failed gates", "",
+    ]
+    for check in gate.get("checks", []):
+        if check.get("passed"):
+            continue
+        lines.append(f"- {check.get('name')}")
+        for missing in check.get("missing", []):
+            lines.append(f"  - missing: {missing}")
+        if check.get("output"):
+            lines.extend(["", "```text", check["output"][-4000:], "```"])
+    path = runtime / "input" / f"fix-request-delivery-gates-attempt-{attempt:03d}.md"
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Autonomously run implement/validate/review/fix cycles")
+    parser.add_argument("task_id")
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--max-attempts", type=int, help="Maximum implement attempts for this run; defaults to review.max_cycles")
+    parser.add_argument("--resume-interrupted", action="store_true", help="Retry an interrupted Claude session within this run")
+    parser.add_argument("--max-interrupted-retries", type=int, default=1)
+    args = parser.parse_args()
+    td = ensure_task(args.task_id)
+    task = read_yaml(td / "task.yaml")
+    max_attempts = args.max_attempts or int(task.get("review", {}).get("max_cycles", 5))
+    if max_attempts <= 0 or args.max_interrupted_retries < 0:
+        raise SystemExit("max attempts/retries must be positive/non-negative")
+    commands = ["implement", "validate-code", "review", "request-fixes", "report"]
+    if args.dry_run:
+        print(f"Autonomous task run: max_attempts={max_attempts}, resume_interrupted={args.resume_interrupted}")
+        for command in commands:
+            print(f"- ./ai/bin/ai task {command} {args.task_id}")
+        print("Stops at awaiting_user_acceptance; never runs accept.")
+        return
+
+    state = read_yaml(td / "state.yaml")
+    if state.get("status") == "completed":
+        raise SystemExit("Task is already completed; create a requirement-change cycle first")
+    if state.get("status") == "interrupted" and not args.resume_interrupted:
+        raise SystemExit("Task is interrupted; re-run with --resume-interrupted after quota/availability is restored")
+
+    state["automation"] = {"status": "running", "started_at": now_iso(), "max_attempts": max_attempts, "attempts": 0}
+    write_yaml(td / "state.yaml", state)
+    interrupted_retries = 0
+    attempt = 0
+    while attempt < max_attempts:
+        attempt += 1
+        state = read_yaml(td / "state.yaml")
+        state["automation"]["attempts"] = attempt
+        write_yaml(td / "state.yaml", state)
+
+        code = invoke([str(AI_ROOT / "bin" / "run-claude"), args.task_id])
+        state = read_yaml(td / "state.yaml")
+        if state.get("status") == "interrupted":
+            if args.resume_interrupted and interrupted_retries < args.max_interrupted_retries:
+                interrupted_retries += 1
+                attempt -= 1
+                continue
+            state["automation"].update({"status": "interrupted", "finished_at": now_iso()})
+            write_yaml(td / "state.yaml", state)
+            raise SystemExit(code or 1)
+        if (
+            (code != 0 or state.get("status") == "failed")
+            and str(state.get("last_error", "")).startswith("Required skill checks failed:")
+        ):
+            request = delivery_gate_fix_request(args.task_id, attempt)
+            print(f"Delivery quality gates failed; queued for next implementation attempt: {request}")
+            if attempt < max_attempts:
+                continue
+            break
+        if code != 0 or state.get("status") in {"failed", "blocked", "needs_input"}:
+            state["automation"].update({"status": "stopped", "finished_at": now_iso()})
+            write_yaml(td / "state.yaml", state)
+            raise SystemExit(code or 1)
+
+        code = invoke([str(AI_ROOT / "bin" / "validate"), args.task_id])
+        if code != 0:
+            request = validation_fix_request(args.task_id, attempt)
+            print(f"Validation failed; queued for next implementation attempt: {request}")
+            if attempt < max_attempts:
+                continue
+            break
+
+        code = invoke([str(AI_ROOT / "bin" / "run-codex-review"), args.task_id])
+        state = read_yaml(td / "state.yaml")
+        if code != 0 or state.get("status") in {"failed", "blocked", "needs_input"}:
+            state.setdefault("automation", {}).update({"status": "stopped", "finished_at": now_iso()})
+            write_yaml(td / "state.yaml", state)
+            raise SystemExit(code or 1)
+        review = read_json(td / "review.json")
+        if review.get("verdict") == "pass":
+            code = invoke([str(AI_ROOT / "bin" / "finalize-task"), args.task_id])
+            state = read_yaml(td / "state.yaml")
+            state.setdefault("automation", {}).update({"status": "awaiting_user_acceptance", "finished_at": now_iso()})
+            write_yaml(td / "state.yaml", state)
+            raise SystemExit(code)
+        if review.get("verdict") == "changes_requested":
+            code = invoke([str(AI_ROOT / "bin" / "request-fixes"), args.task_id])
+            if code != 0:
+                state = read_yaml(td / "state.yaml")
+                state.setdefault("automation", {}).update({"status": "blocked", "finished_at": now_iso()})
+                write_yaml(td / "state.yaml", state)
+                raise SystemExit(code)
+            continue
+        state["status"] = "blocked"
+        state["last_error"] = "Review did not return pass or changes_requested"
+        state.setdefault("automation", {}).update({"status": "blocked", "finished_at": now_iso()})
+        write_yaml(td / "state.yaml", state)
+        raise SystemExit(state["last_error"])
+
+    state = read_yaml(td / "state.yaml")
+    state["status"] = "blocked"
+    state["last_error"] = f"Autonomous run reached maximum implementation attempts ({max_attempts})"
+    state.setdefault("automation", {}).update({"status": "blocked", "finished_at": now_iso()})
+    write_yaml(td / "state.yaml", state)
+    raise SystemExit(state["last_error"])
+
+
+if __name__ == "__main__":
+    main()

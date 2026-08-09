@@ -1,0 +1,4 @@
+interface:
+  display_name: "Migrate Prototype to Next.js"
+  short_description: "Convert prototypes into robust Next.js pages"
+  default_prompt: "Use $migrate-prototype-nextjs-page to convert this prototype into a reusable and accessible Next.js route."

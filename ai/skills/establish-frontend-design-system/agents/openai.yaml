@@ -1,0 +1,4 @@
+interface:
+  display_name: "Establish Frontend Design System"
+  short_description: "Build reusable frontend tokens and primitives"
+  default_prompt: "Use $establish-frontend-design-system to establish shared design tokens, themes, and UI primitives before page implementation."

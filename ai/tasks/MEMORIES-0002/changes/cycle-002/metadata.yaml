@@ -1,0 +1,10 @@
+version: 1
+task_id: MEMORIES-0002
+cycle: 2
+kind: correction
+title: Thiếu API đăng ký
+created_at: '2026-08-07T23:48:04+07:00'
+created_from_status: awaiting_user_acceptance
+status: accepted
+requirement_precedence: latest_addendum_wins_on_explicit_conflict
+worktree_policy: reuse_registered_worktrees

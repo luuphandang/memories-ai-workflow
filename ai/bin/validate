@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+import argparse, time
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib.ai_common import AI_ROOT, enforce_global_git_policy, ensure_task, read_yaml, write_yaml, write_json, safe_workspace_path, run, git_value, runtime_dir, now_iso
+
+
+def main() -> None:
+    p = argparse.ArgumentParser(description="Run deterministic repository validations")
+    p.add_argument("task_id")
+    p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--include-optional", action="store_true")
+    p.add_argument("--command", action="append", help="Only run named command; repeatable")
+    args = p.parse_args()
+    td = ensure_task(args.task_id)
+    task = read_yaml(td / "task.yaml")
+    enforce_global_git_policy(task)
+    rt = runtime_dir(args.task_id)
+    validation_dir = rt / "validation"
+
+    state = read_yaml(td / "state.yaml")
+    implementation_cycle = int(state.get("implementation_cycle", 1))
+    change_cycle = int(state.get("change_cycle", 0))
+    state["status"] = "validating"
+    state.setdefault("timestamps", {})["validation_started_at"] = now_iso()
+    write_yaml(td / "state.yaml", state)
+
+    overall = True
+    repo_summaries = []
+    for wt in task.get("worktrees", []):
+        repo = wt["repo"]
+        wp = safe_workspace_path(wt["path"])
+        config_path = AI_ROOT / "repos" / repo / "commands.yaml"
+        if not config_path.exists():
+            repo_summaries.append({"repo":repo,"passed":False,"error":f"Missing {config_path}"})
+            overall = False
+            continue
+        commands_config = read_yaml(config_path).get("commands", {})
+        selected = task.get("validation", {}).get(repo, list(commands_config))
+        if args.command: selected = [x for x in selected if x in args.command]
+        results = []
+        for name in selected:
+            spec = commands_config.get(name)
+            if not spec:
+                results.append({"name":name,"status":"missing","required":True})
+                overall = False
+                continue
+            required = bool(spec.get("required", True))
+            if not required and not args.include_optional:
+                results.append({"name":name,"command":spec["command"],"status":"skipped","required":False})
+                continue
+            if args.dry_run:
+                results.append({"name":name,"command":spec["command"],"status":"planned","required":required})
+                continue
+            started = time.time()
+            try:
+                cp = run(spec["command"], cwd=wp, timeout=int(spec.get("timeout_seconds", 900)), shell=True)
+                status = "passed" if cp.returncode == 0 else "failed"
+                output = cp.stdout[-12000:]
+            except Exception as exc:
+                status, output, cp = "error", str(exc), None
+            item = {"name":name,"command":spec["command"],"status":status,"required":required,"duration_seconds":round(time.time()-started,2),"exit_code":None if cp is None else cp.returncode,"output_tail":output}
+            results.append(item)
+            if required and status != "passed": overall = False
+        summary = {
+            "task_id": args.task_id, "repo": repo, "path": wt["path"], "generated_at": now_iso(),
+            "implementation_cycle": implementation_cycle, "change_cycle": change_cycle,
+            "passed": all((not x.get("required")) or x["status"] in ("passed","planned") for x in results),
+            "commands": results,
+            "git": {"branch":git_value(wp,["branch","--show-current"]),"head":git_value(wp,["rev-parse","HEAD"]),"diff_stat":git_value(wp,["diff","--stat"],"")}
+        }
+        write_json(validation_dir / f"{repo}.json", summary)
+        repo_summaries.append(summary)
+    write_json(validation_dir / "summary.json", {"task_id":args.task_id,"generated_at":now_iso(),"implementation_cycle":implementation_cycle,"change_cycle":change_cycle,"passed":overall,"repositories":repo_summaries,"dry_run":args.dry_run})
+
+    state = read_yaml(td / "state.yaml")
+    state["status"] = "reviewing" if overall and not args.dry_run else ("prepared" if args.dry_run else "failed")
+    state.setdefault("timestamps", {})["validation_finished_at"] = now_iso()
+    if not overall: state["last_error"] = "One or more required validations failed"
+    write_yaml(td / "state.yaml", state)
+    print(f"Validation {'PASSED' if overall else 'FAILED'}; see {validation_dir / 'summary.json'}")
+    if not overall and not args.dry_run: raise SystemExit(1)
+
+if __name__ == "__main__": main()

@@ -1,0 +1,15 @@
+{"applied_skills":[],"review_coverage":{"review_passes":[],"changed_files":[],"risk_areas":[],"prior_findings":[],"completion_statement":false},
+  "task_id": "PROJ-1002",
+  "verdict": "pass",
+  "reviewed_repositories": [],
+  "findings": [],
+  "validation_assessment": {
+    "passed": true,
+    "missing": []
+  },
+  "acceptance_criteria": [],
+  "knowledge_updates": [],
+  "summary": "Baseline review pass.",
+  "implementation_cycle": 1,
+  "change_cycle": 0
+}

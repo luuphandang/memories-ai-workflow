@@ -1,0 +1,52 @@
+{
+  "task_id": "MEMORIES-0002",
+  "generated_at": "2026-08-07T21:44:52+07:00",
+  "passed": false,
+  "checks": [
+    {
+      "name": "implement-nestjs-vertical-slice:check_port_bindings.py:backend",
+      "passed": true,
+      "output": "Port binding check PASSED: 28 injected Symbol tokens\n"
+    },
+    {
+      "name": "implement-nestjs-vertical-slice:check_module_wiring.py:backend",
+      "passed": true,
+      "output": "Nest module wiring check PASSED: 27 use-case/controller classes\n"
+    },
+    {
+      "name": "implement-auth-security-change:check_auth_invariants.py:backend",
+      "passed": true,
+      "output": "Auth invariant check PASSED\n"
+    },
+    {
+      "name": "acceptance-evidence",
+      "passed": false,
+      "missing": [
+        "Module boundary",
+        "Account domain model",
+        "AuthIdentity model",
+        "UserProfile domain model",
+        "Customer và Staff boundary",
+        "Auditable entity foundation",
+        "Database migration",
+        "Transaction tạo Account",
+        "Login bằng phone và password",
+        "Phân biệt authentication và authorization",
+        "Authentication provider abstraction",
+        "RBAC foundation",
+        "JWT payload và session",
+        "Request context",
+        "Audit behavior",
+        "Account CRUD API",
+        "UserProfile CRUD API",
+        "Frontend integration",
+        "Validation và security",
+        "Tests",
+        "Documentation"
+      ]
+    }
+  ],
+  "failures": [
+    "acceptance-evidence"
+  ]
+}

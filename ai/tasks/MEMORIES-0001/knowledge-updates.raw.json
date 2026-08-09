@@ -1,0 +1,467 @@
+{
+  "task_id": "MEMORIES-0001",
+  "updates": [
+    {
+      "target": "ai/repos/backend/database-rules.md",
+      "type": "proposal",
+      "summary": "TypeORM entities glob trong toàn bộ codebase phải khớp đúng '*.orm-entity.ts'/'*.orm-entity.js' (không phải '*.entity.ts') — lỗi này khiến KHÔNG entity nào từng được nhận diện ở runtime thật trước round 2, chỉ ẩn vì chưa có test nào thực sự gọi repository qua HTTP thật.",
+      "content": "- **Nguồn:** `libs/platform/database`\n\nTypeORM entities glob trong toàn bộ codebase phải khớp đúng '*.orm-entity.ts'/'*.orm-entity.js' (không phải '*.entity.ts') — lỗi này khiến KHÔNG entity nào từng được nhận diện ở runtime thật trước round 2, chỉ ẩn vì chưa có test nào thực sự gọi repository qua HTTP thật.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "BullMQ từ chối customId chứa ':' trừ khi tách được đúng 3 phần qua split(':') (tương thích ngược với repeatable job cũ) — mọi jobId tự tạo trong dự án này nên dùng '-' làm dấu phân cách.",
+      "content": "- **Nguồn:** `libs/modules/media/src/application/contracts/generate-thumbnail.job.ts`\n\nBullMQ từ chối customId chứa ':' trừ khi tách được đúng 3 phần qua split(':') (tương thích ngược với repeatable job cũ) — mọi jobId tự tạo trong dự án này nên dùng '-' làm dấu phân cách.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/database-rules.md",
+      "type": "proposal",
+      "summary": "reflect-metadata suy giảm kiểu 'X | undefined' thành Object ở design-time cho cả TypeORM @Column và @nestjs/swagger @ApiProperty — cả hai đều cần 'type' tường minh khi property là optional.",
+      "content": "- **Nguồn:** `TypeORM @Column / @nestjs/swagger @ApiProperty`\n\nreflect-metadata suy giảm kiểu 'X | undefined' thành Object ở design-time cho cả TypeORM @Column và @nestjs/swagger @ApiProperty — cả hai đều cần 'type' tường minh khi property là optional.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "proposal",
+      "summary": "apps/worker và apps/scheduler dùng chung BUSINESS_MODULES với apps/api nên bất kỳ guard/dependency mới nào thêm vào 1 module business (vd JwtAuthGuard cần TOKEN_SERVICE) đều phải được đưa vào SecurityModule.register() ở cả 3 app.module.ts, không chỉ apps/api — nếu không cả worker/scheduler sẽ crash ngay khi boot.",
+      "content": "- **Nguồn:** `apps/worker/src/app.module.ts, apps/scheduler/src/app.module.ts`\n\napps/worker và apps/scheduler dùng chung BUSINESS_MODULES với apps/api nên bất kỳ guard/dependency mới nào thêm vào 1 module business (vd JwtAuthGuard cần TOKEN_SERVICE) đều phải được đưa vào SecurityModule.register() ở cả 3 app.module.ts, không chỉ apps/api — nếu không cả worker/scheduler sẽ crash ngay khi boot.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/testing.md",
+      "type": "proposal",
+      "summary": "Test dựng Nest app qua Test.createTestingModule().createNestApplication() KHÔNG tự áp dụng global prefix/ValidationPipe/GlobalExceptionFilter như main.ts thật — phải gọi lại đúng logic đó (nay tách thành configure-app.ts dùng chung) để e2e test phản ánh đúng hành vi production.",
+      "content": "- **Nguồn:** `apps/api/src/configure-app.ts`\n\nTest dựng Nest app qua Test.createTestingModule().createNestApplication() KHÔNG tự áp dụng global prefix/ValidationPipe/GlobalExceptionFilter như main.ts thật — phải gọi lại đúng logic đó (nay tách thành configure-app.ts dùng chung) để e2e test phản ánh đúng hành vi production.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/database-rules.md",
+      "type": "proposal",
+      "summary": "`nest build` (webpack:true, monorepo mode) gộp toàn bộ app + mọi thư viện nó phụ thuộc vào MỘT file dist/apps/<app>/main.js duy nhất — không có file dist/libs/**/*.js riêng lẻ nào theo đường dẫn gốc. Bất kỳ cơ chế nào dựa vào filesystem glob để tìm class/asset theo đường dẫn thư mục gốc (kiểu dist/libs/modules/**/*.orm-entity.js) sẽ luôn thất bại trong image production thật, dù hoạt động đúng khi chạy trực tiếp từ source qua ts-node/ts-jest. Dùng cơ chế dựa trên DI graph (autoLoadEntities, hoặc providers/imports tường minh) thay vì glob khi cần hoạt động nhất quán ở cả 2 môi trường.",
+      "content": "- **Nguồn:** `libs/platform/database/src/typeorm-options.factory.ts`\n\n`nest build` (webpack:true, monorepo mode) gộp toàn bộ app + mọi thư viện nó phụ thuộc vào MỘT file dist/apps/<app>/main.js duy nhất — không có file dist/libs/**/*.js riêng lẻ nào theo đường dẫn gốc. Bất kỳ cơ chế nào dựa vào filesystem glob để tìm class/asset theo đường dẫn thư mục gốc (kiểu dist/libs/modules/**/*.orm-entity.js) sẽ luôn thất bại trong image production thật, dù hoạt động đúng khi chạy trực tiếp từ source qua ts-node/ts-jest. Dùng cơ chế dựa trên DI graph (autoLoadEntities, hoặc providers/imports tường minh) thay vì glob khi cần hoạt động nhất quán ở cả 2 môi trường.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "SwaggerModule.createDocument() chỉ phản ánh global prefix nếu app.setGlobalPrefix() đã được gọi TRƯỚC ĐÓ trên cùng app instance — bất kỳ script standalone nào build tài liệu OpenAPI qua NestFactory.create() (không đi qua main.ts's bootstrap()) phải tự gọi lại đúng bước này, nếu không tài liệu xuất ra sẽ mô tả sai đường dẫn thật.",
+      "content": "- **Nguồn:** `apps/api/src/export-openapi.ts, apps/api/src/configure-app.ts`\n\nSwaggerModule.createDocument() chỉ phản ánh global prefix nếu app.setGlobalPrefix() đã được gọi TRƯỚC ĐÓ trên cùng app instance — bất kỳ script standalone nào build tài liệu OpenAPI qua NestFactory.create() (không đi qua main.ts's bootstrap()) phải tự gọi lại đúng bước này, nếu không tài liệu xuất ra sẽ mô tả sai đường dẫn thật.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "toBullMqError() chuyển non-retryable BackgroundJobError thành BullMQ UnrecoverableError, khiến job dừng ngay lần thử đầu tiên bất kể opts.attempts cấu hình bao nhiêu — bất kỳ logic nào coi 'job.attemptsMade >= opts.attempts' là điều kiện duy nhất để xác định 'lần thử cuối' sẽ bỏ sót trường hợp này. Phải kiểm tra thêm error instanceof UnrecoverableError.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/bullmq.worker.ts`\n\ntoBullMqError() chuyển non-retryable BackgroundJobError thành BullMQ UnrecoverableError, khiến job dừng ngay lần thử đầu tiên bất kể opts.attempts cấu hình bao nhiêu — bất kỳ logic nào coi 'job.attemptsMade >= opts.attempts' là điều kiện duy nhất để xác định 'lần thử cuối' sẽ bỏ sót trường hợp này. Phải kiểm tra thêm error instanceof UnrecoverableError.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "proposal",
+      "summary": "Một background job handler không bao giờ biết chắc đây có phải lần thực thi 'cuối cùng, có thẩm quyền' cho job đó hay không (BullMQ có thể redeliver job bị coi là stalled) — nên bất kỳ transition nào chuyển sang trạng thái terminal 'xấu' (failed) đều phải tự guard: không được ghi đè lên trạng thái terminal 'tốt' (ready) đã đạt được bởi một lần thực thi khác trước đó.",
+      "content": "- **Nguồn:** `libs/modules/media/src/domain/media-asset/media-asset.ts`\n\nMột background job handler không bao giờ biết chắc đây có phải lần thực thi 'cuối cùng, có thẩm quyền' cho job đó hay không (BullMQ có thể redeliver job bị coi là stalled) — nên bất kỳ transition nào chuyển sang trạng thái terminal 'xấu' (failed) đều phải tự guard: không được ghi đè lên trạng thái terminal 'tốt' (ready) đã đạt được bởi một lần thực thi khác trước đó.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/database-rules.md",
+      "type": "proposal",
+      "summary": "Khi 2 execution của CÙNG một job (BullMQ at-least-once delivery) có thể chạy chồng lên nhau thật sự, một transition sang trạng thái terminal (ready/failed) phải là 1 UPDATE nguyên tử có điều kiện trên chính trạng thái hiện tại (WHERE status = expected) ở tầng repository — không phải pattern findById -> mutate -> save, vốn luôn để hở 1 khoảng thời gian giữa đọc và ghi mà execution khác có thể chen vào.",
+      "content": "- **Nguồn:** `libs/modules/media/src/domain/media-asset/media-asset.repository.ts`\n\nKhi 2 execution của CÙNG một job (BullMQ at-least-once delivery) có thể chạy chồng lên nhau thật sự, một transition sang trạng thái terminal (ready/failed) phải là 1 UPDATE nguyên tử có điều kiện trên chính trạng thái hiện tại (WHERE status = expected) ở tầng repository — không phải pattern findById -> mutate -> save, vốn luôn để hở 1 khoảng thời gian giữa đọc và ghi mà execution khác có thể chen vào.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "BullMQ's queue.add() với 1 jobId đã tồn tại bản ghi (ở BẤT KỲ trạng thái nào còn trong retention — completed/failed/active/waiting) sẽ KHÔNG tạo execution mới, kể cả khi job cũ đã ở trạng thái terminal 'failed' từ lâu. Bất kỳ luồng nào dùng deterministic job ID cho mục đích idempotency (tránh double-publish) phải cân nhắc: cùng cơ chế đó cũng ngăn một lần 'reprocess' hợp lệ chạy lại, trừ khi chủ động dùng job ID theo từng lần thử (attempt-scoped) hoặc xoá job cũ trước khi add lại.",
+      "content": "- **Nguồn:** `libs/modules/media/src/application/use-cases/confirm-media-upload.use-case.ts`\n\nBullMQ's queue.add() với 1 jobId đã tồn tại bản ghi (ở BẤT KỲ trạng thái nào còn trong retention — completed/failed/active/waiting) sẽ KHÔNG tạo execution mới, kể cả khi job cũ đã ở trạng thái terminal 'failed' từ lâu. Bất kỳ luồng nào dùng deterministic job ID cho mục đích idempotency (tránh double-publish) phải cân nhắc: cùng cơ chế đó cũng ngăn một lần 'reprocess' hợp lệ chạy lại, trừ khi chủ động dùng job ID theo từng lần thử (attempt-scoped) hoặc xoá job cũ trước khi add lại.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "proposal",
+      "summary": "MỌI application process import BUSINESS_MODULES (không chỉ apps/api) đều cần SecurityModule.register() nếu bất kỳ business module nào dùng JwtAuthGuard — đã bỏ sót apps/cli ở những round trước dù đã sửa đúng worker/scheduler, cho thấy quy tắc 'thêm dependency mới vào TẤT CẢ app.module.ts dùng BUSINESS_MODULES' cần được kiểm tra tường minh trên danh sách đầy đủ (find apps/*/src/app.module.ts), không dựa vào trí nhớ những app nào đã từng cần sửa.",
+      "content": "- **Nguồn:** `apps/cli/src/app.module.ts, apps/worker/src/app.module.ts, apps/scheduler/src/app.module.ts`\n\nMỌI application process import BUSINESS_MODULES (không chỉ apps/api) đều cần SecurityModule.register() nếu bất kỳ business module nào dùng JwtAuthGuard — đã bỏ sót apps/cli ở những round trước dù đã sửa đúng worker/scheduler, cho thấy quy tắc 'thêm dependency mới vào TẤT CẢ app.module.ts dùng BUSINESS_MODULES' cần được kiểm tra tường minh trên danh sách đầy đủ (find apps/*/src/app.module.ts), không dựa vào trí nhớ những app nào đã từng cần sửa.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "Một provider được import vào cùng DI container (qua BUSINESS_MODULES) KHÔNG tự động injectable được từ provider khác ngoài module gốc của nó — NestJS chỉ cho phép nếu module đó khai báo provider trong mảng `exports`. `exports: []` (rỗng) là giá trị mặc định hợp lý cho 1 module chỉ tự dùng nội bộ, nhưng sẽ chặn đứng bất kỳ nhu cầu tương lai nào (như CLI ops tooling) cần inject trực tiếp 1 provider của module đó.",
+      "content": "- **Nguồn:** `libs/modules/media/src/media.module.ts`\n\nMột provider được import vào cùng DI container (qua BUSINESS_MODULES) KHÔNG tự động injectable được từ provider khác ngoài module gốc của nó — NestJS chỉ cho phép nếu module đó khai báo provider trong mảng `exports`. `exports: []` (rỗng) là giá trị mặc định hợp lý cho 1 module chỉ tự dùng nội bộ, nhưng sẽ chặn đứng bất kỳ nhu cầu tương lai nào (như CLI ops tooling) cần inject trực tiếp 1 provider của module đó.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/database-rules.md",
+      "type": "proposal",
+      "summary": "Bất kỳ 'ambient context' nào cần cách ly theo từng request/tác vụ đồng thời (transaction hiện tại, correlation ID...) PHẢI dùng AsyncLocalStorage, không được dùng field mutable đơn trên 1 singleton — dù singleton đó chỉ có 1 instance trong toàn app, field của nó vẫn bị NHIỀU async call chain đọc/ghi đồng thời. CorrelationContext đã làm đúng điều này từ đầu; TypeOrmQueryRunnerContext (scaffold cũ) đã làm sai và chỉ được phát hiện khi thực sự dùng lần đầu.",
+      "content": "- **Nguồn:** `libs/platform/database/src/typeorm-unit-of-work.ts`\n\nBất kỳ 'ambient context' nào cần cách ly theo từng request/tác vụ đồng thời (transaction hiện tại, correlation ID...) PHẢI dùng AsyncLocalStorage, không được dùng field mutable đơn trên 1 singleton — dù singleton đó chỉ có 1 instance trong toàn app, field của nó vẫn bị NHIỀU async call chain đọc/ghi đồng thời. CorrelationContext đã làm đúng điều này từ đầu; TypeOrmQueryRunnerContext (scaffold cũ) đã làm sai và chỉ được phát hiện khi thực sự dùng lần đầu.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "proposal",
+      "summary": "Bất kỳ use case nào vừa cần ghi domain state VỪA cần publish 1 background job phải dùng transactional outbox (ghi 1 outbox row trong CÙNG transaction với domain write, để 1 relay riêng publish sau) thay vì gọi BackgroundJobPublisher trực tiếp — gọi trực tiếp trước/sau DB write luôn để hở 1 khoảng có thể mất đồng bộ nếu 1 trong 2 thao tác thất bại độc lập.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/outbox/outbox.contract.ts`\n\nBất kỳ use case nào vừa cần ghi domain state VỪA cần publish 1 background job phải dùng transactional outbox (ghi 1 outbox row trong CÙNG transaction với domain write, để 1 relay riêng publish sau) thay vì gọi BackgroundJobPublisher trực tiếp — gọi trực tiếp trước/sau DB write luôn để hở 1 khoảng có thể mất đồng bộ nếu 1 trong 2 thao tác thất bại độc lập.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "Bất kỳ cơ chế nào publish/xử lý 1 tác vụ TRỄ HƠN (qua outbox relay, cron, queue riêng...) so với lúc tác vụ đó được TẠO RA sẽ chạy ngoài AsyncLocalStorage context gốc (CorrelationContext) — phải chủ động lưu lại correlationId/actorId vào chính bản ghi tác vụ đó NGAY LÚC TẠO (khi context còn tồn tại), không thể trông chờ context tự động 'theo' tác vụ sang thời điểm xử lý sau.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/outbox/outbox-relay.service.ts, libs/modules/media/src/application/use-cases/confirm-media-upload.use-case.ts`\n\nBất kỳ cơ chế nào publish/xử lý 1 tác vụ TRỄ HƠN (qua outbox relay, cron, queue riêng...) so với lúc tác vụ đó được TẠO RA sẽ chạy ngoài AsyncLocalStorage context gốc (CorrelationContext) — phải chủ động lưu lại correlationId/actorId vào chính bản ghi tác vụ đó NGAY LÚC TẠO (khi context còn tồn tại), không thể trông chờ context tự động 'theo' tác vụ sang thời điểm xử lý sau.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "Bất kỳ code nào gọi 1 async function từ setInterval bằng `void fn()` phải tự đảm bảo fn() KHÔNG BAO GIỜ reject — 1 Promise bị bỏ qua bằng `void` mà reject sẽ trở thành unhandled rejection ở top-level, có thể làm crash tiến trình tuỳ cấu hình Node, bất kể try/catch bên trong fn() có vẻ đầy đủ tới đâu (phải bọc TOÀN BỘ thân hàm, không chỉ phần logic chính).",
+      "content": "- **Nguồn:** `libs/platform/queue/src/outbox/outbox-relay.service.ts`\n\nBất kỳ code nào gọi 1 async function từ setInterval bằng `void fn()` phải tự đảm bảo fn() KHÔNG BAO GIỜ reject — 1 Promise bị bỏ qua bằng `void` mà reject sẽ trở thành unhandled rejection ở top-level, có thể làm crash tiến trình tuỳ cấu hình Node, bất kể try/catch bên trong fn() có vẻ đầy đủ tới đâu (phải bọc TOÀN BỘ thân hàm, không chỉ phần logic chính).\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "proposal",
+      "summary": "Khi cần 1 cơ chế reconciliation bền vững cho 1 hướng dữ liệu, TRƯỚC KHI xây thêm 1 bảng/outbox mới, hãy kiểm tra xem hệ thống đã có sẵn 1 nguồn lưu trữ bền vững nào phù hợp chưa (ở đây: BullMQ/Redis đã tự lưu failed jobs theo removeOnFail retention) — dùng lại nguồn đó thường đơn giản hơn và tránh vấn đề 'kho lưu trữ mới cũng không ghi được khi chính hạ tầng đang gặp sự cố'. Điều kiện tiên quyết: hành động reconcile phải idempotent-an toàn để có thể gọi lại vô điều kiện theo lịch mà không cần thêm state theo dõi 'đã xử lý'.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/failure-reconciliation.service.ts`\n\nKhi cần 1 cơ chế reconciliation bền vững cho 1 hướng dữ liệu, TRƯỚC KHI xây thêm 1 bảng/outbox mới, hãy kiểm tra xem hệ thống đã có sẵn 1 nguồn lưu trữ bền vững nào phù hợp chưa (ở đây: BullMQ/Redis đã tự lưu failed jobs theo removeOnFail retention) — dùng lại nguồn đó thường đơn giản hơn và tránh vấn đề 'kho lưu trữ mới cũng không ghi được khi chính hạ tầng đang gặp sự cố'. Điều kiện tiên quyết: hành động reconcile phải idempotent-an toàn để có thể gọi lại vô điều kiện theo lịch mà không cần thêm state theo dõi 'đã xử lý'.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/database-rules.md",
+      "type": "proposal",
+      "summary": "Khi 1 domain object có thể được thao tác bởi nhiều 'attempt' độc lập nhưng cùng chia sẻ 1 status trung gian (ví dụ 'processing'), 1 CAS chỉ dựa trên status là KHÔNG ĐỦ để ngăn 1 attempt cũ ghi đè attempt mới — cần thêm 1 định danh attempt (jobId, version, v.v.) vào cả điều kiện WHERE lẫn giá trị SET, và bắt buộc mọi nơi gọi CAS terminal-transition phải truyền đúng định danh của attempt đang thao tác.",
+      "content": "- **Nguồn:** `libs/modules/media/src/domain/media-asset/media-asset.repository.ts`\n\nKhi 1 domain object có thể được thao tác bởi nhiều 'attempt' độc lập nhưng cùng chia sẻ 1 status trung gian (ví dụ 'processing'), 1 CAS chỉ dựa trên status là KHÔNG ĐỦ để ngăn 1 attempt cũ ghi đè attempt mới — cần thêm 1 định danh attempt (jobId, version, v.v.) vào cả điều kiện WHERE lẫn giá trị SET, và bắt buộc mọi nơi gọi CAS terminal-transition phải truyền đúng định danh của attempt đang thao tác.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "`setInterval(() => { this.current = this.doWork(); }, ms)` có 1 race: nếu doWork() tự chặn lặp (early-return khi đang chạy) thì giá trị trả về ở 1 tick sau là 1 promise ĐÃ RESOLVE ngay, và nó sẽ GHI ĐÈ this.current đang trỏ tới work THẬT SỰ còn đang chạy — code chờ shutdown (`await this.current`) sẽ chờ sai. Sửa đúng: để chính doWork() là nơi DUY NHẤT gán this.current, chỉ gán khi thật sự bắt đầu (kiểm tra giá trị hiện tại trước, return nó nếu đã có thay vì tạo promise mới), và setInterval callback chỉ gọi `void this.doWork()` không gán gì cả.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/failure-reconciliation.service.ts, libs/platform/queue/src/outbox/outbox-relay.service.ts`\n\n`setInterval(() => { this.current = this.doWork(); }, ms)` có 1 race: nếu doWork() tự chặn lặp (early-return khi đang chạy) thì giá trị trả về ở 1 tick sau là 1 promise ĐÃ RESOLVE ngay, và nó sẽ GHI ĐÈ this.current đang trỏ tới work THẬT SỰ còn đang chạy — code chờ shutdown (`await this.current`) sẽ chờ sai. Sửa đúng: để chính doWork() là nơi DUY NHẤT gán this.current, chỉ gán khi thật sự bắt đầu (kiểm tra giá trị hiện tại trước, return nó nếu đã có thay vì tạo promise mới), và setInterval callback chỉ gọi `void this.doWork()` không gán gì cả.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "Khi thiết kế 1 cơ chế 'ghi lại rằng X cần được xử lý lại vì write chính đã thất bại do hạ tầng Y đang down', đừng ghi bản ghi đó vào CHÍNH hạ tầng Y — nó sẽ thất bại vì cùng lý do và không thực sự bền vững hơn. Dùng 1 nguồn lưu trữ có tính khả dụng ĐỘC LẬP với Y (ở đây: Redis độc lập với Postgres). Nếu nguồn đó có cơ chế tự dọn dẹp theo dung lượng/số lượng (removeOnFail), phải tắt nó cho đúng phần dữ liệu cần giữ tới khi được xác nhận xử lý xong, nếu không dữ liệu vẫn có thể bị mất dù chọn đúng nguồn lưu trữ.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/registry/queue.registry.ts, libs/platform/queue/src/bullmq/failure-reconciliation.service.ts`\n\nKhi thiết kế 1 cơ chế 'ghi lại rằng X cần được xử lý lại vì write chính đã thất bại do hạ tầng Y đang down', đừng ghi bản ghi đó vào CHÍNH hạ tầng Y — nó sẽ thất bại vì cùng lý do và không thực sự bền vững hơn. Dùng 1 nguồn lưu trữ có tính khả dụng ĐỘC LẬP với Y (ở đây: Redis độc lập với Postgres). Nếu nguồn đó có cơ chế tự dọn dẹp theo dung lượng/số lượng (removeOnFail), phải tắt nó cho đúng phần dữ liệu cần giữ tới khi được xác nhận xử lý xong, nếu không dữ liệu vẫn có thể bị mất dù chọn đúng nguồn lưu trữ.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "Khi phân trang qua 1 tập hợp có thể bị XÓA XEN KẼ trong lúc đang đọc (ví dụ BullMQ failed set khi vừa reconcile vừa remove()), KHÔNG dùng cursor += PAGE_SIZE cố định — 1 item bị xóa làm mọi item phía sau trượt lên 1 vị trí, nên cursor chỉ được tiến đúng bằng số lượng item GIỮ LẠI (không bị xóa) ở trang vừa đọc; nếu tất cả bị xóa, đọc lại đúng cùng cursor. Dùng 1 Set để 'bỏ qua' item đã thử vẫn có thể khiến toàn bộ phần còn lại của tập hợp không bao giờ được xét nếu nguyên 1 trang đầu không xóa được cái nào.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/failure-reconciliation.service.ts`\n\nKhi phân trang qua 1 tập hợp có thể bị XÓA XEN KẼ trong lúc đang đọc (ví dụ BullMQ failed set khi vừa reconcile vừa remove()), KHÔNG dùng cursor += PAGE_SIZE cố định — 1 item bị xóa làm mọi item phía sau trượt lên 1 vị trí, nên cursor chỉ được tiến đúng bằng số lượng item GIỮ LẠI (không bị xóa) ở trang vừa đọc; nếu tất cả bị xóa, đọc lại đúng cùng cursor. Dùng 1 Set để 'bỏ qua' item đã thử vẫn có thể khiến toàn bộ phần còn lại của tập hợp không bao giờ được xét nếu nguyên 1 trang đầu không xóa được cái nào.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "proposal",
+      "summary": "Bất kỳ truy vấn nào dạng 'ORDER BY <cột> LIMIT N' lặp lại định kỳ để xử lý 1 tập hợp record đang chờ (chưa publish/chưa reconcile/...) đều có cùng rủi ro poison-batch nếu không có offset: N record đầu liên tục thất bại sẽ chặn vĩnh viễn mọi record sau. Áp dụng cursor tiến theo số lượng record GIỮ LẠI (chưa xử lý xong) mỗi lần đọc — không phải LIMIT cố định — cho MỌI hàng đợi kiểu này trong hệ thống (BullMQ failed set, outbox unpublished set, và bất kỳ hàng đợi tương tự nào thêm sau này).",
+      "content": "- **Nguồn:** `libs/platform/queue/src/outbox/outbox-relay.service.ts, libs/platform/queue/src/outbox/typeorm-outbox.repository.ts`\n\nBất kỳ truy vấn nào dạng 'ORDER BY <cột> LIMIT N' lặp lại định kỳ để xử lý 1 tập hợp record đang chờ (chưa publish/chưa reconcile/...) đều có cùng rủi ro poison-batch nếu không có offset: N record đầu liên tục thất bại sẽ chặn vĩnh viễn mọi record sau. Áp dụng cursor tiến theo số lượng record GIỮ LẠI (chưa xử lý xong) mỗi lần đọc — không phải LIMIT cố định — cho MỌI hàng đợi kiểu này trong hệ thống (BullMQ failed set, outbox unpublished set, và bất kỳ hàng đợi tương tự nào thêm sau này).\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "BullMQ's Queue.getFailed(start,end) là alias của getJobs(['failed'],start,end,false) — asc:false nghĩa là NEWEST-FIRST, không phải oldest-first (dễ nhầm trực giác). Bất kỳ pagination nào dựa trên vị trí (cursor/offset) qua 1 tập hợp có thể có phần tử MỚI chèn vào PHÍA TRƯỚC (như failed set mặc định) đều có rủi ro starvation phần tử cũ dưới tải liên tục — luôn ưu tiên duyệt theo thứ tự oldest-first (asc:true) khi mục tiêu là đảm bảo mọi phần tử cũ cuối cùng đều được xử lý, để phần tử mới chỉ nối vào đuôi (sau cursor), không bao giờ chèn vào trước.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/failure-reconciliation.service.ts`\n\nBullMQ's Queue.getFailed(start,end) là alias của getJobs(['failed'],start,end,false) — asc:false nghĩa là NEWEST-FIRST, không phải oldest-first (dễ nhầm trực giác). Bất kỳ pagination nào dựa trên vị trí (cursor/offset) qua 1 tập hợp có thể có phần tử MỚI chèn vào PHÍA TRƯỚC (như failed set mặc định) đều có rủi ro starvation phần tử cũ dưới tải liên tục — luôn ưu tiên duyệt theo thứ tự oldest-first (asc:true) khi mục tiêu là đảm bảo mọi phần tử cũ cuối cùng đều được xử lý, để phần tử mới chỉ nối vào đuôi (sau cursor), không bao giờ chèn vào trước.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "1 cron job publish qua BackgroundJobPublisher mà KHÔNG có handler tương ứng được đăng ký (@RegisterBackgroundJobHandler) sẽ luôn thất bại ngay khi worker cố xử lý ('No background job handler registered'), và validation/test hiện tại (lint/typecheck/test/e2e) KHÔNG phát hiện được vì không gì thực sự invoke đường cron đó — chỉ có review thủ công/production thật mới lộ ra. Khi thêm 1 @Cron() publish job mới, luôn xác nhận: (a) jobId không chứa ':', (b) có handler thật đã đăng ký cho job name đó, (c) có ít nhất 1 test/integration path thực sự gọi hàm publish để không rơi vào tình trạng 'never actually exercised' như trường hợp này.",
+      "content": "- **Nguồn:** `apps/scheduler/src/scheduled-tasks.service.ts (đã xóa)`\n\n1 cron job publish qua BackgroundJobPublisher mà KHÔNG có handler tương ứng được đăng ký (@RegisterBackgroundJobHandler) sẽ luôn thất bại ngay khi worker cố xử lý ('No background job handler registered'), và validation/test hiện tại (lint/typecheck/test/e2e) KHÔNG phát hiện được vì không gì thực sự invoke đường cron đó — chỉ có review thủ công/production thật mới lộ ra. Khi thêm 1 @Cron() publish job mới, luôn xác nhận: (a) jobId không chứa ':', (b) có handler thật đã đăng ký cho job name đó, (c) có ít nhất 1 test/integration path thực sự gọi hàm publish để không rơi vào tình trạng 'never actually exercised' như trường hợp này.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/shared/policies/git-policy.md",
+      "type": "proposal",
+      "summary": "Repository của epic này dùng single-branch model (chỉ 'master', không có main/develop) theo quyết định tường minh của người dùng — mọi workflow/tài liệu CI/CD viết mới sau này phải merge/trigger dựa trên 'master', không giả định mô hình git-flow (main+develop) mặc định.",
+      "content": "- **Nguồn:** `apps/backend/.github/workflows/deploy-production.yml, apps/frontend/.github/workflows/deploy-production.yml, docs/guides/deployment.md, docs/guides/release-process.md (cả 2 repo)`\n\nRepository của epic này dùng single-branch model (chỉ 'master', không có main/develop) theo quyết định tường minh của người dùng — mọi workflow/tài liệu CI/CD viết mới sau này phải merge/trigger dựa trên 'master', không giả định mô hình git-flow (main+develop) mặc định.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "Đừng bao giờ giả định 1 status transition 'chỉ xảy ra 1 lần, không có concurrent writer' chỉ vì nó LOGICALLY là bước đầu tiên trong lifecycle (ví dụ Pending->Processing) — client retry (do timeout, double-click, mất kết nối giữa chừng dù server đã xử lý xong) là kịch bản concurrent hoàn toàn thực tế cho BẤT KỲ endpoint nào, kể cả bước 'đầu tiên'. Mọi status transition ghi vào DB đều cần CAS (transitionStatus), không có ngoại lệ dựa trên vị trí trong lifecycle.",
+      "content": "- **Nguồn:** `libs/modules/media/src/application/use-cases/confirm-media-upload.use-case.ts`\n\nĐừng bao giờ giả định 1 status transition 'chỉ xảy ra 1 lần, không có concurrent writer' chỉ vì nó LOGICALLY là bước đầu tiên trong lifecycle (ví dụ Pending->Processing) — client retry (do timeout, double-click, mất kết nối giữa chừng dù server đã xử lý xong) là kịch bản concurrent hoàn toàn thực tế cho BẤT KỲ endpoint nào, kể cả bước 'đầu tiên'. Mọi status transition ghi vào DB đều cần CAS (transitionStatus), không có ngoại lệ dựa trên vị trí trong lifecycle.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/database-rules.md",
+      "type": "proposal",
+      "summary": "Khi 1 CAS cần XÓA tường minh 1 cột nullable (khác với 'không đụng tới'), dùng `string | null` cho tham số ('null' = xóa, 'undefined' = giữ nguyên) và cho phép ORM entity's property type nhận cả `null` — TypeORM's .update() coi `undefined` là 'bỏ qua field này khỏi SET clause' còn `null` literal mới thực sự sinh ra 'SET column = NULL'.",
+      "content": "- **Nguồn:** `libs/modules/media/src/domain/media-asset/media-asset.repository.ts, libs/modules/media/src/infrastructure/persistence/media-asset.orm-entity.ts`\n\nKhi 1 CAS cần XÓA tường minh 1 cột nullable (khác với 'không đụng tới'), dùng `string | null` cho tham số ('null' = xóa, 'undefined' = giữ nguyên) và cho phép ORM entity's property type nhận cả `null` — TypeORM's .update() coi `undefined` là 'bỏ qua field này khỏi SET clause' còn `null` literal mới thực sự sinh ra 'SET column = NULL'.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/shared/workflows/requirement-change.md",
+      "type": "proposal",
+      "summary": "Khi cần ghi nhận 1 quyết định sửa đổi/làm rõ requirement mà ai/bin/request-change không thể chạy (state.yaml's status không khớp completed/awaiting_user_acceptance/reviewing), KHÔNG ghi quyết định đó vào implementation.json's decisions — Codex kiểm tra context.lock.json.requirements/change_cycle để xác định requirement nào đang hiệu lực, không đọc implementation.json như 1 nguồn requirement. Sửa trực tiếp file được liệt kê trong context.lock.json.requirements (thường là task.md) là cách duy nhất thực sự có hiệu lực trong tình huống này.",
+      "content": "- **Nguồn:** `ai/tasks/MEMORIES-0001/task.md, ai/tasks/MEMORIES-0001/context.lock.json`\n\nKhi cần ghi nhận 1 quyết định sửa đổi/làm rõ requirement mà ai/bin/request-change không thể chạy (state.yaml's status không khớp completed/awaiting_user_acceptance/reviewing), KHÔNG ghi quyết định đó vào implementation.json's decisions — Codex kiểm tra context.lock.json.requirements/change_cycle để xác định requirement nào đang hiệu lực, không đọc implementation.json như 1 nguồn requirement. Sửa trực tiếp file được liệt kê trong context.lock.json.requirements (thường là task.md) là cách duy nhất thực sự có hiệu lực trong tình huống này.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "proposal",
+      "summary": "Bất kỳ vòng lặp 'phân trang tới khi hết backlog' nào (đặc biệt khi kết hợp với removeOnFail:false hoặc bất kỳ retention không giới hạn nào khác) đều cần 1 cờ cancellation kiểm tra TRƯỚC MỖI ĐƠN VỊ CÔNG VIỆC (job/message), không chỉ giữa các trang — nếu không, onApplicationShutdown có thể phải chờ toàn bộ backlog xử lý xong, vi phạm shutdown deadline khi backlog đủ lớn.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/failure-reconciliation.service.ts, libs/platform/queue/src/outbox/outbox-relay.service.ts`\n\nBất kỳ vòng lặp 'phân trang tới khi hết backlog' nào (đặc biệt khi kết hợp với removeOnFail:false hoặc bất kỳ retention không giới hạn nào khác) đều cần 1 cờ cancellation kiểm tra TRƯỚC MỖI ĐƠN VỊ CÔNG VIỆC (job/message), không chỉ giữa các trang — nếu không, onApplicationShutdown có thể phải chờ toàn bộ backlog xử lý xong, vi phạm shutdown deadline khi backlog đủ lớn.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "proposal",
+      "summary": "Cooperative cancellation (cờ boolean kiểm tra giữa các đơn vị công việc) chỉ ngăn 1 vòng lặp BẮT ĐẦU công việc mới — không thể ngắt 1 lệnh gọi I/O ĐANG chạy nếu framework/driver bên dưới (TypeORM, ioredis, BullMQ) không có primitive cancellation thật. Khi cần đảm bảo 1 giới hạn thời gian tuyệt đối (ví dụ graceful shutdown deadline), phải kết hợp thêm Promise.race với 1 deadline timer — chấp nhận rằng lệnh gọi gốc có thể vẫn chạy ngầm sau đó, nhưng bản thân hàm chờ nó (onApplicationShutdown) sẽ luôn return đúng hạn.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/shutdown-deadline.ts`\n\nCooperative cancellation (cờ boolean kiểm tra giữa các đơn vị công việc) chỉ ngăn 1 vòng lặp BẮT ĐẦU công việc mới — không thể ngắt 1 lệnh gọi I/O ĐANG chạy nếu framework/driver bên dưới (TypeORM, ioredis, BullMQ) không có primitive cancellation thật. Khi cần đảm bảo 1 giới hạn thời gian tuyệt đối (ví dụ graceful shutdown deadline), phải kết hợp thêm Promise.race với 1 deadline timer — chấp nhận rằng lệnh gọi gốc có thể vẫn chạy ngầm sau đó, nhưng bản thân hàm chờ nó (onApplicationShutdown) sẽ luôn return đúng hạn.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/shared/policies/git-policy.md",
+      "type": "proposal",
+      "summary": "`git fetch origin <branch>` (không chỉ định đích) trong 1 GitHub Actions job vừa checkout từ 1 nhánh KHÁC (ví dụ release/vX.Y.Z) không đảm bảo tạo/cập nhật ref cục bộ hay remote-tracking cho <branch> — phụ thuộc refspec mặc định của remote.origin.fetch mà actions/checkout có thể đã thu hẹp. Luôn fetch vào 1 ref tường minh (`git fetch origin <branch>:refs/remotes/origin/<branch>`) rồi `git checkout -B <branch> origin/<branch>` khi cần chuyển sang 1 nhánh khác giữa workflow, đặc biệt ở bước SAU KHI đã push tag/artifact quan trọng — 1 lỗi checkout ở đây để lại release dở dang không dễ re-run sạch.",
+      "content": "- **Nguồn:** `.github/workflows/deploy-production.yml (cả 2 repo)`\n\n`git fetch origin <branch>` (không chỉ định đích) trong 1 GitHub Actions job vừa checkout từ 1 nhánh KHÁC (ví dụ release/vX.Y.Z) không đảm bảo tạo/cập nhật ref cục bộ hay remote-tracking cho <branch> — phụ thuộc refspec mặc định của remote.origin.fetch mà actions/checkout có thể đã thu hẹp. Luôn fetch vào 1 ref tường minh (`git fetch origin <branch>:refs/remotes/origin/<branch>`) rồi `git checkout -B <branch> origin/<branch>` khi cần chuyển sang 1 nhánh khác giữa workflow, đặc biệt ở bước SAU KHI đã push tag/artifact quan trọng — 1 lỗi checkout ở đây để lại release dở dang không dễ re-run sạch.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "BullMQ's Worker.close(force) cache promise của lần gọi ĐẦU TIÊN vào this.closing — mọi lần gọi close() sau đó (dù truyền force khác) chỉ trả lại CÙNG promise cache, bỏ qua force hoàn toàn. Không bao giờ gọi close() nhiều lần với hy vọng 'nâng cấp' lên force sau — phải quyết định force/graceful TRƯỚC lần gọi close() duy nhất (ví dụ dùng pause(), method riêng không bị cache theo cơ chế này, để thăm dò trạng thái active job trước khi quyết định).",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/bullmq.worker.ts`\n\nBullMQ's Worker.close(force) cache promise của lần gọi ĐẦU TIÊN vào this.closing — mọi lần gọi close() sau đó (dù truyền force khác) chỉ trả lại CÙNG promise cache, bỏ qua force hoàn toàn. Không bao giờ gọi close() nhiều lần với hy vọng 'nâng cấp' lên force sau — phải quyết định force/graceful TRƯỚC lần gọi close() duy nhất (ví dụ dùng pause(), method riêng không bị cache theo cơ chế này, để thăm dò trạng thái active job trước khi quyết định).\n",
+      "approved": false
+    },
+    {
+      "target": "ai/shared/policies/git-policy.md",
+      "type": "proposal",
+      "summary": "actions/checkout@v4 mặc định fetch-depth=1 (shallow, chỉ 1 commit) — bất kỳ bước nào sau đó cần git merge/merge-base (kể cả với 1 nhánh khác vừa fetch) đều cần fetch-depth: 0 (hoặc unshallow tường minh) trong bước checkout ban đầu, nếu không git merge có thể thất bại vì thiếu lịch sử chung, đặc biệt nguy hiểm nếu bước đó chạy SAU KHI đã push artifact quan trọng (tag, manifest) ở bước trước.",
+      "content": "- **Nguồn:** `.github/workflows/deploy-production.yml (cả 2 repo)`\n\nactions/checkout@v4 mặc định fetch-depth=1 (shallow, chỉ 1 commit) — bất kỳ bước nào sau đó cần git merge/merge-base (kể cả với 1 nhánh khác vừa fetch) đều cần fetch-depth: 0 (hoặc unshallow tường minh) trong bước checkout ban đầu, nếu không git merge có thể thất bại vì thiếu lịch sử chung, đặc biệt nguy hiểm nếu bước đó chạy SAU KHI đã push artifact quan trọng (tag, manifest) ở bước trước.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/shared/policies/security.md",
+      "type": "proposal",
+      "summary": "GitHub Actions: khai báo `permissions:` tường minh ở BẤT KỲ cấp nào (workflow hay job) khiến MỌI scope không được liệt kê mặc định thành 'none', không giữ nguyên default permissions của repo/org như khi không khai báo gì cả. Khi thêm 1 permission mới cho 1 nhu cầu cụ thể, phải rà soát lại TOÀN BỘ các lệnh khác trong cùng job (gh CLI, actions khác, v.v.) xem có cần scope nào khác không, không chỉ thêm đúng scope vừa phát sinh nhu cầu.",
+      "content": "- **Nguồn:** `.github/workflows/deploy-production.yml (cả 2 repo)`\n\nGitHub Actions: khai báo `permissions:` tường minh ở BẤT KỲ cấp nào (workflow hay job) khiến MỌI scope không được liệt kê mặc định thành 'none', không giữ nguyên default permissions của repo/org như khi không khai báo gì cả. Khi thêm 1 permission mới cho 1 nhu cầu cụ thể, phải rà soát lại TOÀN BỘ các lệnh khác trong cùng job (gh CLI, actions khác, v.v.) xem có cần scope nào khác không, không chỉ thêm đúng scope vừa phát sinh nhu cầu.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "proposal",
+      "summary": "Khi thiết kế 1 shutdown deadline tổng cho NHIỀU bước tuần tự (pause, close, drain, v.v.), tính đúng 1 deadline DUY NHẤT ở đầu hàm và để MỌI bước race với PHẦN CÒN LẠI của chính deadline đó — không bao giờ cấp lại 1 cửa sổ timeout đầy đủ mới cho bước sau chỉ vì bước trước đã dùng hết budget, nếu không tổng thời gian có thể thành bội số của giá trị cấu hình, phá vỡ đúng mục đích của deadline (giới hạn TỔNG thời gian chờ, không phải từng bước riêng lẻ).",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/bullmq.worker.ts`\n\nKhi thiết kế 1 shutdown deadline tổng cho NHIỀU bước tuần tự (pause, close, drain, v.v.), tính đúng 1 deadline DUY NHẤT ở đầu hàm và để MỌI bước race với PHẦN CÒN LẠI của chính deadline đó — không bao giờ cấp lại 1 cửa sổ timeout đầy đủ mới cho bước sau chỉ vì bước trước đã dùng hết budget, nếu không tổng thời gian có thể thành bội số của giá trị cấu hình, phá vỡ đúng mục đích của deadline (giới hạn TỔNG thời gian chờ, không phải từng bước riêng lẻ).\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "raceAgainstDeadline (Promise.race giữa 1 promise và 1 deadline timer) chỉ giải quyết trường hợp promise TREO (không bao giờ settle) — nếu promise đó REJECT, Promise.race cũng reject theo ngay lập tức, ném lỗi ra ngoài bất kể deadline. Khi promise truyền vào là kết quả của Promise.all trên nhiều thao tác độc lập (ví dụ đóng nhiều worker), LUÔN dùng Promise.allSettled thay vì Promise.all trước khi đưa vào race-against-deadline — nếu không, 1 thao tác lỗi sẽ làm rớt toàn bộ chuỗi cleanup của các thao tác khác, dù mục đích ban đầu là đảm bảo TẤT CẢ đều được dọn dẹp.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/bullmq.worker.ts, libs/platform/queue/src/bullmq/shutdown-deadline.ts`\n\nraceAgainstDeadline (Promise.race giữa 1 promise và 1 deadline timer) chỉ giải quyết trường hợp promise TREO (không bao giờ settle) — nếu promise đó REJECT, Promise.race cũng reject theo ngay lập tức, ném lỗi ra ngoài bất kể deadline. Khi promise truyền vào là kết quả của Promise.all trên nhiều thao tác độc lập (ví dụ đóng nhiều worker), LUÔN dùng Promise.allSettled thay vì Promise.all trước khi đưa vào race-against-deadline — nếu không, 1 thao tác lỗi sẽ làm rớt toàn bộ chuỗi cleanup của các thao tác khác, dù mục đích ban đầu là đảm bảo TẤT CẢ đều được dọn dẹp.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "Node's EventEmitter coi 'error' là tên sự kiện ĐẶC BIỆT: phát 'error' mà không có listener nào đăng ký sẽ NÉM lỗi đó ra (throw), có thể crash process, khác với mọi sự kiện khác (chỉ im lặng nếu không ai lắng nghe). Bất kỳ EventEmitter nào từ 1 thư viện bên thứ 3 (BullMQ Worker, ioredis client, v.v.) đều PHẢI được đăng ký listener 'error' tường minh, kể cả khi chỉ để log, nếu không muốn rủi ro crash ngoài ý muốn.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/bullmq.worker.ts`\n\nNode's EventEmitter coi 'error' là tên sự kiện ĐẶC BIỆT: phát 'error' mà không có listener nào đăng ký sẽ NÉM lỗi đó ra (throw), có thể crash process, khác với mọi sự kiện khác (chỉ im lặng nếu không ai lắng nghe). Bất kỳ EventEmitter nào từ 1 thư viện bên thứ 3 (BullMQ Worker, ioredis client, v.v.) đều PHẢI được đăng ký listener 'error' tường minh, kể cả khi chỉ để log, nếu không muốn rủi ro crash ngoài ý muốn.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "BullMQ's Worker.pause() (mặc định, không tham số) không chỉ 'chờ active job' đơn thuần — nó gọi whenCurrentJobsFinished() với reconnect mặc định = true, nghĩa là sau khi job xong nó tự disconnect RỒI reconnect lại blocking Redis connection. Nếu code khác (ví dụ force-close sau deadline) đóng chính connection đó trong lúc promise pause() còn đang chạy ngầm (không bị hủy, chỉ bị 'race' bỏ qua), reconnect() sau đó sẽ mở lại 1 connection đã đóng — dangling handle. Khi cần 'chờ active job xong trong 1 deadline rồi mới quyết định force-close', tự theo dõi trạng thái active job qua listener riêng (không đụng BullMQ internals) an toàn hơn nhiều so với dựa vào pause()'s built-in wait.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/bullmq.worker.ts`\n\nBullMQ's Worker.pause() (mặc định, không tham số) không chỉ 'chờ active job' đơn thuần — nó gọi whenCurrentJobsFinished() với reconnect mặc định = true, nghĩa là sau khi job xong nó tự disconnect RỒI reconnect lại blocking Redis connection. Nếu code khác (ví dụ force-close sau deadline) đóng chính connection đó trong lúc promise pause() còn đang chạy ngầm (không bị hủy, chỉ bị 'race' bỏ qua), reconnect() sau đó sẽ mở lại 1 connection đã đóng — dangling handle. Khi cần 'chờ active job xong trong 1 deadline rồi mới quyết định force-close', tự theo dõi trạng thái active job qua listener riêng (không đụng BullMQ internals) an toàn hơn nhiều so với dựa vào pause()'s built-in wait.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "proposal",
+      "summary": "Bất kỳ shutdown/teardown method nào gọi nhiều thao tác độc lập qua Promise.all rồi tiếp tục làm việc khác SAU ĐÓ (ví dụ super.close(server) sau khi đóng các Redis client) đều có cùng rủi ro: 1 thao tác lỗi làm Promise.all reject, bỏ qua hoàn toàn phần code phía sau. Luôn dùng Promise.allSettled (log riêng từng lỗi) khi các thao tác đó ĐỘC LẬP với nhau và phần code phía sau PHẢI luôn chạy bất kể kết quả.",
+      "content": "- **Nguồn:** `libs/platform/realtime/src/redis-io.adapter.ts`\n\nBất kỳ shutdown/teardown method nào gọi nhiều thao tác độc lập qua Promise.all rồi tiếp tục làm việc khác SAU ĐÓ (ví dụ super.close(server) sau khi đóng các Redis client) đều có cùng rủi ro: 1 thao tác lỗi làm Promise.all reject, bỏ qua hoàn toàn phần code phía sau. Luôn dùng Promise.allSettled (log riêng từng lỗi) khi các thao tác đó ĐỘC LẬP với nhau và phần code phía sau PHẢI luôn chạy bất kể kết quả.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "Promise.allSettled cho phép 1 rejection không làm cả nhóm reject, nhưng nếu KẾT QUẢ từng phần tử bị bỏ qua sau khi await, việc chuyển sang allSettled tự nó không đủ để xử lý đúng lỗi từng phần — allSettled chỉ giải quyết vấn đề 'không được throw sớm', không tự động giải quyết vấn đề 'phải làm gì với 1 rejection'. Phải luôn kiểm tra .status === 'rejected' trên từng phần tử và phản ứng phù hợp (ở đây: force-close) thay vì coi allSettled resolve xong là 'mọi thứ ổn'.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/bullmq.worker.ts`\n\nPromise.allSettled cho phép 1 rejection không làm cả nhóm reject, nhưng nếu KẾT QUẢ từng phần tử bị bỏ qua sau khi await, việc chuyển sang allSettled tự nó không đủ để xử lý đúng lỗi từng phần — allSettled chỉ giải quyết vấn đề 'không được throw sớm', không tự động giải quyết vấn đề 'phải làm gì với 1 rejection'. Phải luôn kiểm tra .status === 'rejected' trên từng phần tử và phản ứng phù hợp (ở đây: force-close) thay vì coi allSettled resolve xong là 'mọi thứ ổn'.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "BullMQ's Worker.processJob(): khi job.moveToCompleted() hoặc job.moveToFailed() tự throw (không phải lỗi kết nối — ví dụ lock bị mất/stalled giữa chừng), retryIfFailed() chỉ emit 'error' và (ở nhánh handleFailed's retry) swallow lỗi mà KHÔNG bao giờ emit 'completed' lẫn 'failed'. Bất kỳ counter/bookkeeping nào dựa vào giả định '1 trong 2 event completed/failed luôn fire đúng 1 lần mỗi attempt' đều có thể kẹt vĩnh viễn trong tình huống lock-loss này — nếu cần đếm 'có bao nhiêu attempt đang chạy', đếm quanh chính lệnh gọi processor của mình (try/finally) thay vì dựa vào event nào đó của thư viện.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/bullmq.worker.ts`\n\nBullMQ's Worker.processJob(): khi job.moveToCompleted() hoặc job.moveToFailed() tự throw (không phải lỗi kết nối — ví dụ lock bị mất/stalled giữa chừng), retryIfFailed() chỉ emit 'error' và (ở nhánh handleFailed's retry) swallow lỗi mà KHÔNG bao giờ emit 'completed' lẫn 'failed'. Bất kỳ counter/bookkeeping nào dựa vào giả định '1 trong 2 event completed/failed luôn fire đúng 1 lần mỗi attempt' đều có thể kẹt vĩnh viễn trong tình huống lock-loss này — nếu cần đếm 'có bao nhiêu attempt đang chạy', đếm quanh chính lệnh gọi processor của mình (try/finally) thay vì dựa vào event nào đó của thư viện.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "BullMQ's Worker.mainLoop() giữ điều kiện vòng lặp `(!this.closing && !this.paused) || asyncFifoQueue.numTotal() > 0` — nghĩa là ngay cả sau khi paused=true (kể cả pause(true)/doNotWaitActive), main loop vẫn tiếp tục xử lý các job ĐÃ được fetch/commit vào asyncFifoQueue trước đó, chỉ dừng nhận job MỚI. Bất kỳ cơ chế đếm 'có bao nhiêu job đang chạy' nào dựa vào thời điểm processor callback CỦA MÌNH bắt đầu (thay vì thời điểm BullMQ thực sự fetch/commit job, tức event 'active') đều có 1 khoảng hở quiescence: có thể có job đã được BullMQ cam kết chạy nhưng chưa kịp tăng counter. BullMQ emit 'active' đúng lúc fetch/commit (trước khi gọi processor callback), nên đó mới là tín hiệu đúng để tăng counter.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/bullmq.worker.ts`\n\nBullMQ's Worker.mainLoop() giữ điều kiện vòng lặp `(!this.closing && !this.paused) || asyncFifoQueue.numTotal() > 0` — nghĩa là ngay cả sau khi paused=true (kể cả pause(true)/doNotWaitActive), main loop vẫn tiếp tục xử lý các job ĐÃ được fetch/commit vào asyncFifoQueue trước đó, chỉ dừng nhận job MỚI. Bất kỳ cơ chế đếm 'có bao nhiêu job đang chạy' nào dựa vào thời điểm processor callback CỦA MÌNH bắt đầu (thay vì thời điểm BullMQ thực sự fetch/commit job, tức event 'active') đều có 1 khoảng hở quiescence: có thể có job đã được BullMQ cam kết chạy nhưng chưa kịp tăng counter. BullMQ emit 'active' đúng lúc fetch/commit (trước khi gọi processor callback), nên đó mới là tín hiệu đúng để tăng counter.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "proposal",
+      "summary": "Bất kỳ hàm async nào mà kết quả (thành công hay reject) được đưa vào 1 Set/collection chỉ gắn .finally() (không .catch()) để dọn dẹp — như notifyFinalFailure trong pendingFinalFailures — PHẢI tự đảm bảo KHÔNG BAO GIỜ reject, kể cả ở bước tra cứu/resolve đầu tiên (không chỉ ở phần gọi hook chính). Một throw đồng bộ ở BẤT KỲ đâu trong thân hàm async đó sẽ tự động trở thành promise reject, và nếu không có .catch() ở nơi tiêu thụ, đó là unhandled rejection thật — Node có thể kết thúc process vì việc này.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/bullmq.worker.ts`\n\nBất kỳ hàm async nào mà kết quả (thành công hay reject) được đưa vào 1 Set/collection chỉ gắn .finally() (không .catch()) để dọn dẹp — như notifyFinalFailure trong pendingFinalFailures — PHẢI tự đảm bảo KHÔNG BAO GIỜ reject, kể cả ở bước tra cứu/resolve đầu tiên (không chỉ ở phần gọi hook chính). Một throw đồng bộ ở BẤT KỲ đâu trong thân hàm async đó sẽ tự động trở thành promise reject, và nếu không có .catch() ở nơi tiêu thụ, đó là unhandled rejection thật — Node có thể kết thúc process vì việc này.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/shared/policies/git-policy.md",
+      "type": "proposal",
+      "summary": "Bất kỳ workflow nào push lên 1 tag MUTABLE (ví dụ tag version dùng chung cho mọi push lên cùng branch) rồi ĐỌC LẠI thông tin của chính tag đó (digest, metadata) SAU KHI push đều có 1 race nếu không có concurrency guard: 1 run khác có thể retag giữa lúc push và lúc đọc lại, khiến run hiện tại nhận nhầm thông tin của commit khác. Cách loại bỏ race triệt để là lấy thông tin trực tiếp từ OUTPUT của chính lệnh build/push (ví dụ `docker buildx build --metadata-file`), không phụ thuộc trạng thái tag sau đó; concurrency guard (`concurrency: {group, cancel-in-progress}`) theo branch/ref là phòng vệ bổ sung ngăn các run chồng lấn ngay từ đầu.",
+      "content": "- **Nguồn:** `.github/workflows/release.yml`\n\nBất kỳ workflow nào push lên 1 tag MUTABLE (ví dụ tag version dùng chung cho mọi push lên cùng branch) rồi ĐỌC LẠI thông tin của chính tag đó (digest, metadata) SAU KHI push đều có 1 race nếu không có concurrency guard: 1 run khác có thể retag giữa lúc push và lúc đọc lại, khiến run hiện tại nhận nhầm thông tin của commit khác. Cách loại bỏ race triệt để là lấy thông tin trực tiếp từ OUTPUT của chính lệnh build/push (ví dụ `docker buildx build --metadata-file`), không phụ thuộc trạng thái tag sau đó; concurrency guard (`concurrency: {group, cancel-in-progress}`) theo branch/ref là phòng vệ bổ sung ngăn các run chồng lấn ngay từ đầu.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "ioredis's `quit()` gửi lệnh QUIT và chờ phản hồi từ server, KHÔNG có command/socket timeout mặc định — nếu server còn giữ kết nối TCP nhưng không bao giờ phản hồi (treo, network partition một chiều), quit() có thể treo vô hạn. Bất kỳ graceful-shutdown path nào gọi quit() trực tiếp đều cần race nó với 1 deadline cấu hình được, fallback sang disconnect() (đóng socket cục bộ, không cần round-trip) khi hết hạn — nếu không, toàn bộ tiến trình có thể không bao giờ thoát dù các thành phần khác (BullMQ, v.v.) đã tuân thủ đúng deadline riêng của chúng.",
+      "content": "- **Nguồn:** `libs/platform/cache/src/redis-client.shutdown.ts, libs/platform/realtime/src/redis-emitter-client.shutdown.ts, libs/platform/realtime/src/redis-io.adapter.ts`\n\nioredis's `quit()` gửi lệnh QUIT và chờ phản hồi từ server, KHÔNG có command/socket timeout mặc định — nếu server còn giữ kết nối TCP nhưng không bao giờ phản hồi (treo, network partition một chiều), quit() có thể treo vô hạn. Bất kỳ graceful-shutdown path nào gọi quit() trực tiếp đều cần race nó với 1 deadline cấu hình được, fallback sang disconnect() (đóng socket cục bộ, không cần round-trip) khi hết hạn — nếu không, toàn bộ tiến trình có thể không bao giờ thoát dù các thành phần khác (BullMQ, v.v.) đã tuân thủ đúng deadline riêng của chúng.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "BullMQ's Worker.processJob() có nhánh getUnrecoverableErrorMessage (job.deferredFailure, hoặc job.attemptsStarted vượt opts.maxStartedAttempts) gọi handleFailed rồi return TRƯỚC callProcessJob — nghĩa là processor callback của ứng dụng KHÔNG BAO GIỜ được gọi cho nhánh này, dù 'active' đã fire trước đó. Bất kỳ cơ chế đếm/theo dõi 'job đang chạy' nào chỉ dựa vào việc processor callback của mình được gọi (dù có try/finally đầy đủ) đều bỏ sót nhánh này. Cách phủ đúng: theo dõi bằng ID (không phải counter số) trong 1 Set, xóa idempotently ở CẢ 'completed'/'failed' listener (phủ nhánh bypass processor) VÀ trong finally của chính processor callback (phủ nhánh lock-loss nơi completed/failed không bao giờ fire) — Set.delete trên id đã bị xóa là no-op nên không thể double-decrement khi cả 2 đường cùng cố xóa 1 id ở luồng bình thường.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/bullmq.worker.ts`\n\nBullMQ's Worker.processJob() có nhánh getUnrecoverableErrorMessage (job.deferredFailure, hoặc job.attemptsStarted vượt opts.maxStartedAttempts) gọi handleFailed rồi return TRƯỚC callProcessJob — nghĩa là processor callback của ứng dụng KHÔNG BAO GIỜ được gọi cho nhánh này, dù 'active' đã fire trước đó. Bất kỳ cơ chế đếm/theo dõi 'job đang chạy' nào chỉ dựa vào việc processor callback của mình được gọi (dù có try/finally đầy đủ) đều bỏ sót nhánh này. Cách phủ đúng: theo dõi bằng ID (không phải counter số) trong 1 Set, xóa idempotently ở CẢ 'completed'/'failed' listener (phủ nhánh bypass processor) VÀ trong finally của chính processor callback (phủ nhánh lock-loss nơi completed/failed không bao giờ fire) — Set.delete trên id đã bị xóa là no-op nên không thể double-decrement khi cả 2 đường cùng cố xóa 1 id ở luồng bình thường.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "BullMQ's processJob(): sau khi processor callback của ứng dụng resolve/reject, BullMQ còn phải chạy job.moveToCompleted/job.moveToFailed trên Redis SAU ĐÓ (không đồng thời với callback) trước khi job thực sự được coi là xong. Bất kỳ tracking nào coi 'callback đã settle' là 'job đã xong' đều bỏ sót bước finalize này — nếu nó treo (Redis không phản hồi), tracking đã sai khi báo 'không còn job nào chạy'. Tín hiệu ĐÚNG duy nhất cho 'job đã thực sự xong theo BullMQ' là sự kiện 'completed'/'failed' tự nó, fire đúng lúc bước finalize thành công.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/bullmq.worker.ts`\n\nBullMQ's processJob(): sau khi processor callback của ứng dụng resolve/reject, BullMQ còn phải chạy job.moveToCompleted/job.moveToFailed trên Redis SAU ĐÓ (không đồng thời với callback) trước khi job thực sự được coi là xong. Bất kỳ tracking nào coi 'callback đã settle' là 'job đã xong' đều bỏ sót bước finalize này — nếu nó treo (Redis không phản hồi), tracking đã sai khi báo 'không còn job nào chạy'. Tín hiệu ĐÚNG duy nhất cho 'job đã thực sự xong theo BullMQ' là sự kiện 'completed'/'failed' tự nó, fire đúng lúc bước finalize thành công.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "BullMQ job ID chỉ đảm bảo duy nhất TRONG PHẠM VI 1 QUEUE, không phải toàn cục — nhiều queue khác nhau (mỗi queue 1 Worker riêng, như QueueRegistry ở đây khởi tạo) có thể có job cùng ID (đặc biệt với ID auto-generated). Bất kỳ Set/Map nào theo dõi job theo ID mà không namespace theo tên queue đều có nguy cơ gộp nhầm 2 job khác queue thành 1.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/bullmq.worker.ts`\n\nBullMQ job ID chỉ đảm bảo duy nhất TRONG PHẠM VI 1 QUEUE, không phải toàn cục — nhiều queue khác nhau (mỗi queue 1 Worker riêng, như QueueRegistry ở đây khởi tạo) có thể có job cùng ID (đặc biệt với ID auto-generated). Bất kỳ Set/Map nào theo dõi job theo ID mà không namespace theo tên queue đều có nguy cơ gộp nhầm 2 job khác queue thành 1.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "Node's http.Server.close() chờ MỌI active connection tự kết thúc, không có deadline mặc định — giống hệt lý do ioredis's quit() cần deadline riêng. server.closeAllConnections() (Node 18.2+) là API chính thức để force-đóng mọi connection còn lại khi cần bound thời gian shutdown của 1 HTTP server bất kỳ, không riêng gì framework NestJS.",
+      "content": "- **Nguồn:** `apps/worker/src/worker-metrics.server.ts`\n\nNode's http.Server.close() chờ MỌI active connection tự kết thúc, không có deadline mặc định — giống hệt lý do ioredis's quit() cần deadline riêng. server.closeAllConnections() (Node 18.2+) là API chính thức để force-đóng mọi connection còn lại khi cần bound thời gian shutdown của 1 HTTP server bất kỳ, không riêng gì framework NestJS.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/shared/policies/git-policy.md",
+      "type": "proposal",
+      "summary": "2 workflow khác nhau cùng đọc/ghi 1 nhánh durable dùng chung (ví dụ release-manifests) hoặc cùng tác động lên 1 target chung (ví dụ production) đều cần CHUNG 1 concurrency group (không phải group riêng cho từng workflow) để tuần tự hóa lẫn nhau — concurrency group chỉ tuần tự hóa các run TRONG CÙNG group, nên 2 workflow file khác nhau muốn loại trừ lẫn nhau phải khai báo group tên giống hệt nhau.",
+      "content": "- **Nguồn:** `.github/workflows/deploy-production.yml, .github/workflows/rollback-production.yml`\n\n2 workflow khác nhau cùng đọc/ghi 1 nhánh durable dùng chung (ví dụ release-manifests) hoặc cùng tác động lên 1 target chung (ví dụ production) đều cần CHUNG 1 concurrency group (không phải group riêng cho từng workflow) để tuần tự hóa lẫn nhau — concurrency group chỉ tuần tự hóa các run TRONG CÙNG group, nên 2 workflow file khác nhau muốn loại trừ lẫn nhau phải khai báo group tên giống hệt nhau.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/shared/policies/security.md",
+      "type": "proposal",
+      "summary": "GitHub Actions expression `${{ }}` (kể cả `${{ inputs.* }}` từ workflow_dispatch) được nội suy vào TEXT của `run:` script TRƯỚC KHI shell chạy nó — không có escaping hay quoting tự động nào. Bất kỳ input do người dùng cung cấp (workflow_dispatch, issue/PR title/body, v.v.) mà bị chèn trực tiếp vào `run:` đều là 1 lỗ hổng shell/command injection thật — sửa bằng cách LUÔN đưa input qua `env:` (giá trị được truyền qua process environment, không phải string nội suy vào script text), rồi script chỉ tham chiếu qua biến shell đã quote.",
+      "content": "- **Nguồn:** `.github/workflows/deploy-production.yml, .github/workflows/rollback-production.yml`\n\nGitHub Actions expression `${{ }}` (kể cả `${{ inputs.* }}` từ workflow_dispatch) được nội suy vào TEXT của `run:` script TRƯỚC KHI shell chạy nó — không có escaping hay quoting tự động nào. Bất kỳ input do người dùng cung cấp (workflow_dispatch, issue/PR title/body, v.v.) mà bị chèn trực tiếp vào `run:` đều là 1 lỗ hổng shell/command injection thật — sửa bằng cách LUÔN đưa input qua `env:` (giá trị được truyền qua process environment, không phải string nội suy vào script text), rồi script chỉ tham chiếu qua biến shell đã quote.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "Mọi nỗ lực tự xấp xỉ 'quiescence' của 1 BullMQ Worker bằng cách đếm/theo dõi các event công khai ('active'/'completed'/'failed') đều có nguy cơ còn khoảng hở so với trạng thái nội bộ thật của Worker — verified qua 4 vòng review liên tiếp tìm ra 4 khoảng hở riêng biệt. `Worker.whenCurrentJobsFinished(reconnect)` (dù là API `private` không nằm trong .d.ts) chính là promise `mainLoopRunning` mà `Worker.close()` TỰ NÓ dùng nội bộ cho graceful close — đây là nguồn sự thật duy nhất không có khoảng hở, vì không có cách nào 'chính xác hơn' bản thân thư viện. Khi 1 thư viện có sẵn 1 barrier/primitive nội bộ chính xác cho đúng nhu cầu, tự viết lại logic tương đương ở tầng ứng dụng hầu như luôn kém chính xác hơn, dù đã qua nhiều vòng sửa.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/bullmq.worker.ts`\n\nMọi nỗ lực tự xấp xỉ 'quiescence' của 1 BullMQ Worker bằng cách đếm/theo dõi các event công khai ('active'/'completed'/'failed') đều có nguy cơ còn khoảng hở so với trạng thái nội bộ thật của Worker — verified qua 4 vòng review liên tiếp tìm ra 4 khoảng hở riêng biệt. `Worker.whenCurrentJobsFinished(reconnect)` (dù là API `private` không nằm trong .d.ts) chính là promise `mainLoopRunning` mà `Worker.close()` TỰ NÓ dùng nội bộ cho graceful close — đây là nguồn sự thật duy nhất không có khoảng hở, vì không có cách nào 'chính xác hơn' bản thân thư viện. Khi 1 thư viện có sẵn 1 barrier/primitive nội bộ chính xác cho đúng nhu cầu, tự viết lại logic tương đương ở tầng ứng dụng hầu như luôn kém chính xác hơn, dù đã qua nhiều vòng sửa.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "1 presigned PUT URL cho direct-to-S3 upload vẫn còn hiệu lực tới khi hết hạn — bất kỳ validation nào chạy SAU KHI upload xong (ví dụ 1 bước 'confirm' riêng biệt) chỉ chứng minh được trạng thái object TẠI THỜI ĐIỂM ĐÓ, không phải tại thời điểm 1 job nền chạy SAU đó thực sự xử lý nó — khoảng hở TOCTOU thật giữa 2 lần đọc. Cách đóng đúng: ràng buộc lần xử lý sau với 1 định danh nội dung bất biến (ETag/VersionId/checksum) đã quan sát được tại thời điểm validate, rồi re-check định danh đó (không chỉ 'object còn tồn tại') trước khi tin tưởng dùng object.",
+      "content": "- **Nguồn:** `libs/modules/media/src/application/use-cases/generate-thumbnail.use-case.ts`\n\n1 presigned PUT URL cho direct-to-S3 upload vẫn còn hiệu lực tới khi hết hạn — bất kỳ validation nào chạy SAU KHI upload xong (ví dụ 1 bước 'confirm' riêng biệt) chỉ chứng minh được trạng thái object TẠI THỜI ĐIỂM ĐÓ, không phải tại thời điểm 1 job nền chạy SAU đó thực sự xử lý nó — khoảng hở TOCTOU thật giữa 2 lần đọc. Cách đóng đúng: ràng buộc lần xử lý sau với 1 định danh nội dung bất biến (ETag/VersionId/checksum) đã quan sát được tại thời điểm validate, rồi re-check định danh đó (không chỉ 'object còn tồn tại') trước khi tin tưởng dùng object.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "Khi thiết kế 1 Promise.race giữa 'thao tác chính' và 'deadline' để quyết định có cần fallback hay không, PHẢI phân biệt rõ outcome của thao tác chính (thành công/reject) chứ không chỉ 'có kịp trong deadline hay không' — nếu .then()/.catch() của thao tác chính đều trả về cùng 1 giá trị (ví dụ cùng `false`), logic fallback phía sau không còn cách nào phân biệt 'thành công thật' với 'thất bại nhưng không phải do timeout', dễ vô tình coi 1 rejection là thành công.",
+      "content": "- **Nguồn:** `libs/platform/cache/src/redis-client.shutdown.ts, libs/platform/realtime/src/redis-emitter-client.shutdown.ts, libs/platform/realtime/src/redis-io.adapter.ts`\n\nKhi thiết kế 1 Promise.race giữa 'thao tác chính' và 'deadline' để quyết định có cần fallback hay không, PHẢI phân biệt rõ outcome của thao tác chính (thành công/reject) chứ không chỉ 'có kịp trong deadline hay không' — nếu .then()/.catch() của thao tác chính đều trả về cùng 1 giá trị (ví dụ cùng `false`), logic fallback phía sau không còn cách nào phân biệt 'thành công thật' với 'thất bại nhưng không phải do timeout', dễ vô tình coi 1 rejection là thành công.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/shared/policies/security.md",
+      "type": "proposal",
+      "summary": "Import/cấu hình 1 module (ví dụ ThrottlerModule.forRootAsync) chỉ đăng ký DỮ LIỆU cấu hình — không tự động thực thi bất kỳ hành vi nào. Với @nestjs/throttler cụ thể, PHẢI đăng ký thêm { provide: APP_GUARD, useClass: ThrottlerGuard } (hoặc @UseGuards thủ công) thì cấu hình mới thực sự chặn request nào — kiểm tra 'module có được import chưa' không đủ để xác nhận 1 tính năng bảo mật thực sự hoạt động, phải kiểm tra bằng traffic thật vượt giới hạn.",
+      "content": "- **Nguồn:** `libs/platform/security/src/security.module.ts`\n\nImport/cấu hình 1 module (ví dụ ThrottlerModule.forRootAsync) chỉ đăng ký DỮ LIỆU cấu hình — không tự động thực thi bất kỳ hành vi nào. Với @nestjs/throttler cụ thể, PHẢI đăng ký thêm { provide: APP_GUARD, useClass: ThrottlerGuard } (hoặc @UseGuards thủ công) thì cấu hình mới thực sự chặn request nào — kiểm tra 'module có được import chưa' không đủ để xác nhận 1 tính năng bảo mật thực sự hoạt động, phải kiểm tra bằng traffic thật vượt giới hạn.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "AWS SDK v3's getSignedUrl() cho PutObjectCommand: bất kỳ field nào trên command (ví dụ ContentLength) đều được đưa vào X-Amz-SignedHeaders của presigned URL, khiến server-side (S3/MinIO) từ chối request nếu header thực tế gửi lên khác giá trị đã ký — đây là cách S3-native duy nhất để presigned PUT URL thực sự ràng buộc size, không cần chuyển sang presigned POST policy (vốn có content-length-range nhưng đổi hẳn contract sang multipart form). GetObjectCommand hỗ trợ IfMatch tương tự, được server đánh giá atomic trong cùng request — cách xấp xỉ gần nhất cho 'verify rồi dùng nguyên tử' khi không có S3 object versioning.",
+      "content": "- **Nguồn:** `libs/platform/storage/src/s3-storage.adapter.ts`\n\nAWS SDK v3's getSignedUrl() cho PutObjectCommand: bất kỳ field nào trên command (ví dụ ContentLength) đều được đưa vào X-Amz-SignedHeaders của presigned URL, khiến server-side (S3/MinIO) từ chối request nếu header thực tế gửi lên khác giá trị đã ký — đây là cách S3-native duy nhất để presigned PUT URL thực sự ràng buộc size, không cần chuyển sang presigned POST policy (vốn có content-length-range nhưng đổi hẳn contract sang multipart form). GetObjectCommand hỗ trợ IfMatch tương tự, được server đánh giá atomic trong cùng request — cách xấp xỉ gần nhất cho 'verify rồi dùng nguyên tử' khi không có S3 object versioning.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "AWS SDK v3's @aws-sdk/client-s3 model MỖI operation's lỗi 404 thành 1 exception class RIÊNG theo operation, không dùng chung 1 class: HeadObjectCommand's 404 là `NotFound` (có export riêng), nhưng GetObjectCommand's 404 là `NoSuchKey` (KHÔNG có export riêng). `error instanceof NotFound` chỉ đúng cho HeadObjectCommand, sai (luôn false) cho GetObjectCommand dù cùng ý nghĩa 404. Với các exception không có export riêng (NoSuchKey, PreconditionFailed), kiểm tra qua error.$metadata.httpStatusCode ổn định hơn dùng error.name (không thuộc contract công khai/ổn định của SDK).",
+      "content": "- **Nguồn:** `libs/platform/storage/src/s3-storage.adapter.ts`\n\nAWS SDK v3's @aws-sdk/client-s3 model MỖI operation's lỗi 404 thành 1 exception class RIÊNG theo operation, không dùng chung 1 class: HeadObjectCommand's 404 là `NotFound` (có export riêng), nhưng GetObjectCommand's 404 là `NoSuchKey` (KHÔNG có export riêng). `error instanceof NotFound` chỉ đúng cho HeadObjectCommand, sai (luôn false) cho GetObjectCommand dù cùng ý nghĩa 404. Với các exception không có export riêng (NoSuchKey, PreconditionFailed), kiểm tra qua error.$metadata.httpStatusCode ổn định hơn dùng error.name (không thuộc contract công khai/ổn định của SDK).\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "proposal",
+      "summary": "1 use case tự nhận là 'idempotent với redelivery' PHẢI kiểm tra trạng thái terminal (ví dụ status === Ready) làm điều kiện early-return NGAY ĐẦU hàm, trước bất kỳ side effect nào (storage call, external API, v.v.) — không được chỉ dựa vào 1 CAS/write thất bại SAU KHI đã thực hiện side effect để phát hiện redelivery, vì side effect đó tự nó có thể throw trước khi kịp tới bước CAS (ví dụ nếu điều kiện thế giới bên ngoài đã đổi khác kể từ lần chạy thành công trước đó).",
+      "content": "- **Nguồn:** `libs/modules/media/src/application/use-cases/generate-thumbnail.use-case.ts`\n\n1 use case tự nhận là 'idempotent với redelivery' PHẢI kiểm tra trạng thái terminal (ví dụ status === Ready) làm điều kiện early-return NGAY ĐẦU hàm, trước bất kỳ side effect nào (storage call, external API, v.v.) — không được chỉ dựa vào 1 CAS/write thất bại SAU KHI đã thực hiện side effect để phát hiện redelivery, vì side effect đó tự nó có thể throw trước khi kịp tới bước CAS (ví dụ nếu điều kiện thế giới bên ngoài đã đổi khác kể từ lần chạy thành công trước đó).\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/database-rules.md",
+      "type": "proposal",
+      "summary": "Với bất kỳ resource cần release/cleanup (connection pool, file handle, lock, v.v.), try/finally phải bắt đầu NGAY SAU bước thực sự chiếm dụng resource đó thành công (không phải sau MỌI bước khởi tạo tiếp theo) — nếu 1 bước khởi tạo SAU KHI đã chiếm dụng resource (ví dụ BEGIN transaction sau khi đã checkout connection) thất bại mà nằm ngoài try/finally, resource đó rò rỉ vĩnh viễn.",
+      "content": "- **Nguồn:** `libs/platform/database/src/typeorm-unit-of-work.ts`\n\nVới bất kỳ resource cần release/cleanup (connection pool, file handle, lock, v.v.), try/finally phải bắt đầu NGAY SAU bước thực sự chiếm dụng resource đó thành công (không phải sau MỌI bước khởi tạo tiếp theo) — nếu 1 bước khởi tạo SAU KHI đã chiếm dụng resource (ví dụ BEGIN transaction sau khi đã checkout connection) thất bại mà nằm ngoài try/finally, resource đó rò rỉ vĩnh viễn.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/shared/policies/git-policy.md",
+      "type": "proposal",
+      "summary": "Trong 1 workflow nhiều bước với side effect KHÔNG thể hoàn tác dễ dàng (tạo git tag, ghi file durable, v.v.) chạy TRƯỚC 1 bước khác có thể thất bại, mỗi bước side-effect đó phải tự kiểm tra 'đã làm việc này chưa' và bỏ qua an toàn nếu có (miễn là kết quả khớp với lần chạy hiện tại) — nếu không, workflow không thể resume sau khi bước SAU thất bại, vì rerun sẽ luôn fail ngay ở chính bước side-effect đã hoàn tất trước đó.",
+      "content": "- **Nguồn:** `.github/workflows/deploy-production.yml`\n\nTrong 1 workflow nhiều bước với side effect KHÔNG thể hoàn tác dễ dàng (tạo git tag, ghi file durable, v.v.) chạy TRƯỚC 1 bước khác có thể thất bại, mỗi bước side-effect đó phải tự kiểm tra 'đã làm việc này chưa' và bỏ qua an toàn nếu có (miễn là kết quả khớp với lần chạy hiện tại) — nếu không, workflow không thể resume sau khi bước SAU thất bại, vì rerun sẽ luôn fail ngay ở chính bước side-effect đã hoàn tất trước đó.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "BullMQ's Queue.close() chia sẻ CHÍNH XÁC 2 đặc điểm của Worker.close() cần fix riêng trong các round trước: cache theo lần gọi đầu tiên (gọi lại sau đó chỉ re-await cùng promise, không có tác dụng gì thêm) và cuối cùng await ioredis quit() (không có command/socket timeout mặc định). Bất kỳ chỗ nào trong codebase gọi trực tiếp queue.close() hoặc worker.close() trong shutdown hook đều cần cùng 1 kiểu xử lý (race với deadline, fallback disconnect() không bị cache) — không thể giả định 1 fix đã áp dụng cho Worker cũng tự động đúng cho mọi class khác cùng thư viện.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/bullmq-queue.factory.ts`\n\nBullMQ's Queue.close() chia sẻ CHÍNH XÁC 2 đặc điểm của Worker.close() cần fix riêng trong các round trước: cache theo lần gọi đầu tiên (gọi lại sau đó chỉ re-await cùng promise, không có tác dụng gì thêm) và cuối cùng await ioredis quit() (không có command/socket timeout mặc định). Bất kỳ chỗ nào trong codebase gọi trực tiếp queue.close() hoặc worker.close() trong shutdown hook đều cần cùng 1 kiểu xử lý (race với deadline, fallback disconnect() không bị cache) — không thể giả định 1 fix đã áp dụng cho Worker cũng tự động đúng cho mọi class khác cùng thư viện.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "Với dotenv/@nestjs/config: 1 dòng `KEY=` (không có giá trị) trong file .env parse thành chuỗi RỖNG (''), KHÔNG PHẢI undefined. Với field Zod kiểu z.enum(['true','false']).optional(), '' làm validate THẤT BẠI (không phải coi là unset). Với field z.coerce.number().optional(), '' được coerce THÀNH 0 (JS quirk: Number('')===0) — 1 giá trị cụ thể sai, không phải 'chưa set'. Khi 1 field code-level có logic fallback kiểu 'X ?? Y' dựa vào X thực sự là undefined, .env.example dùng cho field đó PHẢI để hẳn KHÔNG CÓ dòng key, không được viết KEY= (rỗng) — nếu không, người dùng copy nguyên .env.example sẽ vô tình 'set' field đó thành giá trị rỗng/0, phá vỡ fallback.",
+      "content": "- **Nguồn:** `libs/platform/configuration`\n\nVới dotenv/@nestjs/config: 1 dòng `KEY=` (không có giá trị) trong file .env parse thành chuỗi RỖNG (''), KHÔNG PHẢI undefined. Với field Zod kiểu z.enum(['true','false']).optional(), '' làm validate THẤT BẠI (không phải coi là unset). Với field z.coerce.number().optional(), '' được coerce THÀNH 0 (JS quirk: Number('')===0) — 1 giá trị cụ thể sai, không phải 'chưa set'. Khi 1 field code-level có logic fallback kiểu 'X ?? Y' dựa vào X thực sự là undefined, .env.example dùng cho field đó PHẢI để hẳn KHÔNG CÓ dòng key, không được viết KEY= (rỗng) — nếu không, người dùng copy nguyên .env.example sẽ vô tình 'set' field đó thành giá trị rỗng/0, phá vỡ fallback.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "queue.disconnect() (BullMQ) trả về Promise<void> và có thể tự reject — khác với close(), nó KHÔNG cache theo lần gọi đầu tiên nên an toàn gọi lại sau khi close() đã thua 1 deadline race, nhưng vẫn phải được await trong try/catch riêng, không được gọi fire-and-forget, nếu không rejection của nó có thể thoát ra thành unhandled promise rejection đúng lúc process đang shutdown.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/bullmq-queue.factory.ts`\n\nqueue.disconnect() (BullMQ) trả về Promise<void> và có thể tự reject — khác với close(), nó KHÔNG cache theo lần gọi đầu tiên nên an toàn gọi lại sau khi close() đã thua 1 deadline race, nhưng vẫn phải được await trong try/catch riêng, không được gọi fire-and-forget, nếu không rejection của nó có thể thoát ra thành unhandled promise rejection đúng lúc process đang shutdown.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "proposal",
+      "summary": "NestJS đảm bảo thứ tự PHASE-TO-PHASE khi shutdown (onModuleDestroy toàn bộ module -> beforeApplicationShutdown toàn bộ module -> onApplicationShutdown toàn bộ module, xác minh trực tiếp trong node_modules/@nestjs/core/nest-application-context.js's close()), nhưng KHÔNG đảm bảo thứ tự giữa các provider khác nhau TRONG CÙNG 1 phase. Khi 1 provider A đóng 1 tài nguyên dùng chung (kết nối, queue, v.v.) mà provider B khác vẫn còn đang thao tác vào tài nguyên đó lúc shutdown, cách đúng để đảm bảo B luôn dừng TRƯỚC khi A đóng tài nguyên là đặt A và B ở 2 phase KHÁC NHAU (A ở phase sau B), không phải dựa vào thứ tự đăng ký provider trong cùng 1 phase.",
+      "content": "- **Nguồn:** `libs/platform/queue`\n\nNestJS đảm bảo thứ tự PHASE-TO-PHASE khi shutdown (onModuleDestroy toàn bộ module -> beforeApplicationShutdown toàn bộ module -> onApplicationShutdown toàn bộ module, xác minh trực tiếp trong node_modules/@nestjs/core/nest-application-context.js's close()), nhưng KHÔNG đảm bảo thứ tự giữa các provider khác nhau TRONG CÙNG 1 phase. Khi 1 provider A đóng 1 tài nguyên dùng chung (kết nối, queue, v.v.) mà provider B khác vẫn còn đang thao tác vào tài nguyên đó lúc shutdown, cách đúng để đảm bảo B luôn dừng TRƯỚC khi A đóng tài nguyên là đặt A và B ở 2 phase KHÁC NHAU (A ở phase sau B), không phải dựa vào thứ tự đăng ký provider trong cùng 1 phase.\n",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/known-issues.md",
+      "type": "proposal",
+      "summary": "Khi thêm 1 pattern cooperative-cancellation + deadline (shuttingDown flag + in-flight promise tracking) cho 1 service tiêu thụ Queue vì lifecycle ordering với BullMqQueueFactory, phải áp dụng cho MỌI service tiêu thụ Queue tương tự — kể cả 1 service tưởng như 'chỉ đọc metrics, không side-effect quan trọng' như BullMqMetricsCollector. Nó vẫn gọi getQueue()/getJobCounts() trên cùng tập Queue mà factory quản lý vòng đời, nên vẫn dính đúng race: chỉ clearInterval() không đủ, vì 1 lượt collect() đang chạy dở có thể tiếp tục truy cập Queue sau khi bị đóng hoặc tạo kết nối mới không bao giờ được đóng.",
+      "content": "- **Nguồn:** `libs/platform/queue/src/bullmq/bullmq.events.ts`\n\nKhi thêm 1 pattern cooperative-cancellation + deadline (shuttingDown flag + in-flight promise tracking) cho 1 service tiêu thụ Queue vì lifecycle ordering với BullMqQueueFactory, phải áp dụng cho MỌI service tiêu thụ Queue tương tự — kể cả 1 service tưởng như 'chỉ đọc metrics, không side-effect quan trọng' như BullMqMetricsCollector. Nó vẫn gọi getQueue()/getJobCounts() trên cùng tập Queue mà factory quản lý vòng đời, nên vẫn dính đúng race: chỉ clearInterval() không đủ, vì 1 lượt collect() đang chạy dở có thể tiếp tục truy cập Queue sau khi bị đóng hoặc tạo kết nối mới không bao giờ được đóng.\n",
+      "approved": false
+    }
+  ]
+}

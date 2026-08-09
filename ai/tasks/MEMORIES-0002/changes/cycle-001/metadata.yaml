@@ -1,0 +1,10 @@
+version: 1
+task_id: MEMORIES-0002
+cycle: 1
+kind: correction
+title: Loai bo yeu cau frontend khoi pham vi epic (backend-only)
+created_at: '2026-08-07T22:05:46+07:00'
+created_from_status: reviewing
+status: active
+requirement_precedence: latest_addendum_wins_on_explicit_conflict
+worktree_policy: reuse_registered_worktrees

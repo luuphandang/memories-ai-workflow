@@ -1,0 +1,119 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib.ai_common import (
+    configured_fail_severities,
+    ensure_task,
+    now_iso,
+    read_json,
+    read_yaml,
+    require_file,
+    runtime_dir,
+    write_yaml,
+)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Create a concise fix request from Codex findings"
+    )
+    parser.add_argument("task_id")
+    args = parser.parse_args()
+
+    td = ensure_task(args.task_id)
+    review_path = require_file(
+        td / "review.json",
+        "Codex review output",
+        f"run ./ai/bin/ai task review {args.task_id}",
+    )
+    review = read_json(review_path)
+    state = read_yaml(td / "state.yaml")
+    task = read_yaml(td / "task.yaml")
+    cycle = int(state.get("review_cycle", 0))
+    max_cycles = int(task.get("review", {}).get("max_cycles", 5))
+    fail_on = configured_fail_severities(task)
+
+    verdict = review.get("verdict")
+    if verdict == "pass":
+        raise SystemExit(
+            "Codex review passed; there are no fixes to request. "
+            f"Run ./ai/bin/ai task accept {args.task_id} --accepted-by <name> after user acceptance."
+        )
+    if verdict != "changes_requested":
+        raise SystemExit(
+            f"Cannot create a fix request from review verdict {verdict!r}; "
+            "resolve the blocked/invalid review first."
+        )
+
+    if cycle >= max_cycles:
+        state["status"] = "blocked"
+        state["last_error"] = f"Maximum review cycles reached ({max_cycles})"
+        write_yaml(td / "state.yaml", state)
+        raise SystemExit(state["last_error"])
+
+    findings = [
+        item for item in review.get("findings", []) if item.get("severity") in fail_on
+    ]
+    lines = [
+        f"# Fix request — {args.task_id} — review cycle {cycle}",
+        "",
+        "Resolve the verified blocking items below while preserving all effective requirements and unrelated changes. Then update implementation.json.",
+        "",
+        f"Configured blocking severities: {', '.join(fail_on)}.",
+        "",
+    ]
+    for index, finding in enumerate(findings, 1):
+        location = f"{finding.get('repo')}:{finding.get('file')}"
+        if finding.get("line"):
+            location += f":{finding.get('line')}"
+        lines.extend(
+            [
+                f"## {index}. [{finding.get('severity')}] {finding.get('title')}",
+                "",
+                f"- Location: `{location}`",
+                f"- Evidence: {finding.get('evidence')}",
+                f"- Expected fix: {finding.get('expected_fix')}",
+                "",
+            ]
+        )
+
+    failed_criteria = [
+        item
+        for item in review.get("acceptance_criteria", [])
+        if item.get("status") in {"failed", "partial", "not_verified"}
+    ]
+    missing_validation = review.get("validation_assessment", {}).get("missing", [])
+    if failed_criteria:
+        lines.extend(["## Acceptance criteria requiring work", ""])
+        lines.extend(
+            f"- [{item.get('status')}] {item.get('criterion')}"
+            for item in failed_criteria
+        )
+        lines.append("")
+    if missing_validation:
+        lines.extend(["## Missing validation evidence", ""])
+        lines.extend(f"- {item}" for item in missing_validation)
+        lines.append("")
+
+    if not findings and not failed_criteria and not missing_validation:
+        raise SystemExit(
+            "Invalid changes_requested review: no configured blocking finding, failed criterion, "
+            "or missing validation evidence was found. Re-run or inspect review.json."
+        )
+
+    path = runtime_dir(args.task_id) / "input" / f"fix-request-review-{cycle}.md"
+    path.write_text("\n".join(lines), encoding="utf-8")
+    state["status"] = "changes_requested_by_codex"
+    state.setdefault("timestamps", {})["fix_requested_at"] = now_iso()
+    state["last_error"] = None
+    write_yaml(td / "state.yaml", state)
+    print(path)
+
+
+if __name__ == "__main__":
+    main()

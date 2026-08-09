@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib.ai_common import ensure_task, read_yaml, write_yaml
+
+
+RULES = {
+    "implement-nestjs-vertical-slice": ("backend", {"nestjs", "controller", "repository", "typeorm", "migration", "api"}),
+    "implement-auth-security-change": (None, {"auth", "jwt", "password", "permission", "login", "session", "account", "identity"}),
+    "verify-openapi-contract": ("backend", {"openapi", "swagger", "api contract", "generated client"}),
+    "implement-nextjs-vertical-slice": ("frontend", {"frontend", "next.js", "nextjs", "page", "ui", "react", "website"}),
+    "establish-frontend-design-system": ("frontend", {"design system", "design token", "semantic token", "tailwind preset", "shared primitive"}),
+    "migrate-prototype-nextjs-page": ("frontend", {"prototype", "html", "fidelity", "mock data", "legacy script"}),
+}
+
+REVIEW_RULES = {
+    "review-frontend-ui-fidelity": ("frontend", {"prototype", "fidelity", "viewport", "responsive", "screenshot"}),
+}
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Suggest required project skills from task scope")
+    parser.add_argument("task_id")
+    parser.add_argument("--apply", action="store_true", help="Apply suggestions to task.yaml")
+    args = parser.parse_args()
+    td = ensure_task(args.task_id)
+    task = read_yaml(td / "task.yaml")
+    text = ((td / "task.md").read_text(encoding="utf-8") + "\n" + task.get("title", "")).lower()
+    repos = {item.get("repo") for item in task.get("worktrees", [])} | set(task.get("validation", {}))
+    suggestions = ["decompose-implementation-task"]
+    reasons = {"decompose-implementation-task": "required execution planning"}
+    for skill, (repo, keywords) in RULES.items():
+        matched = sorted(word for word in keywords if word in text)
+        if (repo is None or repo in repos) and matched:
+            suggestions.append(skill)
+            reasons[skill] = "matched: " + ", ".join(matched[:6])
+    print("Suggested implementation skills:")
+    for skill in suggestions:
+        print(f"- {skill} ({reasons[skill]})")
+    review_suggestions = ["review-vertical-slice-completeness"]
+    for skill, (repo, keywords) in REVIEW_RULES.items():
+        if repo in repos and any(word in text for word in keywords):
+            review_suggestions.append(skill)
+    print("Review skills:")
+    for skill in review_suggestions:
+        print(f"- {skill}")
+    if args.apply:
+        task["skills"] = {"implement": suggestions, "review": review_suggestions}
+        write_yaml(td / "task.yaml", task)
+        print(f"Applied suggestions to {td / 'task.yaml'}")
+    else:
+        print("No files changed. Re-run with --apply after reviewing the suggestions.")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+import argparse, shutil
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib.ai_common import ROOT, AI_ROOT, ensure_task, read_yaml, read_json, validate_json, atomic_write, now_iso
+
+ALLOWED = (AI_ROOT / "shared", AI_ROOT / "repos", AI_ROOT / "domains")
+
+def is_allowed(path: Path) -> bool:
+    rp = path.resolve()
+    return any(rp == base.resolve() or base.resolve() in rp.parents for base in ALLOWED)
+
+
+def proposal_path(task_dir: Path, item: dict, index: int) -> Path:
+    """Return a stable, collision-free path for one proposal entry."""
+    target_name = item["target"].replace("/", "__")
+    return task_dir / "knowledge-proposals" / f"{index:03d}__{target_name}.md"
+
+
+def main() -> None:
+    p = argparse.ArgumentParser(description="Apply approved durable knowledge updates")
+    p.add_argument("task_id")
+    p.add_argument("--apply", action="store_true", help="Without this flag only show the plan")
+    p.add_argument("--force", action="store_true")
+    args = p.parse_args()
+    td = ensure_task(args.task_id)
+    state = read_yaml(td / "state.yaml")
+    if state.get("status") != "completed" and not args.force:
+        raise SystemExit("Knowledge update requires completed task (or --force)")
+    path = td / "knowledge-updates.json"
+    validate_json(path, AI_ROOT / "schemas" / "knowledge-update.schema.json")
+    data = read_json(path)
+    updates = data.get("updates", [])
+    if not args.apply:
+        for index, item in enumerate(updates, start=1):
+            marker = "x" if item.get("approved") else " "
+            print(
+                f"[{marker}] #{index:03d} {item['type']}: "
+                f"{item['target']} — {item['summary']}"
+            )
+        print(
+            f"Plan only: {len(updates)} total, "
+            f"{sum(1 for item in updates if item.get('approved'))} approved. "
+            "Re-run with --apply after reviewing the content."
+        )
+        return
+
+    approved = [
+        (index, item)
+        for index, item in enumerate(updates, start=1)
+        if item.get("approved")
+    ]
+    for index, item in approved:
+        target = (ROOT / item["target"]).resolve()
+        if not is_allowed(target): raise SystemExit(f"Disallowed target: {target}")
+        print(f"{item['type']}: {item['target']} — {item['summary']}")
+        content = item.get("content", "").strip()
+        if not content or "[BỔ SUNG" in content:
+            proposal = proposal_path(td, item, index)
+            proposal.parent.mkdir(parents=True, exist_ok=True)
+            proposal.write_text(f"# Proposed update\n\nTarget: `{item['target']}`\n\n{item['summary']}\n\n{content}\n", encoding="utf-8")
+            print(f"  Content unresolved; wrote proposal: {proposal}")
+            continue
+        current = target.read_text(encoding="utf-8") if target.exists() else ""
+        if item["type"] == "append":
+            if content in current:
+                print("  Already applied; skipped duplicate append.")
+                continue
+            new = current.rstrip() + "\n\n" + content + "\n"
+        elif item["type"] in ("replace", "create"): new = content + "\n"
+        else:
+            proposal = proposal_path(td, item, index)
+            proposal.parent.mkdir(parents=True, exist_ok=True); proposal.write_text(content + "\n", encoding="utf-8"); continue
+        if item["type"] in ("replace", "create") and current.strip() == content:
+            print("  Already applied; skipped identical content.")
+            continue
+        if target.exists():
+            backup = td / "knowledge-backups" / (item["target"].replace("/", "__") + ".bak")
+            backup.parent.mkdir(parents=True, exist_ok=True)
+            if not backup.exists():
+                shutil.copy2(target, backup)
+        atomic_write(target, new)
+
+if __name__ == "__main__": main()

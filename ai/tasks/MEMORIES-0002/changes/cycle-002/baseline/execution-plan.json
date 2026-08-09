@@ -1,0 +1,663 @@
+{
+  "task_id": "MEMORIES-0002",
+  "implementation_cycle": 2,
+  "change_cycle": 1,
+  "status": "ready",
+  "slices": [
+    {
+      "id": "module-boundary",
+      "title": "Module boundary",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Module boundary"
+      ],
+      "requirement_details": {
+        "Module boundary": [
+          "Sử dụng module `identity-access` để quản lý:",
+          "Sử dụng module `user-profiles` để quản lý UserProfile.",
+          "Không đặt UserProfile trong module `customers`.",
+          "Module `customers` chỉ được sử dụng cho nghiệp vụ khách hàng trong tương lai.",
+          "Module `staff` chỉ được sử dụng cho nghiệp vụ nhân viên trong tương lai.",
+          "Module khác chỉ truy cập Account và UserProfile thông qua public API hoặc application contract.",
+          "Không sử dụng TypeORM relation trực tiếp xuyên module."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "account-domain-model",
+      "title": "Account domain model",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Account domain model"
+      ],
+      "requirement_details": {
+        "Account domain model": [
+          "Khai báo `Account` aggregate/entity trong module `identity-access`.",
+          "Account kế thừa Entity hoặc AggregateRoot abstraction hiện tại.",
+          "Account có tối thiểu:",
+          "Account status hỗ trợ tối thiểu:",
+          "Account không chứa thông tin hồ sơ cá nhân.",
+          "Account không chứa email hoặc địa chỉ.",
+          "Account không trả credential trong API response.",
+          "Account inactive, locked hoặc deleted không được đăng nhập.",
+          "Account bị vô hiệu hóa không được refresh token."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "authidentity-model",
+      "title": "AuthIdentity model",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "AuthIdentity model"
+      ],
+      "requirement_details": {
+        "AuthIdentity model": [
+          "Khai báo `AuthIdentity` trong module `identity-access`.",
+          "Một Account có thể có nhiều AuthIdentity.",
+          "AuthIdentity có tối thiểu:",
+          "Provider hỗ trợ:",
+          "Chỉ triển khai đầy đủ provider `LOCAL` trong epic này.",
+          "Với provider LOCAL:",
+          "Với social provider:",
+          "Không lưu plain text password.",
+          "Không trả passwordHash qua API.",
+          "Không ghi credential vào log.",
+          "Có unique constraint phù hợp cho:"
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "userprofile-domain-model",
+      "title": "UserProfile domain model",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "UserProfile domain model"
+      ],
+      "requirement_details": {
+        "UserProfile domain model": [
+          "Khai báo `UserProfile` trong module `user-profiles`.",
+          "UserProfile có tối thiểu:",
+          "`accountId` có unique constraint.",
+          "Mỗi Account chỉ có tối đa một UserProfile.",
+          "Email chỉ là thông tin liên hệ.",
+          "Email không được sử dụng làm login identifier.",
+          "Email được normalize về lowercase trước khi lưu.",
+          "Email có thể nullable nếu nghiệp vụ không bắt buộc.",
+          "UserProfile không chứa password hoặc permission.",
+          "Không tạo TypeORM relation trực tiếp từ UserProfile sang Account.",
+          "Kiểm tra Account tồn tại thông qua application contract."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "customer-v-staff-boundary",
+      "title": "Customer và Staff boundary",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Customer và Staff boundary"
+      ],
+      "requirement_details": {
+        "Customer và Staff boundary": [
+          "Không tạo Customer tự động khi tạo Account.",
+          "Không coi mọi Account đăng nhập public là Customer.",
+          "Không coi tài khoản admin là Customer.",
+          "Tài liệu architecture phải mô tả:",
+          "Customer hoặc Staff sau này liên kết với:",
+          "Không triển khai Customer hoặc Staff trong epic này."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "auditable-entity-foundation",
+      "title": "Auditable entity foundation",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Auditable entity foundation"
+      ],
+      "requirement_details": {
+        "Auditable entity foundation": [
+          "Bổ sung hoặc hoàn thiện AuditableEntity abstraction.",
+          "Các entity cần audit có:",
+          "Database sử dụng tên cột:",
+          "Timestamp sử dụng timezone-aware type.",
+          "Không cho client truyền audit fields.",
+          "Audit actor được lấy từ request context.",
+          "Query mặc định bỏ qua bản ghi đã soft delete.",
+          "Không lặp lại khai báo audit columns trong từng ORM entity."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "database-migration",
+      "title": "Database migration",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Database migration"
+      ],
+      "requirement_details": {
+        "Database migration": [
+          "Tạo migration cho:",
+          "Không sử dụng schema `customer` cho UserProfile.",
+          "Schema đề xuất cho UserProfile là:",
+          "Tạo index cho:",
+          "Unique index phải xử lý đúng soft delete.",
+          "Không bật `synchronize: true`.",
+          "Migration hỗ trợ rollback trong development và test.",
+          "Seed Role và Permission phải idempotent."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "transaction-t-o-account",
+      "title": "Transaction tạo Account",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Transaction tạo Account"
+      ],
+      "requirement_details": {
+        "Transaction tạo Account": [
+          "Triển khai use case tạo Account trong một transaction.",
+          "Luồng tạo Account gồm:",
+          "Nếu bất kỳ bước nào thất bại, toàn bộ transaction phải rollback.",
+          "Không để tồn tại:",
+          "Có application error riêng cho:"
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "login-b-ng-phone-v-password",
+      "title": "Login bằng phone và password",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Login bằng phone và password"
+      ],
+      "requirement_details": {
+        "Login bằng phone và password": [
+          "Thay đổi login request từ:",
+          "Portal sử dụng enum:",
+          "Không cho client truyền permission cần kiểm tra.",
+          "Backend tự map portal sang permission.",
+          "Mapping tối thiểu:",
+          "Chuẩn hóa phone trước khi query.",
+          "Hỗ trợ default region Việt Nam qua configuration.",
+          "Xác thực credential thông qua LOCAL authentication provider.",
+          "Không trả lỗi khác nhau giữa:",
+          "Không cho Account inactive, locked hoặc deleted đăng nhập.",
+          "Sau khi credential hợp lệ, hệ thống phải kiểm tra portal permission.",
+          "Chỉ tạo refresh session sau khi portal authorization thành công.",
+          "Không phát token nếu Account không có quyền truy cập portal.",
+          "Không giữ fallback login bằng email.",
+          "Xóa dữ liệu và logic mock authentication."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "ph-n-bi-t-authentication-v-authorization",
+      "title": "Phân biệt authentication và authorization",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Phân biệt authentication và authorization"
+      ],
+      "requirement_details": {
+        "Phân biệt authentication và authorization": [
+          "Tìm LOCAL AuthIdentity theo phone đã normalize.",
+          "Xác minh password.",
+          "Kiểm tra Account status.",
+          "Xác định Account đã được xác thực.",
+          "Resolve Role và Permission của Account.",
+          "Xác định permission tương ứng với portal.",
+          "Kiểm tra Account có permission truy cập portal.",
+          "Nếu thiếu permission:",
+          "Không hard-code role trong login use case.",
+          "Không xử lý theo kiểu:",
+          "Phải kiểm tra permission:"
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "authentication-provider-abstraction",
+      "title": "Authentication provider abstraction",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Authentication provider abstraction"
+      ],
+      "requirement_details": {
+        "Authentication provider abstraction": [
+          "Khai báo `AuthenticationProvider` port.",
+          "Provider contract hỗ trợ:",
+          "Triển khai Provider Registry hoặc Factory.",
+          "Login use case không chứa switch/case theo từng provider.",
+          "JWT service không phụ thuộc vào provider cụ thể.",
+          "Refresh session service không phụ thuộc vào provider cụ thể.",
+          "Chỉ implement LocalAuthenticationProvider trong epic này.",
+          "Google, Apple và Facebook chỉ cần contract và provider code."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "rbac-foundation",
+      "title": "RBAC foundation",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "RBAC foundation"
+      ],
+      "requirement_details": {
+        "RBAC foundation": [
+          "Khai báo các model:",
+          "Role sử dụng code ổn định.",
+          "Permission sử dụng code ổn định.",
+          "Role chỉ là nhóm các permission.",
+          "Không dùng display name làm business identifier.",
+          "Permission tối thiểu:",
+          "Có default role cho Account public.",
+          "Default role được cấu hình, không hard-code trong use case.",
+          "Có guard, decorator hoặc policy evaluator theo convention hiện tại.",
+          "Các API Account và UserProfile phải khai báo permission.",
+          "Không controller nào hard-code role.",
+          "Request context chứa Role và Permission đã resolve.",
+          "Chưa triển khai CRUD Role và Permission hoàn chỉnh."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "jwt-payload-v-session",
+      "title": "JWT payload và session",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "JWT payload và session"
+      ],
+      "requirement_details": {
+        "JWT payload và session": [
+          "JWT payload có tối thiểu:",
+          "Chỉ thêm Role hoặc Permission vào token nếu phù hợp với policy hiện tại.",
+          "Nếu permission có thể thay đổi trong khi token còn hạn, phải có cơ chế:",
+          "Token phát cho PUBLIC không được tự động sử dụng để truy cập ADMIN nếu audience/portal không hợp lệ.",
+          "Token phải có audience hoặc portal claim phù hợp.",
+          "Admin API phải kiểm tra đúng audience/portal.",
+          "Public API không được coi token admin là mặc nhiên hợp lệ nếu policy yêu cầu tách audience.",
+          "Access token tiếp tục lưu trong memory.",
+          "Refresh token tiếp tục lưu trong cookie HttpOnly.",
+          "Refresh session phải gắn với portal.",
+          "Một Account có thể có nhiều session cho các portal và thiết bị khác nhau.",
+          "Account bị khóa hoặc xóa phải revoke toàn bộ session.",
+          "Có thể revoke riêng session theo portal hoặc device."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "request-context",
+      "title": "Request context",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Request context"
+      ],
+      "requirement_details": {
+        "Request context": [
+          "Triển khai request context bằng AsyncLocalStorage, `nestjs-cls` hoặc abstraction tương đương.",
+          "Context có tối thiểu:",
+          "Middleware tạo request metadata.",
+          "Authentication guard bổ sung authenticated Account.",
+          "Authorization guard bổ sung permission context.",
+          "Không truyền HTTP Request object xuyên application layer.",
+          "Các request đồng thời không được lẫn context.",
+          "Có system context cho:",
+          "System actor phải được phân biệt với Account actor."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "audit-behavior",
+      "title": "Audit behavior",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Audit behavior"
+      ],
+      "requirement_details": {
+        "Audit behavior": [
+          "Khi create:",
+          "Khi update:",
+          "Khi soft delete:",
+          "Client không được truyền actor hoặc timestamp.",
+          "Audit metadata được lưu cùng transaction.",
+          "Không đưa password, token hoặc cookie vào audit log.",
+          "Correlation ID được đưa vào log và event metadata."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "account-crud-api",
+      "title": "Account CRUD API",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Account CRUD API"
+      ],
+      "requirement_details": {
+        "Account CRUD API": [
+          "Triển khai API:",
+          "Không cập nhật password qua generic update DTO.",
+          "Không cập nhật phone qua generic update DTO.",
+          "List API hỗ trợ:",
+          "Account response không chứa password hash.",
+          "Xóa Account phải:",
+          "Mọi API được bảo vệ bằng permission phù hợp."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "userprofile-crud-api",
+      "title": "UserProfile CRUD API",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "UserProfile CRUD API"
+      ],
+      "requirement_details": {
+        "UserProfile CRUD API": [
+          "Triển khai API:",
+          "Không cho tạo nhiều profile cho một Account.",
+          "Không cho client đổi `accountId` qua update DTO.",
+          "List API hỗ trợ:",
+          "Không trả trực tiếp ORM entity.",
+          "Không cho Account tiếp tục hoạt động nếu UserProfile bị xóa mà policy yêu cầu profile bắt buộc.",
+          "Mọi API được bảo vệ bằng permission phù hợp."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "validation-v-security",
+      "title": "Validation và security",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Validation và security"
+      ],
+      "requirement_details": {
+        "Validation và security": [
+          "Phone bắt buộc với LOCAL provider.",
+          "Password bắt buộc với LOCAL provider.",
+          "Password tuân thủ password policy tập trung.",
+          "Full name bắt buộc khi tạo UserProfile.",
+          "Email được validate khi có giá trị.",
+          "Mọi string input có giới hạn độ dài.",
+          "Không mass assignment các trường hệ thống.",
+          "Login endpoint có rate limit.",
+          "Không cho phép account enumeration.",
+          "Không log credential.",
+          "Refresh cookie sử dụng:",
+          "Refresh endpoint áp dụng CSRF/origin protection hiện tại.",
+          "Protected request kiểm tra Account status.",
+          "Admin API kiểm tra `portal.admin.access`.",
+          "Không đưa thông tin cá nhân không cần thiết vào JWT."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "tests",
+      "title": "Tests",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Tests"
+      ],
+      "requirement_details": {
+        "Tests": [
+          "Unit test Account.",
+          "Unit test AuthIdentity.",
+          "Unit test UserProfile.",
+          "Unit test phone normalization.",
+          "Unit test LocalAuthenticationProvider.",
+          "Unit test login use case.",
+          "Unit test portal authorization.",
+          "Unit test permission evaluator.",
+          "Integration test Account repository.",
+          "Integration test AuthIdentity repository.",
+          "Integration test UserProfile repository.",
+          "Integration test transaction tạo Account.",
+          "Integration test audit fields.",
+          "Integration test unique phone.",
+          "E2E login public thành công.",
+          "E2E login admin thành công.",
+          "E2E Account chỉ có public permission không đăng nhập được admin.",
+          "E2E Account có admin permission đăng nhập được admin.",
+          "E2E credential sai.",
+          "E2E Account inactive.",
+          "E2E Account locked.",
+          "E2E Account deleted.",
+          "E2E refresh token theo portal.",
+          "E2E revoke session khi Account bị khóa hoặc xóa.",
+          "E2E Account CRUD theo permission.",
+          "E2E UserProfile CRUD theo permission.",
+          "Test hai request đồng thời không lẫn context.",
+          "Frontend test login public.",
+          "Frontend test login admin.",
+          "Frontend test token chỉ lưu trong memory."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "documentation",
+      "title": "Documentation",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Documentation"
+      ],
+      "requirement_details": {
+        "Documentation": [
+          "Cập nhật authentication flow.",
+          "Cập nhật portal authorization flow.",
+          "Cập nhật module boundaries.",
+          "Cập nhật ERD.",
+          "Mô tả Account, AuthIdentity và UserProfile.",
+          "Mô tả sự khác nhau giữa:",
+          "Mô tả phone normalization.",
+          "Mô tả password policy.",
+          "Mô tả permission naming convention.",
+          "Mô tả request context lifecycle.",
+          "Mô tả audit metadata.",
+          "Mô tả cách thêm authentication provider.",
+          "Mô tả cách thêm portal mới.",
+          "Cập nhật `.env.example`.",
+          "Không thêm secret thật vào repository."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    }
+  ]
+}

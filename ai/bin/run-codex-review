@@ -1,0 +1,302 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+import os
+from pathlib import Path
+import shlex
+import subprocess
+import sys
+import time
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib.ai_common import (
+    AI_ROOT,
+    ROOT,
+    configured_fail_severities,
+    enforce_global_git_policy,
+    ensure_task,
+    env_timeout_seconds,
+    now_iso,
+    read_json,
+    read_yaml,
+    require_file,
+    requirement_documents,
+    run,
+    runtime_dir,
+    append_agent_metric,
+    verify_locked_skills,
+    run_delivery_quality_gates,
+    validate_json,
+    write_yaml,
+)
+
+
+def timeout_output(exc: subprocess.TimeoutExpired) -> str:
+    value = exc.stdout or ""
+    return value.decode(errors="replace") if isinstance(value, bytes) else value
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Run Codex read-only review")
+    parser.add_argument("task_id")
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--print-command", action="store_true")
+    args = parser.parse_args()
+
+    td = ensure_task(args.task_id)
+    task = read_yaml(td / "task.yaml")
+    enforce_global_git_policy(task)
+    fail_on = configured_fail_severities(task)
+    state = read_yaml(td / "state.yaml")
+    runtime = runtime_dir(args.task_id)
+    review_path = td / "review.json"
+    implementation_path = require_file(
+        td / "implementation.json",
+        "Claude implementation handoff",
+        f"run ./ai/bin/ai task implement {args.task_id}",
+    )
+    validation_path = require_file(
+        runtime / "validation" / "summary.json",
+        "validation summary",
+        f"run ./ai/bin/ai task validate-code {args.task_id}",
+    )
+    validate_json(implementation_path, AI_ROOT / "schemas" / "implementation.schema.json")
+    implementation = read_json(implementation_path)
+    validation = read_json(validation_path)
+    context_lock = read_json(td / "context.lock.json")
+    current_implementation_cycle = int(state.get("implementation_cycle", 1))
+    current_change_cycle = int(state.get("change_cycle", 0))
+    if implementation.get("implementation_cycle") != current_implementation_cycle or implementation.get("change_cycle") != current_change_cycle:
+        raise SystemExit("Implementation handoff belongs to an older cycle; run Claude for the current cycle")
+    if validation.get("implementation_cycle") != current_implementation_cycle or validation.get("change_cycle") != current_change_cycle:
+        raise SystemExit("Validation summary belongs to an older cycle; run validation for the current cycle")
+    if validation.get("dry_run") is True or validation.get("passed") is not True:
+        raise SystemExit("Codex review requires a real, passing validation run; dry-run/planned validation is not sufficient")
+
+    locked_skills = context_lock.get("skills", {}).get("locked", {})
+    verify_locked_skills(context_lock)
+    required_implementation_skills = task.get("skills", {}).get("implement", [])
+    applied_implementation_skills = {item.get("name"): item for item in implementation.get("applied_skills", [])}
+    missing_applied = [name for name in required_implementation_skills if name not in applied_implementation_skills]
+    stale_applied = [
+        name for name in required_implementation_skills
+        if name in applied_implementation_skills
+        and applied_implementation_skills[name].get("sha256") != locked_skills.get(name, {}).get("sha256")
+    ]
+    if missing_applied or stale_applied:
+        parts = []
+        if missing_applied:
+            parts.append("missing applied skills: " + ", ".join(missing_applied))
+        if stale_applied:
+            parts.append("stale skill hashes: " + ", ".join(stale_applied))
+        raise SystemExit("Implementation handoff failed required-skill gate: " + "; ".join(parts))
+    run_delivery_quality_gates(args.task_id, implementation)
+
+    skill_check_dir = runtime / "validation" / "skills"
+    skill_check_dir.mkdir(parents=True, exist_ok=True)
+    if "implement-nestjs-vertical-slice" in required_implementation_skills:
+        checker = AI_ROOT / "skills" / "implement-nestjs-vertical-slice" / "scripts" / "check_port_bindings.py"
+        failures = []
+        for item in task.get("worktrees", []):
+            check = run([sys.executable, str(checker), str(ROOT / item["path"])], cwd=ROOT, timeout=120)
+            (skill_check_dir / f"port-bindings-{item['repo']}.log").write_text(check.stdout, encoding="utf-8")
+            if check.returncode != 0:
+                failures.append(f"{item['repo']}: {check.stdout.strip()}")
+        if failures:
+            raise SystemExit("Pre-review NestJS wiring gate failed:\n- " + "\n- ".join(failures))
+
+    execution_plan_path = td / "execution-plan.json"
+    if task.get("scope", {}).get("execution_plan_required", False):
+        matrix_script = AI_ROOT / "skills" / "review-vertical-slice-completeness" / "scripts" / "build_evidence_matrix.py"
+        matrix_path = skill_check_dir / "acceptance-evidence.json"
+        matrix = run([sys.executable, str(matrix_script), str(execution_plan_path), str(implementation_path), "--output", str(matrix_path)], cwd=ROOT, timeout=120)
+        if matrix.returncode != 0:
+            evidence = read_json(matrix_path)
+            raise SystemExit("Pre-review acceptance-evidence gate failed; missing/non-passing criteria: " + ", ".join(evidence.get("missing", [])))
+
+    requirements = requirement_documents(args.task_id, include_user_request=True)
+    requirement_lines = "\n".join(f"- {path}" for path in requirements)
+    worktree_lines = "\n".join(
+        f"- {item['repo']}: {item['path']}" for item in task.get("worktrees", [])
+    )
+    fail_on_text = ", ".join(fail_on)
+    required_review_skills = task.get("skills", {}).get("review", [])
+    review_skill_lines = "\n".join(
+        f"- ${name}: read {locked_skills[name]['path']} (locked skill package sha256 "
+        f"{locked_skills[name]['sha256']} — this is the whole skill directory's combined hash, "
+        f"not the sha256 of SKILL.md alone; do not compare it against a single-file hash)"
+        for name in required_review_skills if name in locked_skills
+    ) or "- none"
+    prior_fix_requests = sorted((runtime / "input").glob("fix-request-review-*.md"))
+    prior_fix_lines = "\n".join(f"- {path.relative_to(ROOT)}" for path in prior_fix_requests) or "- none (first review cycle)"
+    prompt = f"""Review the current implementation for Jira item {args.task_id}.
+
+Current implementation cycle: {current_implementation_cycle}
+Current change cycle: {current_change_cycle}
+Configured blocking severities (review.fail_on): {fail_on_text}
+
+Read in precedence order:
+- ai/agents/common.md
+- ai/agents/codex-reviewer.md
+{requirement_lines}
+- ai/tasks/{args.task_id}/task.yaml
+- ai/tasks/{args.task_id}/context.lock.json
+- ai/tasks/{args.task_id}/implementation.json
+- worktrees/{args.task_id}/.ai/validation/summary.json
+
+Inspect the complete Git diff in every declared worktree:
+{worktree_lines}
+
+Required review skills (read each SKILL.md completely and apply it):
+{review_skill_lines}
+
+Deterministic skill evidence:
+- {skill_check_dir.relative_to(ROOT)}
+
+Prior Codex findings that must each be retested against the current code:
+{prior_fix_lines}
+
+Evaluate only current-cycle validation. Complete all seven independent review passes
+(requirements, diff, architecture, behavior, tests, security, regression) even when
+an early pass finds defects. Inventory every tracked and untracked implementation file.
+Do not issue a partial defect list: aggregate findings only after coverage is complete.
+Do not modify files. Return only JSON matching ai/schemas/review.schema.json. Include
+applied_skills with the locked hash and completed checks for every required review
+skill, plus review_coverage with concrete evidence. Return blocked if any review pass,
+changed file, applicable risk area, or prior finding remains unverified. Return
+changes_requested when coverage is complete and at least one finding has a configured
+blocking severity, an acceptance criterion fails, or required validation evidence is
+missing. A pass means technically ready for user acceptance, not completed.
+"""
+    (runtime / "input" / "codex-review-prompt.md").write_text(prompt, encoding="utf-8")
+
+    command = os.environ.get("CODEX_COMMAND", "codex")
+    timeout_seconds = env_timeout_seconds("CODEX_TIMEOUT_SECONDS", 1800)
+    cmd = [
+        command,
+        "exec",
+        "--profile",
+        "review",
+        "--ephemeral",
+        "--sandbox",
+        "read-only",
+        "--skip-git-repo-check",
+        "--cd",
+        str(ROOT),
+        "--output-schema",
+        str(AI_ROOT / "schemas" / "review.schema.json"),
+        "--output-last-message",
+        str(review_path),
+        prompt,
+    ]
+    if args.print_command or args.dry_run:
+        print(" ".join(shlex.quote(value) for value in cmd))
+        print(f"Timeout: {timeout_seconds} seconds")
+        if args.dry_run:
+            return
+
+    state["status"] = "reviewing"
+    state["review_cycle"] = int(state.get("review_cycle", 0)) + 1
+    state["review_cycles_total"] = int(state.get("review_cycles_total", 0)) + 1
+    state.setdefault("timestamps", {})["review_started_at"] = now_iso()
+    write_yaml(td / "state.yaml", state)
+
+    log_path = runtime / "exchange" / "codex-session.log"
+    started_monotonic = time.monotonic()
+    try:
+        result = run(cmd, cwd=ROOT, timeout=timeout_seconds)
+    except subprocess.TimeoutExpired as exc:
+        log_path.write_text(timeout_output(exc), encoding="utf-8")
+        state = read_yaml(td / "state.yaml")
+        state["status"] = "blocked"
+        state["last_error"] = (
+            f"Codex timed out after {timeout_seconds} seconds. "
+            "Inspect the session log and CLI configuration before retrying."
+        )
+        state.setdefault("timestamps", {})["review_finished_at"] = now_iso()
+        write_yaml(td / "state.yaml", state)
+        append_agent_metric(args.task_id, {"generated_at": now_iso(), "agent": "codex", "phase": "review", "attempt": state.get("review_cycle", 0), "implementation_cycle": int(state.get("implementation_cycle", 1)), "change_cycle": int(state.get("change_cycle", 0)), "status": "blocked", "duration_seconds": round(time.monotonic() - started_monotonic, 2), "resumed": False, "usage": {}})
+        raise SystemExit(state["last_error"])
+
+    log_path.write_text(result.stdout, encoding="utf-8")
+    state = read_yaml(td / "state.yaml")
+    effective_returncode = result.returncode
+    if result.returncode != 0:
+        state["status"] = "failed"
+        state["last_error"] = f"Codex exited {result.returncode}; see {log_path}"
+    else:
+        require_file(review_path, "Codex review output", f"inspect {log_path}")
+        validate_json(review_path, AI_ROOT / "schemas" / "review.schema.json")
+        review = json.loads(review_path.read_text(encoding="utf-8"))
+        coverage = review.get("review_coverage", {})
+        required_passes = {"requirements", "diff", "architecture", "behavior", "tests", "security", "regression"}
+        completed_passes = set(coverage.get("review_passes", []))
+        incomplete_coverage = []
+        if completed_passes != required_passes or len(coverage.get("review_passes", [])) != len(required_passes):
+            missing_passes = sorted(required_passes - completed_passes)
+            detail = ",".join(missing_passes) if missing_passes else "duplicate or unexpected pass entries"
+            incomplete_coverage.append("invalid review passes: " + detail)
+        if not coverage.get("changed_files"):
+            incomplete_coverage.append("changed-file inventory is empty")
+        if any(item.get("status") != "reviewed" for item in coverage.get("changed_files", [])):
+            incomplete_coverage.append("one or more changed files were not reviewed")
+        if not coverage.get("risk_areas"):
+            incomplete_coverage.append("risk-area assessment is empty")
+        if any(item.get("status") == "not_reviewed" for item in coverage.get("risk_areas", [])):
+            incomplete_coverage.append("one or more risk areas were not reviewed")
+        if prior_fix_requests and not coverage.get("prior_findings"):
+            incomplete_coverage.append("prior fix requests exist but prior-findings assessment is empty")
+        if any(item.get("status") == "not_verified" for item in coverage.get("prior_findings", [])):
+            incomplete_coverage.append("one or more prior findings were not verified")
+        if any(item.get("status") == "not_verified" for item in review.get("acceptance_criteria", [])):
+            incomplete_coverage.append("one or more acceptance criteria were not verified")
+        if coverage.get("completion_statement") is not True:
+            incomplete_coverage.append("completion_statement is not true")
+        applied_review_skills = {item.get("name"): item for item in review.get("applied_skills", [])}
+        missing_review_skills = [name for name in required_review_skills if name not in applied_review_skills]
+        stale_review_skills = [name for name in required_review_skills if name in applied_review_skills and applied_review_skills[name].get("sha256") != locked_skills.get(name, {}).get("sha256")]
+        skill_output_invalid = bool(missing_review_skills or stale_review_skills)
+        if skill_output_invalid:
+            state["status"] = "failed"
+            state["last_error"] = "Review output failed required-skill gate: missing=" + ",".join(missing_review_skills) + "; stale=" + ",".join(stale_review_skills)
+            effective_returncode = 3
+        verdict = review["verdict"]
+        blocking = [item for item in review.get("findings", []) if item.get("severity") in fail_on]
+        if skill_output_invalid:
+            pass
+        elif incomplete_coverage and verdict != "blocked":
+            state["status"] = "failed"
+            state["last_error"] = "Review output failed exhaustive-coverage gate: " + "; ".join(incomplete_coverage)
+            effective_returncode = 4
+        elif verdict == "pass" and blocking:
+            state["status"] = "changes_requested_by_codex"
+            state["last_error"] = (
+                "Codex returned pass while configured blocking findings exist: "
+                + ", ".join(item.get("severity", "unknown") for item in blocking)
+            )
+            effective_returncode = 2
+        elif verdict == "changes_requested":
+            state["status"] = "changes_requested_by_codex"
+            state["last_error"] = None
+        elif verdict == "blocked":
+            state["status"] = "blocked"
+            state["last_error"] = review.get("summary") or "Codex review is blocked"
+        elif verdict == "pass":
+            state["status"] = "awaiting_user_acceptance"
+            state["last_error"] = None
+            state.setdefault("timestamps", {})["awaiting_user_acceptance_at"] = now_iso()
+        else:
+            state["status"] = "failed"
+            state["last_error"] = f"Unsupported Codex verdict: {verdict}"
+            effective_returncode = 5
+    state.setdefault("timestamps", {})["review_finished_at"] = now_iso()
+    write_yaml(td / "state.yaml", state)
+    append_agent_metric(args.task_id, {"generated_at": now_iso(), "agent": "codex", "phase": "review", "attempt": state.get("review_cycle", 0), "implementation_cycle": int(state.get("implementation_cycle", 1)), "change_cycle": int(state.get("change_cycle", 0)), "status": state["status"], "duration_seconds": round(time.monotonic() - started_monotonic, 2), "resumed": False, "usage": {}, "output_bytes": len(result.stdout.encode("utf-8"))})
+    print(result.stdout)
+    raise SystemExit(effective_returncode)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implement NestJS Vertical Slice"
+  short_description: "Complete NestJS features across every layer"
+  default_prompt: "Use $implement-nestjs-vertical-slice to implement this NestJS feature end to end."

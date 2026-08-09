@@ -1,0 +1,132 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib.ai_common import AI_ROOT, ROOT, read_yaml, validate_json
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Validate AI workspace configuration and optionally run an isolated smoke pipeline")
+    parser.add_argument("--smoke", action="store_true", help="Run an end-to-end orchestration test in a temporary workspace")
+    args = parser.parse_args()
+
+    errors: list[str] = []
+    ignored_dirs = {"runtime", "worktrees", "node_modules", "dist", "build", ".git", ".venv"}
+    for current, directories, filenames in os.walk(ROOT):
+        directories[:] = [name for name in directories if name not in ignored_dirs]
+        for filename in filenames:
+            if not filename.endswith(".json"):
+                continue
+            path = Path(current) / filename
+            try:
+                json.loads(path.read_text(encoding="utf-8"))
+            except Exception as exc:
+                errors.append(f"Invalid JSON {path.relative_to(ROOT)}: {exc}")
+
+    schema_pairs = [
+        (AI_ROOT / "examples" / "tasks" / "PROJ-1002" / "task.yaml", AI_ROOT / "schemas" / "task.schema.json"),
+        (AI_ROOT / "examples" / "tasks" / "PROJ-1002" / "implementation.json", AI_ROOT / "schemas" / "implementation.schema.json"),
+        (AI_ROOT / "examples" / "tasks" / "PROJ-1002" / "review.json", AI_ROOT / "schemas" / "review.schema.json"),
+        (AI_ROOT / "examples" / "tasks" / "PROJ-1002" / "state.yaml", AI_ROOT / "schemas" / "state.schema.json"),
+        (AI_ROOT / "examples" / "tasks" / "PROJ-1002" / "acceptance.yaml", AI_ROOT / "schemas" / "user-acceptance.schema.json"),
+        (AI_ROOT / "templates" / "execution-plan.json", AI_ROOT / "schemas" / "execution-plan.schema.json"),
+    ]
+    for data_path, schema_path in schema_pairs:
+        try:
+            validate_json(data_path, schema_path)
+        except Exception as exc:
+            errors.append(f"Schema validation failed for {data_path.relative_to(ROOT)}: {exc}")
+
+    skill_names = set()
+    for skill_dir in sorted((AI_ROOT / "skills").iterdir()):
+        if not skill_dir.is_dir():
+            continue
+        skill_file = skill_dir / "SKILL.md"
+        if not skill_file.is_file():
+            errors.append(f"Skill directory has no SKILL.md: {skill_dir.relative_to(ROOT)}")
+            continue
+        text = skill_file.read_text(encoding="utf-8")
+        if not text.startswith("---\n") or "\nname: " not in text or "\ndescription: " not in text:
+            errors.append(f"Invalid skill frontmatter: {skill_file.relative_to(ROOT)}")
+        if f"\nname: {skill_dir.name}\n" not in text:
+            errors.append(f"Skill name does not match directory: {skill_file.relative_to(ROOT)}")
+        if skill_dir.name in skill_names:
+            errors.append(f"Duplicate skill name: {skill_dir.name}")
+        skill_names.add(skill_dir.name)
+        if not (skill_dir / "agents" / "openai.yaml").is_file():
+            errors.append(f"Skill UI metadata missing: {skill_dir.relative_to(ROOT)}")
+        for script in (skill_dir / "scripts").glob("*.py") if (skill_dir / "scripts").exists() else []:
+            try:
+                compile(script.read_text(encoding="utf-8"), str(script), "exec")
+            except SyntaxError as exc:
+                errors.append(f"Invalid skill script {script.relative_to(ROOT)}: {exc}")
+
+    settings = read_yaml(AI_ROOT / "config" / "claude" / "settings.json")
+    allowed = settings.get("permissions", {}).get("allow", [])
+    required_claude_permissions = {
+        "Read",
+        "Write",
+        "Edit",
+        "Glob",
+        "Grep",
+        "Bash(git rev-parse *)",
+        "Bash(npm *)",
+        "Bash(yarn *)",
+        "Bash(pnpm *)",
+        "Bash(corepack *)",
+        "Bash(docker compose *)",
+    }
+    missing_permissions = sorted(required_claude_permissions - set(allowed))
+    if missing_permissions:
+        errors.append(
+            "Claude settings are missing required project permissions: "
+            + ", ".join(missing_permissions)
+        )
+
+    codex_config = (AI_ROOT / "config" / "codex" / "config.toml").read_text(encoding="utf-8")
+    if f'[projects."{ROOT}"]' not in codex_config:
+        errors.append(f"Codex does not trust the current workspace: {ROOT}")
+
+    for path in (ROOT, AI_ROOT, ROOT / "apps", ROOT / "worktrees"):
+        if not os.access(path, os.R_OK | os.W_OK | os.X_OK):
+            errors.append(f"Workspace path is not fully accessible: {path}")
+
+    for command in ("git", "python3", "claude", "codex", "node", "npm", "docker"):
+        if shutil.which(command) is None:
+            errors.append(f"Required command is not available on PATH: {command}")
+
+    if not any(shutil.which(command) for command in ("yarn", "pnpm", "npm")):
+        errors.append("No supported JavaScript package manager is available on PATH")
+
+    if "Bash(git rev-parse *)" not in allowed:
+        errors.append("Claude settings do not allow read-only git rev-parse")
+
+    if errors:
+        raise SystemExit("Self-check FAILED:\n- " + "\n- ".join(errors))
+    print("Static self-check PASSED")
+
+    if args.smoke:
+        for test_name in ("skill_gate_fixtures.py", "smoke_pipeline.py", "agent_gate_pipeline.py"):
+            result = subprocess.run(
+                [sys.executable, str(AI_ROOT / "tests" / test_name)],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                check=False,
+            )
+            print(result.stdout, end="")
+            if result.returncode != 0:
+                raise SystemExit(result.returncode)
+
+
+if __name__ == "__main__":
+    main()

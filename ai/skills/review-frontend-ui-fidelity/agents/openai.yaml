@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Frontend UI Fidelity"
+  short_description: "Review visual, responsive, and a11y fidelity"
+  default_prompt: "Use $review-frontend-ui-fidelity to review implemented routes against their prototype references."

@@ -1,0 +1,82 @@
+{
+  "task_id": "MEMORIES-0001",
+  "updates": [
+    {
+      "target": "ai/repos/backend/queue-and-jobs.md",
+      "type": "create",
+      "summary": "Các invariant bền vững cho BullMQ, transactional outbox, reconciliation và at-least-once delivery.",
+      "content": "# Queue and Background Jobs\n\n## Publication and delivery\n\n- Business modules publish qua port `BackgroundJobPublisher`; không phụ thuộc trực tiếp BullMQ. Khi một use case vừa đổi domain state vừa tạo job, ghi domain state và outbox row trong cùng `UnitOfWork.withTransaction()`, sau đó để `OutboxRelay` publish.\n- BullMQ có semantics at-least-once: redelivery và hai execution chồng nhau là tình huống hợp lệ. Mọi terminal transition phải dùng CAS nguyên tử ở repository, với cả expected status và attempt identity (`jobId`/version) khi nhiều attempt dùng chung trạng thái trung gian.\n- Job ID chỉ unique trong một queue. ID phục vụ deduplication nên deterministic; lần reprocess hợp lệ phải dùng ID theo attempt. Không dùng `:` làm delimiter cho custom ID.\n- Non-retryable error được chuyển thành `UnrecoverableError`; final-failure detection phải bao phủ cả trường hợp này, không chỉ so `attemptsMade` với `attempts`.\n\n## Reconciliation and pagination\n\n- Trước khi tạo thêm kho reconciliation, ưu tiên nguồn durable sẵn có nếu độc lập với hạ tầng đang lỗi. Failed jobs chỉ là nguồn reconciliation khi retention giữ chúng đủ lâu và thao tác reconcile idempotent.\n- Quét backlog theo oldest-first để tránh starvation. Khi vừa đọc vừa xóa, cursor chỉ tiến theo số item được giữ lại; batch đầu bị lỗi không được chặn vĩnh viễn phần còn lại.\n- Tác vụ chạy trễ không kế thừa `AsyncLocalStorage`; phải capture `correlationId` và `actorId` vào outbox/job lúc tạo.\n\n## Worker correctness\n\n- Không suy ra quiescence chỉ từ callback hoặc một cặp event: BullMQ còn finalize job sau callback và có nhánh lock-loss/deferred-failure khác nhau. Dùng lifecycle barrier của worker; nếu buộc phải tracking thì namespace theo queue và phủ cả processor `finally` lẫn `completed`/`failed`.\n- Mọi `EventEmitter` từ worker/client phải có listener `error`. Async work gọi từ timer hoặc fire-and-forget phải tự catch toàn bộ rejection.\n",
+      "approved": true
+    },
+    {
+      "target": "ai/repos/backend/runtime-lifecycle.md",
+      "type": "create",
+      "summary": "Quy tắc graceful shutdown, deadline và cleanup cho các process backend.",
+      "content": "# Runtime Lifecycle and Graceful Shutdown\n\n- NestJS đảm bảo thứ tự giữa các phase (`onModuleDestroy` → `beforeApplicationShutdown` → `onApplicationShutdown`), không đảm bảo thứ tự provider trong cùng phase. Consumer phải dừng ở phase trước provider đóng tài nguyên dùng chung.\n- Mỗi shutdown path có một deadline tổng duy nhất. Các bước tuần tự dùng phần budget còn lại; cooperative cancellation ngăn bắt đầu work mới nhưng I/O đang chạy vẫn cần `Promise.race` với deadline.\n- Theo dõi in-flight work và kiểm tra cancellation trước từng đơn vị công việc, không chỉ giữa các page. Timer phải được dừng và lượt đang chạy phải được chờ trong budget.\n- Cleanup độc lập dùng `Promise.allSettled`, kiểm tra từng rejection, và vẫn chạy bước cleanup tiếp theo. Resource phải được đặt trong `try/finally` ngay sau khi acquisition thành công.\n- `ioredis.quit()`, BullMQ `Queue.close()`/`Worker.close()` và Node `server.close()` có thể chờ vô hạn hoặc cache promise lần gọi đầu. Race graceful close với deadline rồi dùng primitive force-close phù hợp (`disconnect()`/`closeAllConnections()`); mọi fallback promise vẫn phải được await/catch.\n- `Promise.race` phải phân biệt success, rejection và timeout; deadline chỉ giới hạn thời gian caller chờ, không thực sự hủy promise gốc.\n",
+      "approved": true
+    },
+    {
+      "target": "ai/domains/media/INDEX.md",
+      "type": "create",
+      "summary": "Tạo index cho knowledge domain media.",
+      "content": "# Media Domain Index\n\nDomain quản lý vòng đời media asset từ direct upload đến xử lý nền.\n\n- `overview.md` — phạm vi, trạng thái và source chính.\n- `workflow.md` — luồng upload, processing, failure và reprocess.\n- `decisions.md` — invariant về concurrency, idempotency và storage identity.\n",
+      "approved": true
+    },
+    {
+      "target": "ai/domains/media/overview.md",
+      "type": "create",
+      "summary": "Mô tả phạm vi và state machine của media asset.",
+      "content": "# Media Asset Domain — Overview\n\nMedia asset được tạo ở trạng thái `pending`, client upload trực tiếp bằng presigned S3 URL, rồi confirm để chuyển sang `processing` và enqueue thumbnail job qua transactional outbox. Kết quả xử lý chuyển asset sang `ready` hoặc `failed`; asset lỗi có thể được reprocess bằng attempt mới.\n\nSource chính nằm tại `libs/modules/media`: domain entity và repository port trong `src/domain/media-asset`, use case trong `src/application/use-cases`, TypeORM adapter trong `src/infrastructure/persistence`, HTTP API trong `src/presentation/http`.\n\nTrạng thái là invariant nghiệp vụ, không chỉ là progress display. Mọi writer đồng thời phải tuân thủ transition hợp lệ và attempt ownership.\n",
+      "approved": true
+    },
+    {
+      "target": "ai/domains/media/workflow.md",
+      "type": "create",
+      "summary": "Ghi lại workflow upload, xử lý và reprocess media asset.",
+      "content": "# Media Asset Workflow\n\n1. Create asset: validate MIME/size, tạo object key từ owner + UUID + extension theo MIME, lưu asset `pending`, trả presigned PUT URL.\n2. Confirm upload: đọc metadata, đối chiếu MIME/size và lưu immutable content identity (`ETag` hoặc version/checksum); CAS `pending → processing` cùng job attempt ID và ghi outbox trong một transaction.\n3. Process: worker re-check content identity bằng request có precondition trước khi tạo thumbnail. Redelivery của asset đã `ready` phải early-return trước mọi storage/external side effect.\n4. Complete/fail: terminal transition dùng CAS theo status + current job ID. Attempt cũ không được ghi đè kết quả của attempt mới hoặc đổi `ready` thành `failed`.\n5. Reprocess: chỉ asset `failed` được CAS sang `processing`; tạo job ID mới theo attempt và ghi outbox cùng transaction.\n\nPresigned PUT còn hiệu lực sau confirm, nên kiểm tra “object tồn tại” không đóng được TOCTOU. Processing phải ràng buộc vào content identity đã xác nhận, không chỉ object key.\n",
+      "approved": true
+    },
+    {
+      "target": "ai/domains/media/decisions.md",
+      "type": "create",
+      "summary": "Các quyết định bền vững cho concurrency và storage của media asset.",
+      "content": "# Media Asset Decisions\n\n- Status transition được thực thi bằng conditional update ở repository; không dùng `findById → mutate → save` cho transition có concurrent writer.\n- `currentJobId` là attempt identity: terminal writer phải chứng minh nó đang sở hữu attempt hiện hành. `null` nghĩa là xóa cột; `undefined` nghĩa là không thay đổi trong TypeORM update.\n- Idempotency được kiểm tra trước side effect và xác nhận lại ở bước CAS. Trạng thái terminal tốt (`ready`) không bị downgrade bởi redelivery hoặc final-failure callback cũ.\n- Direct upload bị ràng buộc MIME, size và content identity. AWS/S3 operation errors được phân loại ưu tiên theo HTTP metadata khi SDK không cung cấp exception class ổn định cho operation đó.\n",
+      "approved": true
+    },
+    {
+      "target": "ai/repos/backend/database-rules.md",
+      "type": "append",
+      "summary": "Bổ sung quy tắc TypeORM metadata, bundling, CAS và resource lifecycle.",
+      "content": "## Runtime metadata and concurrency\n\n- Property optional/union có thể bị `reflect-metadata` suy thành `Object`; khai báo `type` tường minh cho TypeORM column và Swagger property.\n- Nest monorepo build với webpack bundle dependency vào `dist/apps/<app>/main.js`; runtime discovery không được dựa vào glob `dist/libs/**/*.orm-entity.js`. Dùng `autoLoadEntities`/DI graph; CLI migration chạy từ source vẫn dùng data source tường minh.\n- Ambient transaction context phải dùng `AsyncLocalStorage`, không dùng mutable field trên singleton.\n- Transition có concurrent writer dùng conditional `UPDATE ... WHERE` và kiểm tra affected rows. Khi cần xóa nullable column, dùng `null`; `undefined` nghĩa là bỏ field khỏi `SET`.\n- Bọc resource trong `try/finally` ngay sau acquisition thành công, trước bước initialization tiếp theo có thể lỗi.\n",
+      "approved": true
+    },
+    {
+      "target": "ai/repos/backend/testing.md",
+      "type": "append",
+      "summary": "Bổ sung yêu cầu parity giữa Nest test app và production bootstrap.",
+      "content": "## Bootstrap parity\n\nNest application tạo bởi `Test.createTestingModule().createNestApplication()` không tự nhận global prefix, validation pipe hay exception filter từ `main.ts`. Test/e2e và script OpenAPI phải gọi cùng hàm bootstrap dùng chung (`configureApp()` hoặc tương đương) trước khi gửi request/tạo document. Mọi cron publisher phải có handler đăng ký và ít nhất một integration path thực sự invoke luồng publish.\n",
+      "approved": true
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "append",
+      "summary": "Bổ sung invariant composition root cho mọi application process.",
+      "content": "## Application composition roots\n\nMọi process import `BUSINESS_MODULES` (`api`, `worker`, `scheduler`, `cli`, và process mới sau này) phải đăng ký đầy đủ platform dependency mà các module đó cần, ví dụ `SecurityModule.register()` khi có `JwtAuthGuard`. Khi thêm dependency cross-cutting, rà toàn bộ `apps/*/src/app.module.ts`; không giả định dependency của API tự có trong process khác. Provider cần được inject ngoài module khai báo phải được export tường minh.\n",
+      "approved": true
+    },
+    {
+      "target": "ai/shared/policies/git-policy.md",
+      "type": "append",
+      "summary": "Hợp nhất các invariant release workflow về branch, fetch, digest, concurrency và rerun.",
+      "content": "## Release workflow safety\n\n- Workspace này dùng long-lived branch `master`; workflow không được ngầm giả định `main`/`develop`.\n- Khi workflow checkout một branch rồi chuyển sang branch khác, dùng full history (`fetch-depth: 0`) và fetch ref đích tường minh trước khi checkout.\n- Sau khi push image/tag mutable, lấy digest từ output/metadata của chính build invocation, không đọc lại mutable tag. Dùng concurrency group theo shared resource; deploy và rollback tác động cùng production/manifest branch phải dùng cùng group.\n- Bước tạo tag hoặc ghi artifact durable phải idempotent: rerun chấp nhận kết quả đã tồn tại chỉ khi nó khớp chính xác commit/digest hiện tại.\n",
+      "approved": true
+    },
+    {
+      "target": "ai/shared/policies/security.md",
+      "type": "append",
+      "summary": "Hợp nhất quy tắc GitHub Actions input/permissions và activation của security module.",
+      "content": "## CI and runtime security activation\n\n- Khai báo `permissions` trong GitHub Actions làm mọi scope không liệt kê thành `none`; rà toàn bộ action/CLI trong job khi thay đổi permissions.\n- Không nội suy input không tin cậy trực tiếp vào `run:`. Truyền qua `env:` rồi tham chiếu biến shell đã quote.\n- Import module cấu hình bảo mật không đồng nghĩa enforcement đã chạy. Guard/middleware phải được đăng ký (`APP_GUARD` hoặc route guard) và được xác minh bằng traffic/test vượt policy, ví dụ rate-limit.\n",
+      "approved": true
+    }
+  ]
+}

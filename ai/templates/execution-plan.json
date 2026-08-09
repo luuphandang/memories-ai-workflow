@@ -1,0 +1,19 @@
+{
+  "task_id": "{{TASK_ID}}",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "status": "draft",
+  "slices": [
+    {
+      "id": "complete-task",
+      "title": "Complete the effective task requirements",
+      "depends_on": [],
+      "acceptance_criteria": ["All effective acceptance criteria"],
+      "requirement_details": {"All effective acceptance criteria": []},
+      "deliverables": ["Implementation and required wiring"],
+      "tests": ["Tests for the primary behavior and risks"],
+      "validation": ["Configured repository validation"],
+      "status": "pending"
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "task_id",
+    "updates"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string"
+    },
+    "updates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "target",
+          "type",
+          "summary",
+          "approved"
+        ],
+        "properties": {
+          "target": {
+            "type": "string",
+            "pattern": "^ai/(shared|repos|domains)/"
+          },
+          "type": {
+            "enum": [
+              "append",
+              "replace",
+              "create",
+              "proposal"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "approved": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

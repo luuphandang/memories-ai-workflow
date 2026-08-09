@@ -1,0 +1,53 @@
+version: 1
+id: MEMORIES-0001
+title: Initialize Project Architecture and Folder Structure
+jira:
+  type: epic
+  parent_id: null
+  epic_id: MEMORIES-0001
+priority: high
+status: awaiting_user_acceptance
+children: []
+worktrees:
+- repo: backend
+  path: apps/backend
+  base_ref: master
+  writable: true
+- repo: frontend
+  path: apps/frontend
+  base_ref: master
+  writable: true
+agents:
+  implementer: claude
+  reviewer: codex
+skills:
+  implement:
+  - decompose-implementation-task
+  review:
+  - review-vertical-slice-completeness
+scope:
+  execution_plan_required: true
+review:
+  max_cycles: 34
+  fail_on:
+  - blocker
+  - major
+validation:
+  backend:
+  - lint
+  - typecheck
+  - test
+  - build
+  - test-e2e
+  frontend:
+  - lint
+  - typecheck
+  - test
+  - build
+report:
+  language: vi
+  include_diff_stat: true
+  include_changed_files: true
+  include_test_results: true
+  include_review_findings: true
+  include_knowledge_updates: true

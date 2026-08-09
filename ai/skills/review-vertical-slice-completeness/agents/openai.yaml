@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Vertical Slice Completeness"
+  short_description: "Review end-to-end feature wiring and evidence"
+  default_prompt: "Use $review-vertical-slice-completeness to review this feature across all required layers."

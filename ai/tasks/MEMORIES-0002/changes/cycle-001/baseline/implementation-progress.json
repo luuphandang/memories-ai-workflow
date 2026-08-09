@@ -1,0 +1,28 @@
+{
+  "task_id": "MEMORIES-0002",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "updated_at": "2026-08-07T20:05:00+07:00",
+  "completed_criteria": [
+    "AC1", "AC2", "AC3", "AC4", "AC5", "AC6", "AC7", "AC8", "AC9",
+    "AC12", "AC13", "AC14", "AC15", "AC16", "AC17", "AC18",
+    "AC20", "AC21", "AC22", "AC23", "AC24", "AC25", "AC26", "AC27", "AC28", "AC29",
+    "AC30", "AC31", "AC32", "AC33", "AC34", "AC35", "AC37", "AC38", "AC39", "AC40"
+  ],
+  "current_slice": null,
+  "current_step": "Done for this cycle. All ai/tasks/MEMORIES-0002/review.json findings (2 blockers, 6 majors, 1 minor, plus the validation-evidence gap) are fixed and re-verified with fresh deterministic validation. ai/tasks/MEMORIES-0002/implementation.json rewritten and schema-validated; execution-plan.json slice statuses updated to reflect reality (20 completed, frontend-integration blocked on missing frontend worktree registration).",
+  "remaining_steps": [
+    "Frontend integration (task.md §18: public-web/admin-web login forms, API client regeneration, token-in-memory handling) — no frontend worktree registered in task.yaml for this task; needs a follow-up task/worktree registration, not further backend work.",
+    "Role/Permission full CRUD API and management UI — explicitly out of scope per task.md.",
+    "Real Google/Apple/Facebook OAuth integration — explicitly out of scope per task.md (provider contract/registry is implemented).",
+    "Remaining task.md §21 documentation items: full ERD update, 'how to add an authentication provider' how-to, 'how to add a new portal' how-to, standalone password-policy/permission-naming-convention write-ups (currently only inline doc-comments in code) — carried over from the prior cycle, not a regression.",
+    "User acceptance / reviewer re-check of this fix cycle against review.json is the next step outside this session's scope."
+  ],
+  "notes": [
+    "This was a fix-cycle responding to ai/tasks/MEMORIES-0002/review.json's changes_requested verdict against the previously-implemented code (verified unchanged at the start of this session — worktree diff matched resume-context-attempt-004.md exactly before any edits this session).",
+    "All 9 review findings were fixed: JwtAuthGuard live AccountLookup+tokenVersion check (blocker), UserProfileController PortalGuard (blocker), atomic refresh-session revoke (major), userProfileId surviving refresh (major), OriginGuard on /auth/refresh (major), RequestContext-sourced audit actor across every identity-access/user-profiles use case (major), UserProfile dateOfBirth TypeORM transformer (major), removed the no-op generic Account update endpoint (major), account-list provider-filter EXISTS-subquery fix (minor).",
+    "Fixing JwtAuthGuard to validate live Account status broke apps/api/test/media-upload-flow.e2e-spec.ts, which had been minting tokens for a bare randomUUID() with no real Account behind it — this was a pre-existing test shortcut that only worked because the guard didn't validate subjects before. Fixed by having that test provision a real Account via CreateAccountUseCase instead; this is the correct fix, not a workaround, since JwtAuthGuard is the one shared guard every module (including media) now correctly relies on for live account-state enforcement.",
+    "Full fresh validation this cycle: lint (0 errors), typecheck (pass), unit tests (51 suites / 232 tests, up from 49/220), build:api+cli+worker+scheduler (pass), test:architecture (382 modules / 1299 deps, no violations), migration:revert+migration:run (pass), test:e2e (4 suites / 34 tests, up from 28, against real Postgres/Redis/MinIO docker containers already running from a prior session — none started/stopped by this session), plus all four required deterministic skill-check scripts (check_port_bindings.py, check_module_wiring.py, check_auth_invariants.py, validate_execution_plan.py) — all pass.",
+    "ai/tasks/MEMORIES-0002/implementation.json was rewritten from scratch for this cycle and validated against ai/schemas/implementation.schema.json via Python's jsonschema library — passes."
+  ]
+}

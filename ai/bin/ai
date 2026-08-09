@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+from pathlib import Path
+import subprocess, sys
+BIN=Path(__file__).resolve().parent
+
+
+def usage():
+    print("""Usage:
+  ai bootstrap
+  ai self-check [--smoke]
+  ai task create <ID> --type epic|story|task --title <TITLE> [options]
+  ai task register-worktree <ID> --repo <NAME> --path <PATH> [--base-ref REF]
+  ai task prepare-context <ID>
+  ai task prepare-plan <ID> [--force]
+  ai task classify-skills <ID> [--apply]
+  ai task implement <ID> [--dry-run]
+  ai task run <ID> [--dry-run] [--max-attempts N] [--resume-interrupted]
+  ai task validate-code <ID> [--dry-run]
+  ai task review <ID> [--dry-run]
+  ai task request-fixes <ID>
+  ai task report <ID>
+  ai task accept <ID> [--accepted-by NAME] [--note TEXT]
+  ai task request-change <ID> --title <TITLE> [--kind auto|correction|requirement_change] [--from-file FILE]
+  ai task update-knowledge <ID> [--apply]
+  ai indexes rebuild
+  ai metrics <ID>
+""")
+
+
+def main():
+    args=sys.argv[1:]
+    if not args or args[0] in ("-h","--help"): usage(); return
+    if args[0]=="bootstrap": script,rest="bootstrap",args[1:]
+    elif args[0]=="self-check": script,rest="self-check",args[1:]
+    elif args[:2]==["indexes","rebuild"]: script,rest="rebuild-indexes",args[2:]
+    elif args[0]=="metrics": script,rest="metrics",args[1:]
+    elif args[0]=="task" and len(args)>=2:
+        mapping={"create":"create-task","register-worktree":"register-worktree","prepare-context":"prepare-context","prepare-plan":"prepare-plan","classify-skills":"classify-skills","implement":"run-claude","run":"run-task","validate-code":"validate","review":"run-codex-review","request-fixes":"request-fixes","report":"finalize-task","accept":"accept-task","request-change":"request-change","update-knowledge":"update-knowledge"}
+        script=mapping.get(args[1]); rest=args[2:]
+        if not script: usage(); raise SystemExit(2)
+    else: usage(); raise SystemExit(2)
+    raise SystemExit(subprocess.call([str(BIN/script),*rest]))
+if __name__=="__main__": main()

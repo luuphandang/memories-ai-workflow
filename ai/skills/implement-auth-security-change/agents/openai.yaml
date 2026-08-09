@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implement Auth Security Change"
+  short_description: "Apply secure authentication and authorization changes"
+  default_prompt: "Use $implement-auth-security-change to implement and verify this authentication change."

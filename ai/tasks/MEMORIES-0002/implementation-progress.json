@@ -1,0 +1,45 @@
+{
+  "task_id": "MEMORIES-0002",
+  "implementation_cycle": 3,
+  "change_cycle": 2,
+  "updated_at": "2026-08-09T18:20:00+07:00",
+  "completed_criteria": [
+    "fix-request-review-3 (review cycle 3) #1: AC46 — TypeOrmAuthIdentityRepository.save() now translates the Postgres unique-constraint violation on UQ_identity_auth_identities_provider_identifier into DomainError.conflict('phone_already_exists', ...); new real-Postgres concurrent-registration e2e test proves exactly one of two simultaneous POST /auth/register requests for the same phone succeeds (201), the other returns 409 (never 500), and only one complete Account/AuthIdentity/UserProfile/AccountRole graph is committed",
+    "fix-request-review-2 (review cycle 2) #1: AC47 — centralized password policy (PASSWORD_POLICY/assertPasswordPolicy) added and enforced both in RegisterDto/CreateAccountDto/ChangeAccountPasswordDto and at the application boundary in CreateAccountUseCase/ChangeAccountPasswordUseCase (carried over, unchanged by this fix)",
+    "fix-request-review-2 (review cycle 2) #2: AC51 — apps/api/test/register-transaction-rollback.e2e-spec.ts added: real-Postgres integration test proving genuine rollback when the §8 transaction fails on its last write (carried over, unchanged by this fix)",
+    "fix-request-review-1 (review cycle 1) #1: AC50 — POST /auth/register OpenAPI error documentation (carried over, unchanged by this fix)",
+    "changes/cycle-002 AC41-AC51: POST /auth/register implemented (carried over, unchanged by this fix)"
+  ],
+  "changed_files": [
+    "libs/modules/identity-access/src/infrastructure/persistence/typeorm-auth-identity.repository.ts",
+    "apps/api/test/auth-flow.e2e-spec.ts"
+  ],
+  "decisions": [
+    "Translated the Postgres unique-violation for UQ_identity_auth_identities_provider_identifier into DomainError.conflict('phone_already_exists', ...) inside TypeOrmAuthIdentityRepository.save() (new private translateUniqueViolation helper), instead of a DB advisory lock, SELECT ... FOR UPDATE, or a retry loop — the finding was about the reported status code being wrong for the race's loser, not about data integrity (the unique index and transaction rollback already prevented any duplicate row or partial state).",
+    "Matched on both Postgres SQLSTATE 23505 and the exact constraint name (not SQLSTATE alone or message text), because auth_identities has a second unique index (UQ_identity_auth_identities_provider_subject, for social-provider subject) that also raises 23505 for an unrelated conflict — matching only on SQLSTATE would have mislabeled that as phone_already_exists too.",
+    "Fixed at the repository level (not inside CreateAccountUseCase specifically) because ChangeAccountPhoneUseCase has the identical TOCTOU preflight-check shape and calls the same authIdentities.save(); a repository-level fix closes the race for both call sites without touching either use case.",
+    "Added the concurrency regression test to the existing 'register (changes/cycle-002 addendum)' describe block in apps/api/test/auth-flow.e2e-spec.ts (real Postgres, two genuinely concurrent HTTP requests) rather than a mocked-repository unit test — the bug is specifically about real concurrent DB writes, which a mock can't exercise; no TypeOrm*Repository in this codebase has its own unit-test file, so this also matches established convention.",
+    "Did not touch RegisterUseCase, CreateAccountUseCase, ChangeAccountPhoneUseCase, AuthController, GlobalExceptionFilter, or any already-passed slice/criterion — scoped exactly to fix-request-review-3.md's one major finding."
+  ],
+  "validation": [
+    "lint: PASS (npm run lint, full repo, 0 errors/0 warnings)",
+    "typecheck: PASS (npm run typecheck)",
+    "test (unit): PASS — 54 suites / 244 tests, unchanged (fix is infra/e2e-only)",
+    "build: PASS (npm run build)",
+    "test-architecture: PASS (npm run test:architecture — 0 dependency violations, 390 modules)",
+    "migration-run + migration-revert + migration-run: PASS against real Postgres (memories-test-postgres)",
+    "test-e2e: PASS — 6 suites / 42 tests (up from 41): auth-flow (incl. new concurrent-registration test), rate-limit, health, media-upload-flow, openapi-contract, register-transaction-rollback all green",
+    "check_auth_invariants.py, check_port_bindings.py, check_module_wiring.py, validate_execution_plan.py: PASS (28 tokens / 28 classes / 20 slices, unchanged)",
+    "check_openapi_contract.py worktrees/MEMORIES-0002/backend: PASS — 1 operation, unchanged by this fix",
+    "build_evidence_matrix.py: passed=true, missing=[] against the rewritten implementation.json"
+  ],
+  "current_slice": null,
+  "current_step": "Resolved fix-request-review-3.md's one major finding (AC46 concurrent-registration race returning 500 instead of 409) and rewrote implementation.json with fresh evidence",
+  "remaining_steps": [],
+  "notes": [
+    "This attempt's (attempt 5) net-new work was narrow: review cycle 3 (codex) returned exactly one major finding — AC46's preflight duplicate-phone check is TOCTOU-racy under real concurrency, so the loser of two simultaneous registrations for the same phone got a generic 500 instead of the required 409 business error, even though the transaction itself still rolled back correctly (no partial/duplicate state was ever actually created — only the reported status code was wrong).",
+    "Fix is entirely in the infrastructure layer: TypeOrmAuthIdentityRepository.save() now catches the database's own unique-constraint violation and translates it into the same DomainError.conflict the preflight check already throws for the non-racy case, so GlobalExceptionFilter maps it to 409 as before.",
+    "cycle-001 addendum (backend-only) and cycle-002 addendum (register API) both remain applied as before; unchanged by this fix.",
+    "implementation.json's applied_skills continues to include all four required implement skills (decompose-implementation-task, implement-nestjs-vertical-slice, implement-auth-security-change, verify-openapi-contract) with deterministic checks recorded for each, matching context.lock.json's locked hashes, now updated with this attempt's checks."
+  ]
+}

@@ -1,0 +1,225 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "task_id",
+    "verdict",
+    "reviewed_repositories",
+    "findings",
+    "validation_assessment",
+    "acceptance_criteria",
+    "knowledge_updates",
+    "summary",
+    "implementation_cycle",
+    "change_cycle",
+    "applied_skills",
+    "review_coverage"
+  ],
+  "properties": {
+    "applied_skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "sha256", "checks_completed"],
+        "properties": {
+          "name": {"type": "string"},
+          "sha256": {"type": "string"},
+          "checks_completed": {"type": "array", "items": {"type": "string"}}
+        },
+        "additionalProperties": false
+      }
+    },
+    "task_id": {
+      "type": "string"
+    },
+    "verdict": {
+      "enum": [
+        "pass",
+        "changes_requested",
+        "blocked"
+      ]
+    },
+    "reviewed_repositories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "review_coverage": {
+      "type": "object",
+      "required": ["review_passes", "changed_files", "risk_areas", "prior_findings", "completion_statement"],
+      "properties": {
+        "review_passes": {
+          "type": "array",
+          "items": {
+            "enum": ["requirements", "diff", "architecture", "behavior", "tests", "security", "regression"]
+          }
+        },
+        "changed_files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["repo", "file", "status", "evidence"],
+            "properties": {
+              "repo": {"type": "string"},
+              "file": {"type": "string"},
+              "status": {"enum": ["reviewed", "not_reviewed"]},
+              "evidence": {"type": "string"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "risk_areas": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["area", "status", "evidence"],
+            "properties": {
+              "area": {"type": "string"},
+              "status": {"enum": ["reviewed", "not_applicable", "not_reviewed"]},
+              "evidence": {"type": "string"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "prior_findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["source", "title", "status", "evidence"],
+            "properties": {
+              "source": {"type": "string"},
+              "title": {"type": "string"},
+              "status": {"enum": ["resolved", "regressed", "not_applicable", "not_verified"]},
+              "evidence": {"type": "string"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "completion_statement": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "severity",
+          "repo",
+          "file",
+          "line",
+          "title",
+          "evidence",
+          "expected_fix"
+        ],
+        "properties": {
+          "severity": {
+            "enum": [
+              "blocker",
+              "major",
+              "minor",
+              "note"
+            ]
+          },
+          "repo": {
+            "type": "string"
+          },
+          "file": {
+            "type": "string"
+          },
+          "line": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "string"
+          },
+          "expected_fix": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "validation_assessment": {
+      "type": "object",
+      "required": [
+        "passed",
+        "missing"
+      ],
+      "properties": {
+        "passed": {
+          "type": "boolean"
+        },
+        "missing": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "acceptance_criteria": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "criterion",
+          "status"
+        ],
+        "properties": {
+          "criterion": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "passed",
+              "failed",
+              "partial",
+              "not_verified"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "knowledge_updates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "target",
+          "approved"
+        ],
+        "properties": {
+          "target": {
+            "type": "string"
+          },
+          "approved": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "summary": {
+      "type": "string"
+    },
+    "implementation_cycle": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "change_cycle": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,21 @@
+task_id: PROJ-1002
+status: completed
+implementation_cycle: 3
+review_cycle: 1
+review_cycles_total: 3
+change_cycle: 2
+active_change: null
+timestamps:
+  created_at: '2026-07-18T14:00:00+07:00'
+  change_requested_at: '2026-07-18T12:30:00+07:00'
+  completed_at: '2026-07-18T15:30:00+07:00'
+agents:
+  implementation: claude
+  review: codex
+repositories: {}
+user_acceptance:
+  status: accepted
+  accepted_at: '2026-07-18T15:30:00+07:00'
+  accepted_by: example-user
+  accepted_change_cycle: 2
+last_error: null

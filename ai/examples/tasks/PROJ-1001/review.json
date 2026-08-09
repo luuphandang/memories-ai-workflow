@@ -1,0 +1,17 @@
+{"applied_skills":[],"review_coverage":{"review_passes":[],"changed_files":[],"risk_areas":[],"prior_findings":[],"completion_statement":false},
+  "task_id": "PROJ-1001",
+  "verdict": "blocked",
+  "reviewed_repositories": [],
+  "findings": [],
+  "validation_assessment": {
+    "passed": false,
+    "missing": [
+      "Not an implementation task"
+    ]
+  },
+  "acceptance_criteria": [],
+  "knowledge_updates": [],
+  "summary": "Không chạy review cho item tổng hợp.",
+  "implementation_cycle": 1,
+  "change_cycle": 0
+}

@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx nest *)",
+      "Bash(kill -TERM 86243)",
+      "Bash(python3 ai/bin/validate MEMORIES-0001)",
+      "Bash(python3 -c ' *)",
+      "Bash(python3 /private/tmp/claude-503/-Users-cmc-Documents-Memories/b5024ea7-0b04-4e95-a228-4ffaea73072d/scratchpad/update_round28.py)",
+      "Bash(export CODEX_HOME=/Users/cmc/.project-ai/codex)",
+      "Bash(python3 ai/bin/run-codex-review MEMORIES-0001)",
+      "Bash(DATABASE_HOST=localhost DATABASE_PORT=15432 DATABASE_USERNAME=memories DATABASE_PASSWORD=memories DATABASE_NAME=memories DATABASE_SSL=false npm run migration:run)",
+      "Bash(DATABASE_HOST=localhost DATABASE_PORT=15432 DATABASE_USERNAME=memories DATABASE_PASSWORD=memories DATABASE_NAME=memories DATABASE_SSL=false REDIS_HOST=localhost REDIS_PORT=16379 REDIS_SHUTDOWN_TIMEOUT_MS=5000 BULLMQ_REDIS_HOST=localhost BULLMQ_REDIS_PORT=16379 BULLMQ_PREFIX=memories BULLMQ_SHUTDOWN_TIMEOUT_MS=10000 S3_ENDPOINT=http://localhost:19000 S3_REGION=us-east-1 S3_ACCESS_KEY_ID=minioadmin S3_SECRET_ACCESS_KEY=minioadmin S3_BUCKET=memories S3_FORCE_PATH_STYLE=true JWT_ACCESS_SECRET=test-secret-access-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa JWT_REFRESH_SECRET=test-secret-refresh-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa NODE_ENV=test METRICS_PORT=9464 METRICS_SHUTDOWN_TIMEOUT_MS=5000 node dist/apps/worker/main.js)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(curl -s -o /dev/null -w \"metrics http_code=%{http_code}\\\\n\" http://localhost:9464/metrics)",
+      "Bash(kill -TERM 92344)",
+      "Bash(python3 /private/tmp/claude-503/-Users-cmc-Documents-Memories/b5024ea7-0b04-4e95-a228-4ffaea73072d/scratchpad/update_round29.py)",
+      "Bash(python3 /private/tmp/claude-503/-Users-cmc-Documents-Memories/b5024ea7-0b04-4e95-a228-4ffaea73072d/scratchpad/append_ac33.py)",
+      "Bash(cp /private/tmp/claude-503/-Users-cmc-Documents-Memories/b5024ea7-0b04-4e95-a228-4ffaea73072d/scratchpad/test_content_length_sign.mjs /Users/cmc/Documents/Memories/apps/backend/test_content_length_sign.mjs)",
+      "Bash(node test_content_length_sign.mjs)",
+      "Bash(DATABASE_HOST=localhost DATABASE_PORT=15432 DATABASE_USERNAME=memories DATABASE_PASSWORD=memories DATABASE_NAME=memories DATABASE_SSL=false REDIS_HOST=localhost REDIS_PORT=16379 REDIS_SHUTDOWN_TIMEOUT_MS=5000 BULLMQ_REDIS_HOST=localhost BULLMQ_REDIS_PORT=16379 BULLMQ_PREFIX=memories BULLMQ_SHUTDOWN_TIMEOUT_MS=10000 S3_ENDPOINT=http://localhost:19000 S3_REGION=us-east-1 S3_ACCESS_KEY_ID=minioadmin S3_SECRET_ACCESS_KEY=minioadmin S3_BUCKET=memories S3_FORCE_PATH_STYLE=true JWT_ACCESS_SECRET=test-secret-access-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa JWT_REFRESH_SECRET=test-secret-refresh-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa NODE_ENV=test APP_PORT=3098 node dist/apps/api/main.js)",
+      "Bash(curl -s -o /dev/null -w \"api health http_code=%{http_code}\\\\n\" http://localhost:3098/health/liveness)",
+      "Bash(kill -TERM 98888)",
+      "Bash(python3 /private/tmp/claude-503/-Users-cmc-Documents-Memories/b5024ea7-0b04-4e95-a228-4ffaea73072d/scratchpad/update_round30.py)",
+      "Bash(python3 /private/tmp/claude-503/-Users-cmc-Documents-Memories/b5024ea7-0b04-4e95-a228-4ffaea73072d/scratchpad/append_ac33_round30.py)"
+    ]
+  }
+}

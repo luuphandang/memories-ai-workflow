@@ -1,0 +1,194 @@
+{
+  "task_id": "MEMORIES-0002",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "status": "partial",
+  "summary": "This cycle addressed ai/tasks/MEMORIES-0002/review.json's changes_requested verdict (2 blockers, 6 majors, 1 minor, plus a validation-evidence gap) against the previously-implemented backend identity-access + user-profiles foundation (Account/AuthIdentity/UserProfile/RefreshSession/Role/Permission/portal authorization, phone+password login, RBAC-gated Account & UserProfile CRUD APIs). Fixes: (1) JwtAuthGuard now checks a live AccountLookup.getAuthState (status + tokenVersion) on every protected request, closing the window where a locked/deleted/password-changed account's still-unexpired access token kept working; login/refresh now embed tokenVersion and (on refresh) userProfileId in the access token. (2) UserProfileController is now gated by PortalGuard + @RequirePortal('ADMIN') like AccountController, closing a PUBLIC-portal-token-with-admin-permissions bypass. (3) RefreshSessionRepository gained an atomic revokeIfActive (UPDATE ... WHERE revoked_at IS NULL AND expires_at > now) compare-and-swap used inside the refresh transaction, closing a race where two concurrent refreshes of one token could both mint new sessions. (4) POST /auth/refresh is now behind a new OriginGuard checking Origin against CORS_ORIGIN (CSRF/origin protection), no-op when unconfigured. (5) Every identity-access/user-profiles use case that stamped audit metadata now resolves the actor from the ambient RequestContext instead of a client-suppliable `actorId` input field; added a SYSTEM_ACTOR_ID sentinel and wired CliRunnerService through RequestContext.runAsSystem so background writes are distinguishable from anonymous ones. (6) UserProfileOrmEntity.dateOfBirth now has a TypeORM ValueTransformer, fixing a 500 on any read of a profile with a birth date set (Postgres 'date' hydrates as a string, not a Date). (7) Removed the no-op generic PATCH /accounts/:accountId endpoint and UpdateAccountUseCase (Account has no client-editable field beyond status/phone/password, each already has its own dedicated, meaningful endpoint) rather than fabricate a fake generic-update field, per review.json's own offered alternative. (8) Fixed the GET /accounts provider filter, which previously could only ever match LOCAL because it filtered the same join alias the join condition already restricted to LOCAL; replaced with a separate EXISTS subquery, plus @IsEnum validation on the query param. All identified findings were fixed and re-verified this cycle with fresh, real deterministic validation (lint/typecheck/unit-test/build/architecture/migration-rollback/e2e against real Postgres+Redis+MinIO) rather than reused claims. status=partial only because of items explicitly out of scope for this cycle/task registration (frontend integration — no frontend worktree is registered in task.yaml; Role/Permission full CRUD; real social-provider integration — all per task.md's own 'Out of scope' list) and a residual documentation gap carried over from the prior cycle (full ERD, add-a-provider/add-a-portal how-tos) — not because of any known backend defect.",
+  "repositories": [
+    {
+      "name": "backend",
+      "changed_files": [
+        "apps/api/src/business-modules.ts",
+        "apps/api/test/auth-flow.e2e-spec.ts",
+        "apps/api/test/media-upload-flow.e2e-spec.ts",
+        "apps/cli/src/business-modules.ts",
+        "apps/cli/src/cli-runner.service.ts",
+        "apps/cli/src/commands/seed.command.ts",
+        "apps/scheduler/src/business-modules.ts",
+        "apps/worker/src/business-modules.ts",
+        "docs/architecture/module-boundaries.md",
+        "docs/guides/authentication-flow.md",
+        "nest-cli.json",
+        "tsconfig.json",
+        "package.json",
+        "package-lock.json",
+        "libs/shared/kernel/src/entities/auditable-props.ts",
+        "libs/shared/kernel/src/public-api.ts",
+        "libs/platform/database/src/audit.orm-entity.ts",
+        "libs/platform/database/src/public-api.ts",
+        "libs/platform/database/src/migrations/1722540000000-CreateIdentityAccessSchema.ts",
+        "libs/platform/database/src/migrations/1722550000000-CreateUserProfilesSchema.ts",
+        "libs/platform/configuration/src/config/auth.config.ts",
+        "libs/platform/configuration/src/schemas/env.schema.ts",
+        "libs/platform/security/src/authorization.contract.ts",
+        "libs/platform/security/src/jwt-auth.guard.ts",
+        "libs/platform/security/src/identity.contracts.ts",
+        "libs/platform/security/src/origin.guard.ts",
+        "libs/platform/security/src/portal.guard.ts",
+        "libs/platform/security/src/request-context.ts",
+        "libs/platform/security/src/request-context.middleware.ts",
+        "libs/platform/security/src/refresh-cookie.helper.ts",
+        "libs/platform/security/src/security.module.ts",
+        "libs/platform/security/src/public-api.ts",
+        "libs/platform/security/test/jwt-auth.guard.spec.ts",
+        "libs/platform/security/test/origin.guard.spec.ts",
+        "libs/platform/security/test/portal.guard.spec.ts",
+        "libs/modules/identity-access/src/identity-access.module.ts",
+        "libs/modules/identity-access/src/public-api.ts",
+        "libs/modules/identity-access/src/application/ports/**",
+        "libs/modules/identity-access/src/application/use-cases/**",
+        "libs/modules/identity-access/src/domain/**",
+        "libs/modules/identity-access/src/infrastructure/**",
+        "libs/modules/identity-access/src/presentation/http/**",
+        "libs/modules/identity-access/test/**",
+        "libs/modules/user-profiles/**"
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "Added AccountLookup.getAuthState(accountId): Promise<{ isActive, tokenVersion } | null> to the existing identity.contracts.ts port and checked it in JwtAuthGuard.canActivate on every protected request (both a status check and a tokenVersion-claim comparison); login and refresh now embed Account.tokenVersion in the access token.",
+      "reason": "review.json blocker: a verified signature/expiry only proves the token was genuinely issued, not that the Account is still ACTIVE or that the password hasn't changed since. Reused the exact PermissionsGuard/PERMISSION_CHECKER pattern already in this codebase (a platform-declared port implemented by identity-access, injected via @Optional()+@Inject so the guard's existing hand-constructed unit tests are unaffected) rather than inventing a new mechanism."
+    },
+    {
+      "decision": "Added PortalGuard + @RequirePortal('ADMIN') to UserProfileController, matching AccountController exactly.",
+      "reason": "review.json blocker: every UserProfileController route operates on an arbitrary profile by id (an administrative surface, not a self-service 'my profile' endpoint), so a PUBLIC-portal token from an account that also holds admin permissions could otherwise reach it — the same class of bug AccountController's existing PortalGuard usage already prevents there."
+    },
+    {
+      "decision": "Added RefreshSessionRepository.revokeIfActive(id, now, replacedBySessionId?): Promise<boolean> — a single `UPDATE ... WHERE revoked_at IS NULL AND expires_at > now` — and used it inside RefreshSessionUseCase's transaction instead of the previous read-then-write revoke.",
+      "reason": "review.json major: the previous code read+checked the session as active BEFORE the transaction, with no lock/conditional update inside it, so two concurrent refresh calls could both observe it active and both mint new sessions. The atomic UPDATE is a compare-and-swap: Postgres row-level locking during the UPDATE plus a WHERE clause re-evaluated under read-committed guarantees only one concurrent caller's UPDATE can affect the row; the other gets affected=0 and is rejected. Verified with a new e2e test that fires two concurrent /auth/refresh calls against one token and asserts exactly one succeeds."
+    },
+    {
+      "decision": "RefreshSessionUseCase now injects USER_PROFILE_LOOKUP and includes userProfileId + tokenVersion in the access token it reissues, matching what LoginUseCase already puts there.",
+      "reason": "review.json major: after the first refresh, the reissued access token silently dropped userProfileId (LoginUseCase's token had it, RefreshSessionUseCase's didn't), so JwtAuthGuard set request-context userProfileId to null post-refresh, violating §13's payload minimum. Resolving it via the same UserProfileLookup port login already uses keeps both call sites consistent."
+    },
+    {
+      "decision": "Added OriginGuard (libs/platform/security/src/origin.guard.ts) checking the Origin header against AppConfig.corsOrigins, applied via @UseGuards(OriginGuard) only on POST /auth/refresh; no-ops when CORS_ORIGIN is unset.",
+      "reason": "review.json major + task.md §19 'Refresh endpoint áp dụng CSRF/origin protection hiện tại': refresh authenticates purely off an ambient HttpOnly cookie, which a cross-site page can make the browser send automatically — the Origin header a real browser attaches to every fetch/XHR POST is the only thing that distinguishes a same-site call from a forged cross-site one. login/logout don't need this: login doesn't rely on ambient authority to forge, and logout requires a bearer token that cross-site requests can't attach automatically."
+    },
+    {
+      "decision": "Removed `actorId` from the Input interface of every identity-access/user-profiles use case that previously accepted it for audit stamping (CreateAccountInput, ChangeAccountPasswordInput, ChangeAccountPhoneInput, ChangeAccountStatusInput, DeleteAccountInput, CreateUserProfileInput, UpdateUserProfileInput, DeleteUserProfileInput, ProvisionUserProfileInput, UserProfileProvisioner.deleteByAccountId); each now injects RequestContext and calls currentActorId() itself. Added SYSTEM_ACTOR_ID ('00000000-0000-0000-0000-000000000000') and changed RequestContext.currentActorId() to return it when isSystemActor is set; wired CliRunnerService to run every command via requestContext.runAsSystem(...).",
+      "reason": "review.json major (task.md §14/AC27 'Audit actor được lấy từ request context'): the Input DTOs let ANY caller supply an arbitrary actorId — today's only caller (the controller) happened to populate it correctly from the verified JWT, but the architecture itself didn't enforce that, and system actors (CLI) were indistinguishable from anonymous ones (both stamped null). Cross-module calls that happen inside the same async context as their caller (UserProfileProvisioner.provision/deleteByAccountId, invoked from CreateAccountUseCase/DeleteAccountUseCase) also had their `actorId` parameter removed — they resolve the same value independently via the same ambient RequestContext rather than trusting one threaded through the call, since no `.run()` boundary is crossed in between."
+    },
+    {
+      "decision": "Added a TypeORM ValueTransformer (to: Date -> 'YYYY-MM-DD' string, from: string -> UTC-midnight Date) on UserProfileOrmEntity.dateOfBirth.",
+      "reason": "review.json major: Postgres/TypeORM hydrates a `date`-typed column as a plain string (no time-of-day to parse against), but UserProfileProps.dateOfBirth and UserProfileController's `.toISOString()` call both assumed a real Date — any profile with a birth date set crashed GET/list/update with a 500. Fixing it at the column level (rather than patching each read site) makes every hydration path — findOne, find, query-builder getMany/getRawAndEntities — consistently correct."
+    },
+    {
+      "decision": "Removed the generic `PATCH /accounts/:accountId` endpoint and UpdateAccountUseCase entirely, rather than inventing a field for it to update.",
+      "reason": "review.json major, offered this as an explicit alternative ('...hoặc làm rõ và sửa contract nếu generic update thực sự không thuộc yêu cầu'): Account's documented minimum fields are id/status/tokenVersion/audit only (task.md §2) — status, phone and password each already have their own dedicated, validated endpoint specifically so a generic update can't bypass their extra checks (task.md §16's own explicit carve-outs). There is nothing left for a generic update to legitimately change; the previous endpoint always returned 200 without applying anything, which is a worse contract than not having the route. AC30 ('Account CRUD API hoạt động') is still satisfied by create/list/get/change-status/change-phone/change-password/delete, each of which does something real."
+    },
+    {
+      "decision": "Replaced the account-list provider filter's `localIdentity.provider = :provider` (against an alias already joined ON provider='LOCAL') with a separate `EXISTS` subquery against AuthIdentityOrmEntity, via qb.andWhereExists(qb.subQuery()...); also added @IsEnum(AuthProvider) validation to the `provider` query param.",
+      "reason": "review.json minor: the join used for the phone-display column already restricted `localIdentity` to provider=LOCAL rows, so filtering that same alias by GOOGLE/APPLE/FACEBOOK always returned zero rows regardless of the account's actual identities. The EXISTS subquery checks provider existence independently of the LOCAL-only join."
+    },
+    {
+      "decision": "Fixed apps/api/test/media-upload-flow.e2e-spec.ts, which minted access tokens for a bare `randomUUID()` subject with no backing Account — this now fails JwtAuthGuard's live AccountLookup check (correctly, since that subject genuinely isn't a real, active Account). Updated its `authHeader()` helper to provision a real Account via CreateAccountUseCase (seeding roles/permissions in its own beforeAll, idempotent) and issue a token for that real accountId instead.",
+      "reason": "This test predates the JwtAuthGuard fix and only ever worked because the guard didn't validate the token subject against anything. Media routes only require JwtAuthGuard (no PortalGuard/PermissionsGuard), so the fix only needed a real Account behind the token, not a full phone/password login round-trip — kept the diff to the auth-header helper and its 6 call sites, no assertions changed."
+    },
+    {
+      "decision": "Ran all four required deterministic skill-check scripts this cycle and all passed: check_port_bindings.py (28 injected Symbol tokens), check_module_wiring.py (27 use-case/controller classes), check_auth_invariants.py, validate_execution_plan.py (21 slices). Updated execution-plan.json slice statuses to 'completed' (20 slices) / 'blocked' (frontend-integration, no frontend worktree registered) and the plan's own status to 'in_progress' to reflect that one slice remains genuinely blocked by task.yaml's worktree registration, not by any remaining backend work.",
+      "reason": "claude-implementer.md/skill SKILL.md files explicitly require running these scripts before declaring the slice(s) complete; the prior cycle's execution-plan.json still had every slice marked 'pending' despite substantial implementation, which didn't reflect reality."
+    }
+  ],
+  "assumptions": [
+    "UserProfile CRUD is an administrative surface (gated by @RequirePortal('ADMIN') like AccountController) rather than a self-service 'my profile' endpoint — every route operates on an arbitrary profile by id, and task.md never describes a self-service profile page in this epic's scope.",
+    "'Search phone' (task.md §16/§17) is expected to accept the same local phone format the rest of the system does (login, create-account), not the internally-stored E.164 form — unchanged from the prior cycle's assumption, re-verified this cycle via the account list provider-filter fix's adjacent code path.",
+    "Frontend integration (task.md §18) is out of scope for this implementation cycle because task.yaml registers only a `backend` worktree for MEMORIES-0002.",
+    "The system-actor sentinel (SYSTEM_ACTOR_ID, a fixed nil-form UUID) is an acceptable way to distinguish background/CLI actors from anonymous ones on `uuid`-typed audit columns without a schema migration — no free-text sentinel fits a `uuid NOT NULL/nullable` column, and adding a separate actor-type column was judged a larger, separable change than this review-fix cycle's scope."
+  ],
+  "validation_commands": [
+    { "repo": "backend", "command": "npm run lint", "result": "pass, 0 errors/warnings" },
+    { "repo": "backend", "command": "npm run typecheck", "result": "pass" },
+    { "repo": "backend", "command": "npm run test", "result": "pass, 51 suites / 232 tests (up from 49/220 — added create-account.use-case.spec.ts, origin.guard.spec.ts, plus new cases in jwt-auth.guard.spec.ts and create-user-profile.use-case.spec.ts)" },
+    { "repo": "backend", "command": "npm run build:api && npm run build:cli && npm run build:worker && npm run build:scheduler", "result": "pass, all four webpack builds compiled successfully" },
+    { "repo": "backend", "command": "npm run test:architecture", "result": "pass, no violations (382 modules / 1299 dependencies)" },
+    { "repo": "backend", "command": "npm run migration:revert then npm run migration:run (against memories-test-postgres, localhost:15432, inline env vars, no .env read/written)", "result": "pass — CreateUserProfilesSchema reverted cleanly (DROP TABLE + DROP SCHEMA) and re-applied cleanly this cycle" },
+    { "repo": "backend", "command": "npm run test:e2e (against memories-test-postgres/redis/minio docker containers, inline env vars, no .env read/written)", "result": "pass, 4 suites / 34 tests (up from 28 — auth-flow.e2e-spec.ts grew from 18 to 24 tests covering the review fixes: locked-account access-token rejection, password-change tokenVersion rejection, concurrent-refresh single-winner, userProfileId-survives-refresh, UserProfile PortalGuard rejection, dateOfBirth round-trip; media-upload-flow.e2e-spec.ts's auth-header helper was updated to use a real provisioned Account instead of an arbitrary UUID, which the JwtAuthGuard fix now correctly rejects)" },
+    { "repo": "backend", "command": "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_port_bindings.py worktrees/MEMORIES-0002/backend", "result": "pass — Port binding check PASSED: 28 injected Symbol tokens" },
+    { "repo": "backend", "command": "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_module_wiring.py worktrees/MEMORIES-0002/backend", "result": "pass — Nest module wiring check PASSED: 27 use-case/controller classes" },
+    { "repo": "backend", "command": "python3 ai/skills/implement-auth-security-change/scripts/check_auth_invariants.py worktrees/MEMORIES-0002/backend", "result": "pass — Auth invariant check PASSED" },
+    { "repo": "backend", "command": "python3 ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py ai/tasks/MEMORIES-0002/execution-plan.json", "result": "pass — Execution plan PASSED: 21 slices" }
+  ],
+  "acceptance_criteria": [
+    { "criterion": "AC1: Account is the sole authentication principal for both public-web and admin-web", "status": "passed", "evidence": "Single Account/AuthIdentity model; portal differentiated only by the login request's `portal` field and post-auth permission check; no per-portal Account type exists." },
+    { "criterion": "AC2: No separate Account per portal", "status": "passed", "evidence": "Account schema/domain model has no portal field; portal access is fully permission-derived." },
+    { "criterion": "AC3: UserProfile lives in `user-profiles`, not `customers`", "status": "passed", "evidence": "libs/modules/user-profiles/src/domain/user-profile.ts; no UserProfile code under libs/modules/customers." },
+    { "criterion": "AC4: Customer not auto-created with Account", "status": "passed", "evidence": "CreateAccountUseCase creates Account+AuthIdentity+UserProfile+default role only; no Customer model exists in this epic's scope." },
+    { "criterion": "AC5: Account, AuthIdentity and UserProfile implemented across every applicable layer", "status": "passed", "evidence": "Domain/application/infrastructure/presentation present for all three under libs/modules/identity-access and libs/modules/user-profiles; verified this cycle via check_port_bindings.py/check_module_wiring.py (both pass) and the full e2e suite exercising every layer through real HTTP." },
+    { "criterion": "AC6: A single Account can have multiple AuthIdentity", "status": "passed", "evidence": "AuthIdentity.accountId is a plain FK, no uniqueness constraint against accountId alone; unique constraint is (provider, identifier)." },
+    { "criterion": "AC7: An Account has at most one active UserProfile", "status": "passed", "evidence": "Partial unique index on user_profiles.account_id WHERE deleted_at IS NULL (CreateUserProfilesSchema migration); e2e 'creating a second one for the same account must fail' asserts 409." },
+    { "criterion": "AC8: LOCAL identity uses normalized phone and password hash", "status": "passed", "evidence": "PHONE_NORMALIZER applied before persistence/lookup; ScryptPasswordHasher used for passwordHash; unit tests in phone-normalizer.spec.ts/scrypt-password-hasher.spec.ts." },
+    { "criterion": "AC9: Email login no longer works", "status": "passed", "evidence": "LoginDto/LoginUseCase only accept phone+password+portal; no email field or email-based lookup path exists." },
+    { "criterion": "AC10: Public web logs in with portal PUBLIC", "status": "not_tested", "evidence": "Backend fully supports and e2e-verifies PUBLIC portal login; the public-web frontend integration itself is out of scope for this cycle (no frontend worktree registered in task.yaml)." },
+    { "criterion": "AC11: Admin web logs in with portal ADMIN", "status": "not_tested", "evidence": "Backend fully supports and e2e-verifies ADMIN portal login; admin-web frontend integration is out of scope for this cycle (no frontend worktree registered)." },
+    { "criterion": "AC12: Backend maps portal to the corresponding permission itself", "status": "passed", "evidence": "PORTAL_PERMISSION map in domain/sessions/portal.ts, applied inside LoginUseCase — client never supplies the permission to check." },
+    { "criterion": "AC13: Public login requires portal.public.access", "status": "passed", "evidence": "e2e 'rejects a PUBLIC-only account attempting to log into the ADMIN portal' + successful-PUBLIC-login tests assert the permission is present/enforced." },
+    { "criterion": "AC14: Admin login requires portal.admin.access", "status": "passed", "evidence": "e2e 'logs in an account granted the ADMIN role on the ADMIN portal' and the wrong-portal-403 test." },
+    { "criterion": "AC15: Missing portal permission issues no token/session for that portal", "status": "passed", "evidence": "LoginUseCase checks permission before creating any RefreshSession/issuing tokens; e2e confirms the account can still log into the portal it does have access to right after a rejected attempt." },
+    { "criterion": "AC16: No controller/use case hard-codes role to check portal access", "status": "passed", "evidence": "check_auth_invariants.py passed; LoginUseCase and PortalGuard both check via PermissionChecker/RequestUser.portal, never `if (role === 'ADMIN')`." },
+    { "criterion": "AC17: Role is only a grouping of permissions", "status": "passed", "evidence": "Role domain model (domain/roles/role.ts) has no behavior beyond code/name; AccountRole/RolePermission join tables carry the actual grants." },
+    { "criterion": "AC18: Inactive/locked/deleted Account cannot login or refresh", "status": "passed", "evidence": "Account.canAuthenticate() checked in both LoginUseCase and RefreshSessionUseCase; e2e covers INACTIVE/LOCKED/deleted rejection for both login and refresh." },
+    { "criterion": "AC19: Access token stays in memory", "status": "not_tested", "evidence": "Backend-only cycle: nothing in this repo persists the access token server-side or instructs a client to store it; actual in-memory storage is a frontend concern out of scope here." },
+    { "criterion": "AC20: Refresh token stays in an HttpOnly cookie", "status": "passed", "evidence": "buildRefreshCookieOptions always sets httpOnly: true; e2e asserts the Set-Cookie header matches /HttpOnly/i." },
+    { "criterion": "AC21: RefreshSession is tied to a portal", "status": "passed", "evidence": "RefreshSessionProps.portal persisted and asserted in e2e (refresh preserves the same portal)." },
+    { "criterion": "AC22: JWT/session distinguishes public vs admin portal", "status": "passed", "evidence": "Access/refresh token `portal` claim; PortalGuard/@RequirePortal enforce it on AccountController/UserProfileController; e2e cross-portal-token-rejection tests for both controllers." },
+    { "criterion": "AC23: A PUBLIC token cannot reach admin API", "status": "passed", "evidence": "Fixed this cycle for UserProfileController (previously missing PortalGuard — review.json blocker); AccountController already had it. e2e: 'rejects a PUBLIC-portal token even when the underlying account also holds admin permissions' now asserted for both controllers." },
+    { "criterion": "AC24: Password is never stored plain text", "status": "passed", "evidence": "ScryptPasswordHasher.hash used everywhere a password is written; AuthIdentity only ever stores passwordHash." },
+    { "criterion": "AC25: Password hash never appears in API response/log/audit", "status": "passed", "evidence": "AccountResponseDto/AccountDetail/AccountSummary have no passwordHash field; e2e asserts the list response body never matches /passwordHash/i." },
+    { "criterion": "AC26: Account/AuthIdentity/UserProfile have full audit fields", "status": "passed", "evidence": "All three extend AuditableProps/AuditableOrmEntity (created/updated/deleted by+at)." },
+    { "criterion": "AC27: Audit actor comes from request context", "status": "passed", "evidence": "Fixed this cycle (review.json major): removed `actorId` from every identity-access/user-profiles use case Input DTO; each now calls RequestContext.currentActorId() itself instead of trusting a caller-supplied field. New unit test create-account.use-case.spec.ts asserts the actor stamped on every write matches the mocked RequestContext, not any input field." },
+    { "criterion": "AC28: Concurrent requests don't leak context", "status": "passed", "evidence": "e2e 'resolves each of several concurrent logins to its own account, never crossing subjects' (5-way concurrency), using the AsyncLocalStorage-backed RequestContext." },
+    { "criterion": "AC29: Account/AuthIdentity/UserProfile/default-role creation is one transaction", "status": "passed", "evidence": "CreateAccountUseCase wraps every write in UnitOfWork.withTransaction; unit test 'rolls back without provisioning a profile or assigning a role when the phone is already registered' asserts no partial side effects on failure." },
+    { "criterion": "AC30: Account CRUD API works and is permission-gated", "status": "passed", "evidence": "Removed the previously no-op generic PATCH /accounts/:id (review.json major) — create/list/get/change-status/change-phone/change-password/delete all do real work and every route declares @RequirePermissions; e2e CRUD test covers the full lifecycle." },
+    { "criterion": "AC31: UserProfile CRUD API works and is permission-gated", "status": "passed", "evidence": "Now also gated by PortalGuard/@RequirePortal('ADMIN') (review.json blocker fix); e2e covers create/read/update/delete/duplicate-rejection plus the dateOfBirth round-trip regression added this cycle." },
+    { "criterion": "AC32: Locking/deleting an Account invalidates its current session", "status": "passed", "evidence": "ChangeAccountStatusUseCase/DeleteAccountUseCase call refreshSessions.revokeAllForAccount; this cycle additionally closed the access-token side of this via JwtAuthGuard's live AccountLookup check — e2e 'rejects an already-issued access token immediately once the Account is locked' and the equivalent password-change/tokenVersion test are new this cycle." },
+    { "criterion": "AC33: No TypeORM relation crosses module boundaries", "status": "passed", "evidence": "check_module_wiring.py + npm run test:architecture both pass; UserProfileOrmEntity has no relation to AccountOrmEntity." },
+    { "criterion": "AC34: Controllers never return the ORM entity directly", "status": "passed", "evidence": "All controllers map through Output/ResponseDto types (toAccountResponseDto, toResponseDto, etc.)." },
+    { "criterion": "AC35: Swagger/OpenAPI updated", "status": "passed", "evidence": "@ApiTags/@ApiResponse/@ApiBearerAuth/@ApiParam decorators present on AuthController/AccountController/UserProfileController and all DTOs; OriginGuard/PortalGuard additions don't change the documented request/response shapes." },
+    { "criterion": "AC36: Frontend API client updated/regenerated", "status": "not_tested", "evidence": "Out of scope this cycle — no frontend worktree registered in task.yaml." },
+    { "criterion": "AC37: Migration runs successfully on an empty database", "status": "passed", "evidence": "Both migrations were already verified against an empty DB in the prior cycle; this cycle re-verified rollback safety fresh: npm run migration:revert cleanly reverted CreateUserProfilesSchema (DROP TABLE + DROP SCHEMA) and npm run migration:run cleanly re-applied it against memories-test-postgres. No migration files were changed this cycle." },
+    { "criterion": "AC38: Role/Permission seed is idempotent across runs", "status": "passed", "evidence": "SeedRolesAndPermissionsUseCase find-or-creates every Role/Permission and grants; seed-roles-and-permissions.use-case.spec.ts covers idempotency; the e2e suite's beforeAll calls it and media-upload-flow.e2e-spec.ts's beforeAll now also calls it (added this cycle) without error on a database where it already ran." },
+    { "criterion": "AC39: Mock authentication removed from backend and frontend", "status": "passed", "evidence": "No mock auth controller/module exists anywhere in the backend worktree (confirmed by grep); frontend is out of scope for this cycle so nothing to remove there within this task's registered worktrees." },
+    { "criterion": "AC40: Unit/integration/E2E tests, lint, typecheck and build all succeed", "status": "passed", "evidence": "This cycle, freshly: npm run lint (0 errors), npm run typecheck (pass), npm run test (51 suites / 232 tests, up from 220), npm run build:api/cli/worker/scheduler (all pass), npm run test:architecture (382 modules / 1299 deps, no violations), migration revert+run (pass), npm run test:e2e (4 suites / 34 tests, up from 28) — all against real Postgres/Redis/MinIO, not mocks. No standalone repository-level integration test files beyond what the e2e suite exercises; frontend tests are out of scope this cycle." }
+  ],
+  "knowledge_updates": [],
+  "applied_skills": [
+    {
+      "name": "decompose-implementation-task",
+      "sha256": "0d8e89a94111bd5679c8c5ef6c8f5ce250621909f51704bf676af966f2fd4673",
+      "checks_completed": [
+        "python3 ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py ai/tasks/MEMORIES-0002/execution-plan.json -> pass (21 slices)",
+        "Worked this cycle's fixes against the review.json findings as the current unit of work rather than starting a new, unrelated slice; updated execution-plan.json slice statuses to reflect actual completion (20 completed, frontend-integration blocked on missing frontend worktree registration)"
+      ]
+    },
+    {
+      "name": "implement-nestjs-vertical-slice",
+      "sha256": "46320b8e5f671d095152f339031d0470207a8caa7de73e0e219b45b683321335",
+      "checks_completed": [
+        "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_port_bindings.py worktrees/MEMORIES-0002/backend -> pass (28 injected Symbol tokens)",
+        "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_module_wiring.py worktrees/MEMORIES-0002/backend -> pass (27 use-case/controller classes)",
+        "Traced every new/changed port (AccountLookup.getAuthState, RefreshSessionRepository.revokeIfActive, UserProfileProvisioner without actorId) to a reachable adapter and verified runtime reachability via the full e2e suite against the real AppModule"
+      ]
+    },
+    {
+      "name": "implement-auth-security-change",
+      "sha256": "8de0236f5e04b9c74a738f6ffc71224070c4ddd230cbccbe88fe8e1144627332",
+      "checks_completed": [
+        "python3 ai/skills/implement-auth-security-change/scripts/check_auth_invariants.py worktrees/MEMORIES-0002/backend -> pass",
+        "Added negative/concurrency tests per references/security-verification.md: locked-account and tokenVersion-superseded access-token rejection, concurrent-refresh single-winner, CSRF/origin rejection unit tests, PUBLIC-portal-token admin-route rejection for UserProfileController",
+        "Re-verified session/authorization rules from references/sessions-and-authorization.md end to end via the e2e suite against real Postgres (login/refresh/logout, account-status enforcement, portal separation, actor propagation via RequestContext)"
+      ]
+    }
+  ]
+}

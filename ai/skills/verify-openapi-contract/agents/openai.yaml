@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify OpenAPI Contract"
+  short_description: "Verify runtime routes match OpenAPI contracts"
+  default_prompt: "Use $verify-openapi-contract to verify that API request, success, and error responses are fully represented in OpenAPI."

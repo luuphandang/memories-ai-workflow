@@ -1,0 +1,320 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+import os
+from pathlib import Path
+import shlex
+import subprocess
+import sys
+import time
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib.ai_common import (
+    AI_ROOT,
+    ROOT,
+    enforce_global_git_policy,
+    ensure_task,
+    env_timeout_seconds,
+    now_iso,
+    read_yaml,
+    read_json,
+    requirement_documents,
+    run,
+    runtime_dir,
+    append_agent_metric,
+    skill_manifest,
+    verify_locked_skills,
+    validate_json,
+    run_delivery_quality_gates,
+    write_yaml,
+)
+
+
+INTERRUPTION_MARKERS = (
+    "hit your session limit",
+    "usage limit",
+    "rate limit",
+    "rate_limit",
+    "quota exceeded",
+    "credit balance",
+    "maximum context length",
+    "context window",
+)
+
+
+def is_interruption(output: str) -> bool:
+    lowered = output.lower()
+    return any(marker in lowered for marker in INTERRUPTION_MARKERS)
+
+
+def stream_metadata(output: str) -> tuple[str | None, str, dict]:
+    """Extract the persisted Claude session id and final printable response."""
+    session_id = None
+    final_text = ""
+    usage: dict = {}
+    for line in output.splitlines():
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(event, dict):
+            session_id = event.get("session_id") or session_id
+            if event.get("type") == "result" and isinstance(event.get("result"), str):
+                final_text = event["result"]
+                usage = event.get("usage") or {}
+                for key in ("total_cost_usd", "duration_ms", "duration_api_ms", "num_turns"):
+                    if key in event:
+                        usage[key] = event[key]
+    return session_id, final_text, usage
+
+
+def git_resume_summary(task: dict) -> str:
+    sections: list[str] = []
+    for item in task.get("worktrees", []):
+        path = ROOT / item["path"]
+        status = run(["git", "status", "--short"], cwd=path, timeout=30).stdout.strip()
+        stat = run(["git", "diff", "--stat"], cwd=path, timeout=30).stdout.strip()
+        sections.append(
+            f"## {item['repo']} ({item['path']})\n"
+            f"### Status\n```text\n{status or '(clean)'}\n```\n"
+            f"### Diff stat\n```text\n{stat or '(no tracked diff)'}\n```"
+        )
+    return "\n\n".join(sections)
+
+
+def timeout_output(exc: subprocess.TimeoutExpired) -> str:
+    value = exc.stdout or ""
+    return value.decode(errors="replace") if isinstance(value, bytes) else value
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Run Claude implementer")
+    parser.add_argument("task_id")
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--print-command", action="store_true")
+    args = parser.parse_args()
+
+    td = ensure_task(args.task_id)
+    task = read_yaml(td / "task.yaml")
+    enforce_global_git_policy(task)
+    state = read_yaml(td / "state.yaml")
+    previous_status = state.get("status")
+    runtime = runtime_dir(args.task_id)
+    requirements = requirement_documents(args.task_id, include_user_request=True)
+    context_lock = read_json(td / "context.lock.json")
+    required_skills = task.get("skills", {}).get("implement", [])
+    locked_skills = context_lock.get("skills", {}).get("locked", {})
+    verify_locked_skills(context_lock)
+    skill_lines: list[str] = []
+    for name in required_skills:
+        locked = locked_skills.get(name)
+        if not locked:
+            raise SystemExit(f"Required implement skill is not context-locked: {name}; run prepare-context")
+        skill_path = ROOT / locked["path"]
+        if not skill_path.is_file():
+            raise SystemExit(f"Required implement skill is missing: {skill_path}")
+        skill_lines.append(f"- ${name}: {locked['path']} (sha256 {locked['sha256']})")
+    checkpoint_path = td / "implementation-progress.json"
+    if not checkpoint_path.exists():
+        checkpoint = json.loads(
+            (AI_ROOT / "templates" / "implementation-progress.json")
+            .read_text(encoding="utf-8")
+            .replace("{{TASK_ID}}", args.task_id)
+        )
+        checkpoint["implementation_cycle"] = int(state.get("implementation_cycle", 1))
+        checkpoint["change_cycle"] = int(state.get("change_cycle", 0))
+        checkpoint_path.write_text(
+            json.dumps(checkpoint, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+    attempt = int(state.get("implementation_attempt", 0)) + 1
+    resume_context_path = runtime / "input" / f"resume-context-attempt-{attempt:03d}.md"
+    resume_context_path.write_text(
+        "# Existing worktree state\n\n" + git_resume_summary(task) + "\n",
+        encoding="utf-8",
+    )
+    fix_requests = list((runtime / "input").glob("fix-request-*.md"))
+    latest_fix_request = max(fix_requests, key=lambda path: path.stat().st_mtime).relative_to(ROOT) if fix_requests else None
+
+    requirement_lines = "\n".join(f"- {path}" for path in requirements)
+    required_skill_lines = "\n".join(skill_lines) or "- none"
+    worktree_lines = "\n".join(
+        f"- {item['repo']}: {item['path']}" for item in task.get("worktrees", [])
+    )
+    evidence_key_lines = "- none (execution plan not required)"
+    evidence_check_command = ""
+    if task.get("scope", {}).get("execution_plan_required", False):
+        execution_plan = read_json(td / "execution-plan.json")
+        evidence_key_lines = "\n".join(
+            f"- `slice:{item['id']}`" for item in execution_plan.get("slices", [])
+        )
+        evidence_check_command = (
+            f"- Before finishing, run `python3 ai/skills/review-vertical-slice-completeness/scripts/"
+            f"build_evidence_matrix.py ai/tasks/{args.task_id}/execution-plan.json "
+            f"ai/tasks/{args.task_id}/implementation.json`; do not finish while it reports missing criteria."
+        )
+    prompt = f"""Implement Jira item {args.task_id}.
+
+Current implementation cycle: {state.get('implementation_cycle', 1)}
+Current change cycle: {state.get('change_cycle', 0)}
+
+Read common rules and requirement documents in this order:
+- ai/agents/common.md
+- ai/agents/claude-implementer.md
+{requirement_lines}
+- ai/tasks/{args.task_id}/task.yaml
+- ai/tasks/{args.task_id}/context.yaml
+- ai/tasks/{args.task_id}/context.lock.json
+
+Worktrees:
+{worktree_lines}
+
+Required implementation skills (read each SKILL.md completely and apply it):
+{required_skill_lines}
+
+Execution plan:
+- ai/tasks/{args.task_id}/execution-plan.json
+- Work on one in-progress/pending slice at a time.
+- In implementation.json use exact criterion strings, or one `slice:<slice-id>` entry
+  with complete evidence for a fully passed slice. Keep failures/waivers criterion-specific.
+- Required slice evidence keys for this exact plan are:
+{evidence_key_lines}
+{evidence_check_command}
+
+Continuation protocol:
+- This is implementation attempt {attempt}. Previous status: {previous_status}.
+- Read ai/tasks/{args.task_id}/implementation-progress.json first.
+- Read {resume_context_path.relative_to(ROOT)} for a compact snapshot of existing changes.
+- Treat existing worktree changes as work to inspect and continue; do not redo completed work.
+- Update implementation-progress.json before coding and after each meaningful milestone,
+  validation run, decision, or newly discovered remaining step. Keep it concise and valid
+  against ai/schemas/implementation-progress.schema.json.
+- The checkpoint is a recovery aid, not the final implementation handoff.
+{f'- Read and resolve the latest fix request: {latest_fix_request}' if latest_fix_request else '- No fix request is pending.'}
+
+The newest requirement addendum wins only for conflicts it explicitly changes.
+Work only in registered worktrees. Do not create worktrees, commit, push,
+change branch, or manage Git worktrees.
+
+Write the final structured handoff to:
+ai/tasks/{args.task_id}/implementation.json
+
+The output must match ai/schemas/implementation.schema.json and include
+implementation_cycle, change_cycle, and applied_skills with the locked hashes
+and deterministic checks completed for every required implementation skill.
+"""
+    command = os.environ.get("CLAUDE_COMMAND", "claude")
+    timeout_seconds = env_timeout_seconds("CLAUDE_TIMEOUT_SECONDS", 3600)
+    session_id = state.get("claude_session_id") if previous_status == "interrupted" else None
+    invocation_prompt = prompt
+    if session_id:
+        invocation_prompt = f"""Continue implementing Jira item {args.task_id} in the existing session.
+
+This is attempt {attempt}. Do not repeat completed investigation or implementation.
+Read the current ai/tasks/{args.task_id}/implementation-progress.json and
+{resume_context_path.relative_to(ROOT)}, reconcile them with the existing worktree,
+then continue from current_step/remaining_steps. Keep the checkpoint current after
+each milestone. Finish by writing ai/tasks/{args.task_id}/implementation.json.
+Use these exact slice evidence keys for completed execution-plan slices:
+{evidence_key_lines}
+{evidence_check_command}
+"""
+    (runtime / "input" / "claude-prompt.md").write_text(invocation_prompt, encoding="utf-8")
+
+    cmd = [command, "-p", "--output-format", "stream-json", "--verbose", "--dangerously-skip-permissions"]
+    if session_id:
+        cmd.extend(["--resume", str(session_id)])
+    cmd.append(invocation_prompt)
+    if args.print_command or args.dry_run:
+        print(" ".join(shlex.quote(value) for value in cmd))
+        print(f"Timeout: {timeout_seconds} seconds")
+        if args.dry_run:
+            return
+
+    state["status"] = "implementing"
+    state["implementation_attempt"] = attempt
+    state.setdefault("timestamps", {})["implementation_started_at"] = now_iso()
+    write_yaml(td / "state.yaml", state)
+
+    log_path = runtime / "exchange" / f"claude-session-attempt-{attempt:03d}.jsonl"
+    started_monotonic = time.monotonic()
+    try:
+        result = run(cmd, cwd=ROOT, timeout=timeout_seconds)
+    except subprocess.TimeoutExpired as exc:
+        partial_output = timeout_output(exc)
+        log_path.write_text(partial_output, encoding="utf-8")
+        state = read_yaml(td / "state.yaml")
+        detected_session_id, _, usage = stream_metadata(partial_output)
+        if detected_session_id:
+            state["claude_session_id"] = detected_session_id
+        state["last_implementation_log"] = str(log_path)
+        state["status"] = "interrupted"
+        state["last_error"] = (
+            f"Claude timed out after {timeout_seconds} seconds. Retry implement to resume "
+            f"from the checkpoint; inspect {log_path}."
+        )
+        state.setdefault("timestamps", {})["implementation_finished_at"] = now_iso()
+        write_yaml(td / "state.yaml", state)
+        append_agent_metric(args.task_id, {"generated_at": now_iso(), "agent": "claude", "phase": "implement", "attempt": attempt, "implementation_cycle": int(state.get("implementation_cycle", 1)), "change_cycle": int(state.get("change_cycle", 0)), "status": "interrupted", "duration_seconds": round(time.monotonic() - started_monotonic, 2), "resumed": bool(session_id), "session_id": detected_session_id or session_id, "usage": usage})
+        raise SystemExit(state["last_error"])
+
+    log_path.write_text(result.stdout, encoding="utf-8")
+    state = read_yaml(td / "state.yaml")
+    detected_session_id, final_text, usage = stream_metadata(result.stdout)
+    if detected_session_id:
+        state["claude_session_id"] = detected_session_id
+    state["last_implementation_log"] = str(log_path)
+    state.setdefault("timestamps", {})["implementation_finished_at"] = now_iso()
+    if result.returncode != 0 and is_interruption(result.stdout):
+        state["status"] = "interrupted"
+        state["last_error"] = f"Claude was interrupted by a usage/session limit; retry implement to resume. See {log_path}"
+    elif result.returncode != 0:
+        state["status"] = "failed"
+        state["last_error"] = f"Claude exited {result.returncode}; see {log_path}"
+    else:
+        checker_failures: list[str] = []
+        handoff_path = td / "implementation.json"
+        if not handoff_path.is_file():
+            checker_failures.append("missing implementation.json handoff")
+        else:
+            try:
+                validate_json(handoff_path, AI_ROOT / "schemas" / "implementation.schema.json")
+                handoff = read_json(handoff_path)
+                applied = {item.get("name"): item for item in handoff.get("applied_skills", [])}
+                missing_applied = [name for name in required_skills if name not in applied]
+                stale_applied = [name for name in required_skills if name in applied and applied[name].get("sha256") != locked_skills[name]["sha256"]]
+                if missing_applied or stale_applied:
+                    checker_failures.append("handoff required skills missing=" + ",".join(missing_applied) + "; stale=" + ",".join(stale_applied))
+            except Exception as exc:
+                checker_failures.append(f"invalid implementation handoff: {exc}")
+        if "implement-nestjs-vertical-slice" in required_skills:
+            checker = AI_ROOT / "skills" / "implement-nestjs-vertical-slice" / "scripts" / "check_port_bindings.py"
+            for item in task.get("worktrees", []):
+                check = run([sys.executable, str(checker), str(ROOT / item["path"])], cwd=ROOT, timeout=120)
+                check_log = runtime / "validation" / f"skill-port-bindings-{item['repo']}.log"
+                check_log.write_text(check.stdout, encoding="utf-8")
+                if check.returncode != 0:
+                    checker_failures.append(f"{item['repo']}: {check.stdout.strip()}")
+        if not checker_failures:
+            try:
+                run_delivery_quality_gates(args.task_id, handoff)
+            except SystemExit as exc:
+                checker_failures.append(str(exc))
+        if checker_failures:
+            state["status"] = "failed"
+            state["last_error"] = "Required skill checks failed: " + " | ".join(checker_failures)
+            result = subprocess.CompletedProcess(result.args, 3, result.stdout)
+        else:
+            state["status"] = "prepared"
+            state["last_error"] = None
+    write_yaml(td / "state.yaml", state)
+    append_agent_metric(args.task_id, {"generated_at": now_iso(), "agent": "claude", "phase": "implement", "attempt": attempt, "implementation_cycle": int(state.get("implementation_cycle", 1)), "change_cycle": int(state.get("change_cycle", 0)), "status": state["status"], "duration_seconds": round(time.monotonic() - started_monotonic, 2), "resumed": bool(session_id), "session_id": detected_session_id or session_id, "usage": usage})
+    print(final_text or result.stdout)
+    raise SystemExit(result.returncode)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+import re
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib.ai_common import ensure_task, read_yaml, requirement_documents, safe_workspace_path, write_json
+
+
+HEADING_RE = re.compile(r"^###\s+(?:\d+\.?\s*)?(.+?)\s*$")
+CHECKBOX_RE = re.compile(r"^\s*[-*]\s+\[\s\]\s+(.+?)\s*$")
+
+
+def slug(value: str) -> str:
+    value = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    return value[:60].rstrip("-") or "slice"
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Generate a deterministic vertical-slice execution plan")
+    parser.add_argument("task_id")
+    parser.add_argument("--force", action="store_true")
+    args = parser.parse_args()
+    td = ensure_task(args.task_id)
+    target = td / "execution-plan.json"
+    if target.exists() and not args.force:
+        existing = json.loads(target.read_text(encoding="utf-8"))
+        if existing.get("status") != "draft" or existing.get("slices", [{}])[0].get("id") != "complete-task":
+            raise SystemExit(f"Execution plan already customized: {target}; use --force to replace it")
+
+    sections: list[tuple[str, list[str]]] = []
+    current_title = "Task requirements"
+    current: list[str] = []
+    requirement_text = "\n".join(safe_workspace_path(path).read_text(encoding="utf-8") for path in requirement_documents(args.task_id, include_user_request=False))
+    for line in requirement_text.splitlines():
+        heading = HEADING_RE.match(line)
+        if heading:
+            if current:
+                sections.append((current_title, current))
+            current_title, current = heading.group(1).strip(), []
+            continue
+        checkbox = CHECKBOX_RE.match(line)
+        if checkbox:
+            current.append(checkbox.group(1).strip())
+    if current:
+        sections.append((current_title, current))
+    if not sections:
+        raise SystemExit("No unchecked acceptance items found in task.md")
+
+    seen: dict[str, int] = {}
+    slices = []
+    for title, criteria in sections:
+        criteria = list(dict.fromkeys(criteria))
+        base = slug(title)
+        seen[base] = seen.get(base, 0) + 1
+        identifier = base if seen[base] == 1 else f"{base}-{seen[base]}"
+        slices.append({
+            "id": identifier,
+            "title": title,
+            "depends_on": [],
+            "acceptance_criteria": [title],
+            "requirement_details": {title: criteria},
+            "deliverables": ["Complete implementation across every applicable architecture layer"],
+            "tests": ["Happy path, failure path and primary-risk regression tests"],
+            "validation": ["Configured repository validation and required deterministic skill checks"],
+            "status": "pending",
+        })
+    state = read_yaml(td / "state.yaml")
+    write_json(target, {
+        "task_id": args.task_id,
+        "implementation_cycle": int(state.get("implementation_cycle", 1)),
+        "change_cycle": int(state.get("change_cycle", 0)),
+        "status": "ready",
+        "slices": slices,
+    })
+    detail_count = sum(sum(len(values) for values in item["requirement_details"].values()) for item in slices)
+    print(f"Execution plan ready: {len(slices)} slices, {len(slices)} primary criteria, {detail_count} detailed requirements")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,51 @@
+version: 1
+id: MEMORIES-0002
+title: '[AUTH] Implement Account, User Profile and Portal Authorization Foundation'
+jira:
+  type: epic
+  parent_id: null
+  epic_id: MEMORIES-0002
+priority: medium
+status: ready
+children: []
+worktrees:
+- repo: backend
+  path: worktrees/MEMORIES-0002/backend
+  base_ref: origin/master
+  writable: true
+agents:
+  implementer: claude
+  reviewer: codex
+skills:
+  implement:
+  - decompose-implementation-task
+  - implement-nestjs-vertical-slice
+  - implement-auth-security-change
+  - verify-openapi-contract
+  review:
+  - review-vertical-slice-completeness
+scope:
+  execution_plan_required: true
+review:
+  max_cycles: 10
+  fail_on:
+  - blocker
+  - major
+validation:
+  backend:
+  - lint
+  - typecheck
+  - test
+  - build
+  - test-architecture
+  - migration-run
+  - migration-revert
+  - migration-run
+  - test-e2e
+report:
+  language: vi
+  include_diff_stat: true
+  include_changed_files: true
+  include_test_results: true
+  include_review_findings: true
+  include_knowledge_updates: true

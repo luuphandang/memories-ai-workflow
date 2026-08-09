@@ -1,0 +1,32 @@
+{
+  "task_id": "MEMORIES-0001",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "status": "ready",
+  "slices": [
+    {
+      "id": "task-requirements",
+      "title": "Task requirements",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Task requirements"
+      ],
+      "requirement_details": {
+        "Task requirements": [
+          "Test thay đổi liên quan.",
+          "Tài liệu/knowledge update nếu phát sinh kiến thức bền vững."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    }
+  ]
+}

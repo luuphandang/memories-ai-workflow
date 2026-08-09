@@ -1,0 +1,13 @@
+{
+  "task_id": "PROJ-1002",
+  "status": "implemented",
+  "summary": "Ví dụ handoff cho cycle hiện hành.",
+  "repositories": [],
+  "decisions": [],
+  "assumptions": [],
+  "validation_commands": [],
+  "acceptance_criteria": [],
+  "knowledge_updates": [],
+  "implementation_cycle": 3,
+  "change_cycle": 2
+}

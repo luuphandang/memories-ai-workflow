@@ -1,0 +1,19 @@
+{
+  "task_id": "MEMORIES-0002",
+  "updates": [
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "suggestion",
+      "summary": "Consider documenting the AccountController contract decision explicitly (no generic PATCH /accounts/:accountId; status/phone/password each have a dedicated endpoint because Account carries no other mutable field) so future reviewers don't re-flag the missing route as a defect.",
+      "content": "",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/testing.md",
+      "type": "suggestion",
+      "summary": "Note that any E2E test hitting POST /auth/refresh must set an Origin header matching a CORS_ORIGIN allowlist entry (OriginGuard), since supertest sends no Origin by default and the app enforces this whenever CORS_ORIGIN is configured.",
+      "content": "",
+      "approved": false
+    }
+  ]
+}

@@ -1,0 +1,299 @@
+{
+  "generated_at": "2026-08-09T15:22:48+07:00",
+  "task_id": "MEMORIES-0002",
+  "implementation_cycle": 3,
+  "change_cycle": 2,
+  "active_change": {
+    "cycle": 2,
+    "kind": "correction",
+    "path": "ai/tasks/MEMORIES-0002/changes/cycle-002",
+    "title": "Thiếu API đăng ký"
+  },
+  "requirement_precedence": "task.md then requirement addenda by ascending cycle; newest explicit conflict wins",
+  "files": [
+    {
+      "path": "ai/shared/policies/security.md",
+      "sha256": "5e2d69086b94b5a3350ddab7669520032af10cb2bd9b4aefabc011d2b03b978f",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/shared/policies/git-policy.md",
+      "sha256": "b2a34262a04fdf1e593db7980edbba4d0480b01d481c760e55e9a3503eaf99d3",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/shared/policies/worktree-policy.md",
+      "sha256": "dbf6a2a5a4666e7e7dcf990ec9afc3d29a423ac5332a0f88d927aaa17dc12416",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/shared/quality/definition-of-done.md",
+      "sha256": "42f4f66c4e9aa8a16fedef512280f3ef2f45ab3a5be75e4bbcc3c64bc05de2fe",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/shared/workflows/requirement-change.md",
+      "sha256": "88b06544caa84e0544a6142ef1cfcd36f0eb7ed02daee5ff6a4f4d644dc5c254",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/shared/workflows/user-acceptance.md",
+      "sha256": "81fcf1017b1677e7c9ccc5023a96cffbce496617d1ce57873f5286b19cc8e249",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/backend/INDEX.md",
+      "sha256": "b70684673e92c48cbd67598908d450de69a0094314e3823d3f13a85d87217363",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/backend/architecture.md",
+      "sha256": "14dcb70cfee78725d759aef1fc8ff28a69e1558dd066a4ab938449dffe8e7b8d",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/backend/conventions.md",
+      "sha256": "9da99b3736b78c2cc16b7a2b4b4bd7289710d06b0d4581b8f4dbc221679d528c",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/backend/testing.md",
+      "sha256": "8d7d80be4107605ceeb0790a4678a6636360538f2ccea0568492c7d10a4761c3",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/backend/source-map.md",
+      "sha256": "a75d9ef01a6a31c6a223d0bc0737d590ebfd00cd68ff6c7e5ea555ef4c4595dd",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/domains/authorization/INDEX.md",
+      "sha256": "b8f59111ccdcd243074a957d1224ae9f57509839826bc0e21e55e1d79ebdca0a",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/tasks/MEMORIES-0002/task.md",
+      "sha256": "0460fefd98f5de4f96b627f6b6df286d950a0214f1908ed019683a22cc1c83d5",
+      "load": "initial",
+      "category": "requirement"
+    },
+    {
+      "path": "ai/tasks/MEMORIES-0002/changes/cycle-001/requirement-addendum.md",
+      "sha256": "a10896ccb4d222bbccda80f2013412156250650135b63204fd45bae4e287b6b3",
+      "load": "initial",
+      "category": "requirement"
+    },
+    {
+      "path": "ai/tasks/MEMORIES-0002/changes/cycle-001/user-request.md",
+      "sha256": "ab9107c28e55a5e9a01c8e92b4891f95d7030877ff5c6983455e8e5d588df20d",
+      "load": "initial",
+      "category": "requirement"
+    },
+    {
+      "path": "ai/tasks/MEMORIES-0002/changes/cycle-002/requirement-addendum.md",
+      "sha256": "a688e3262466f8e3fb1137ae21d84d8fd9ed750d2b1628c58b21ab23bd64d793",
+      "load": "initial",
+      "category": "requirement"
+    },
+    {
+      "path": "ai/tasks/MEMORIES-0002/changes/cycle-002/user-request.md",
+      "sha256": "6de1d8ea010ea67b345d17c99e852cb25fd1b7b615a6738648f65ccbfff859cd",
+      "load": "initial",
+      "category": "requirement"
+    }
+  ],
+  "requirements": [
+    "ai/tasks/MEMORIES-0002/task.md",
+    "ai/tasks/MEMORIES-0002/changes/cycle-001/requirement-addendum.md",
+    "ai/tasks/MEMORIES-0002/changes/cycle-001/user-request.md",
+    "ai/tasks/MEMORIES-0002/changes/cycle-002/requirement-addendum.md",
+    "ai/tasks/MEMORIES-0002/changes/cycle-002/user-request.md"
+  ],
+  "repositories": {
+    "backend": {
+      "path": "worktrees/MEMORIES-0002/backend",
+      "base_ref": "origin/master",
+      "head_sha": "7dfc4f5fe39c9e88a141cc71131805c267e22303",
+      "branch": "feature/MEMORIES-0002-implement-auth",
+      "registered_branch": "feature/MEMORIES-0002-implement-auth",
+      "status": "M apps/api/src/business-modules.ts\n M apps/api/test/media-upload-flow.e2e-spec.ts\n M apps/cli/src/business-modules.ts\n M apps/cli/src/cli-runner.service.ts\n M apps/cli/src/commands/seed.command.ts\n M apps/scheduler/src/business-modules.ts\n M apps/worker/src/business-modules.ts\n M docs/architecture/module-boundaries.md\n M docs/guides/authentication-flow.md\n M libs/modules/identity-access/src/identity-access.module.ts\n M libs/modules/identity-access/src/public-api.ts\n M libs/platform/configuration/src/config/auth.config.ts\n M libs/platform/configuration/src/schemas/env.schema.ts\n M libs/platform/database/src/public-api.ts\n M libs/platform/security/src/authorization.contract.ts\n M libs/platform/security/src/jwt-auth.guard.ts\n M libs/platform/security/src/public-api.ts\n M libs/platform/security/src/refresh-cookie.helper.ts\n M libs/platform/security/src/security.module.ts\n M libs/platform/security/test/jwt-auth.guard.spec.ts\n M libs/shared/kernel/src/public-api.ts\n M nest-cli.json\n M package-lock.json\n M package.json\n M tsconfig.json\n?? apps/api/test/auth-flow.e2e-spec.ts\n?? libs/modules/identity-access/src/application/ports/\n?? libs/modules/identity-access/src/application/use-cases/\n?? libs/modules/identity-access/src/domain/accounts/\n?? libs/modules/identity-access/src/domain/auth-identities/\n?? libs/modules/identity-access/src/domain/permissions/\n?? libs/modules/identity-access/src/domain/roles/\n?? libs/modules/identity-access/src/domain/sessions/\n?? libs/modules/identity-access/src/domain/value-objects/\n?? libs/modules/identity-access/src/infrastructure/persistence/\n?? libs/modules/identity-access/src/infrastructure/security/\n?? libs/modules/identity-access/src/presentation/http/\n?? libs/modules/identity-access/test/\n?? libs/modules/user-profiles/\n?? libs/platform/database/src/audit.orm-entity.ts\n?? libs/platform/database/src/migrations/1722540000000-CreateIdentityAccessSchema.ts\n?? libs/platform/database/src/migrations/1722550000000-CreateUserProfilesSchema.ts\n?? libs/platform/security/src/identity.contracts.ts\n?? libs/platform/security/src/origin.guard.ts\n?? libs/platform/security/src/portal.guard.ts\n?? libs/platform/security/src/request-context.middleware.ts\n?? libs/platform/security/src/request-context.ts\n?? libs/platform/security/test/origin.guard.spec.ts\n?? libs/platform/security/test/portal.guard.spec.ts\n?? libs/shared/kernel/src/entities/auditable-props.ts"
+    }
+  },
+  "skills": {
+    "required": {
+      "implement": [
+        "decompose-implementation-task",
+        "implement-nestjs-vertical-slice",
+        "implement-auth-security-change",
+        "verify-openapi-contract"
+      ],
+      "review": [
+        "review-vertical-slice-completeness"
+      ]
+    },
+    "locked": {
+      "decompose-implementation-task": {
+        "path": "ai/skills/decompose-implementation-task/SKILL.md",
+        "sha256": "0d8e89a94111bd5679c8c5ef6c8f5ce250621909f51704bf676af966f2fd4673",
+        "files": [
+          {
+            "path": "ai/skills/decompose-implementation-task/SKILL.md",
+            "sha256": "e76360df532bcd2ca38cde438c7626d17330561e5299343400c0a6b746d152e3"
+          },
+          {
+            "path": "ai/skills/decompose-implementation-task/agents/openai.yaml",
+            "sha256": "c7bf833bcb990adf03cabfaddf25b463ad652bc6c69a385f094c4ab3d67a5d3f"
+          },
+          {
+            "path": "ai/skills/decompose-implementation-task/references/scope-thresholds.md",
+            "sha256": "b913b844e0371b7916c27e112a1e0c4d3a645dbc5659916bfdd6d6309107fe54"
+          },
+          {
+            "path": "ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py",
+            "sha256": "e7aee9f8bbd374ee7ccd909f09cb3a91adb963fb0fe4a40d974201cec867833c"
+          }
+        ]
+      },
+      "implement-auth-security-change": {
+        "path": "ai/skills/implement-auth-security-change/SKILL.md",
+        "sha256": "8de0236f5e04b9c74a738f6ffc71224070c4ddd230cbccbe88fe8e1144627332",
+        "files": [
+          {
+            "path": "ai/skills/implement-auth-security-change/SKILL.md",
+            "sha256": "dbb30f984b81b81f3d59a89e754e78f61de4dbd1271159df236fc3f90fc4ddd7"
+          },
+          {
+            "path": "ai/skills/implement-auth-security-change/agents/openai.yaml",
+            "sha256": "ca97db424a047e2e0ea74ad29a00d28a9482577a61213ee9d435d3487988187c"
+          },
+          {
+            "path": "ai/skills/implement-auth-security-change/references/identity-and-credentials.md",
+            "sha256": "4db762f3b851633808e3f267fe12ecf99d9a9b9788707d1263d384af60ee2be0"
+          },
+          {
+            "path": "ai/skills/implement-auth-security-change/references/security-verification.md",
+            "sha256": "2392d5d5b6684ec94c667f82fc8702255ab352111d01134079512e8172cf1759"
+          },
+          {
+            "path": "ai/skills/implement-auth-security-change/references/sessions-and-authorization.md",
+            "sha256": "65842379d2b8999e78df3a9a1b4ba8a5912cf932c04fa53c607b337470c9a086"
+          },
+          {
+            "path": "ai/skills/implement-auth-security-change/scripts/check_auth_invariants.py",
+            "sha256": "560becc3ce95ae28d86219fd6868ca85c236441a4c401f4616faaa5fb8f87648"
+          }
+        ]
+      },
+      "implement-nestjs-vertical-slice": {
+        "path": "ai/skills/implement-nestjs-vertical-slice/SKILL.md",
+        "sha256": "46320b8e5f671d095152f339031d0470207a8caa7de73e0e219b45b683321335",
+        "files": [
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/SKILL.md",
+            "sha256": "d2fd8e3b76d834d1eebab0f6c483c8f8f4fd4719af59897bf17b910d47b30b09"
+          },
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/agents/openai.yaml",
+            "sha256": "94ac591ab17919e4a12c2f7ff9b86ada8f5369fc766eae18146491421f60ff19"
+          },
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/references/clean-architecture.md",
+            "sha256": "ef3b5a5cf6257ab7034e9cbd384cae91ace3be28188cc4c40a90711b07bb5bd8"
+          },
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/references/dependency-injection.md",
+            "sha256": "5b0735862d5e39a0d4e8cc5121eadb52b9038e825db53714ad571ef5d071043a"
+          },
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/references/persistence.md",
+            "sha256": "4d895be7a1dfd9f1d74e62c2e37ea9d898dd4e45d43a1cd8a5e01a1b84197f1c"
+          },
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/references/testing.md",
+            "sha256": "83652fe179d6b695a58282e79e06321f0c6b406a3b53c565a4b0a41093a40129"
+          },
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/scripts/check_module_wiring.py",
+            "sha256": "40717005a2b7c64f9508bf96f08ad424a50686f89c4a02843d9b543e11fa9782"
+          },
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/scripts/check_port_bindings.py",
+            "sha256": "50b16fb42abb1ad7012577aef0ec03d1e913a8e70fb0bac6737056c59480647f"
+          }
+        ]
+      },
+      "review-vertical-slice-completeness": {
+        "path": "ai/skills/review-vertical-slice-completeness/SKILL.md",
+        "sha256": "e81a7ff83e887692a56ff0dd8d1173b34410afacdb09e2c30011cf3c9d5de099",
+        "files": [
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/SKILL.md",
+            "sha256": "93eec980619cb1aa3834b189bac7af43abb448231c2339ca598e9a028fe9fead"
+          },
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/agents/openai.yaml",
+            "sha256": "e196bf2320746ec34429ae876a64884421aae76b9aae46369b016ea4e7744742"
+          },
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/references/evidence-matrix.md",
+            "sha256": "94c10689d431deb1d20bbfcebfeddf9479f1b28517ce2ccb653f71987614bf16"
+          },
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/references/review-gates.md",
+            "sha256": "49b2ec8c1b41687890f0434088b635e108d23765dd5dbf3bada9e3efd529c467"
+          },
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/scripts/build_evidence_matrix.py",
+            "sha256": "ddf9624d7b7ae57603a14a6c2cd1fcd62e2ab8eccf89d15fa641370a3ab7a95b"
+          }
+        ]
+      },
+      "verify-openapi-contract": {
+        "path": "ai/skills/verify-openapi-contract/SKILL.md",
+        "sha256": "c55f03a12edf369434e1588f7eb141eb3a9816286d813bbde4522b5e9bf7b9ba",
+        "files": [
+          {
+            "path": "ai/skills/verify-openapi-contract/SKILL.md",
+            "sha256": "8edc6b39b7a444d013b37414a0644b8305d67dd110569ee4bae23bdbc054c440"
+          },
+          {
+            "path": "ai/skills/verify-openapi-contract/agents/openai.yaml",
+            "sha256": "810ea071b2fdd1fd56c1963a4417a230bb8eae844c3aa5847e74dbdff3a01af5"
+          },
+          {
+            "path": "ai/skills/verify-openapi-contract/references/manifest.md",
+            "sha256": "b793e00004be5146274e0fe73c403970ff9f95f98b0230638c4bd889e264d544"
+          },
+          {
+            "path": "ai/skills/verify-openapi-contract/scripts/check_openapi_contract.py",
+            "sha256": "ec8bd84c50f8525e59d275202a484232db3c0874c0345034dcebb024f5841c45"
+          }
+        ]
+      }
+    }
+  },
+  "execution_plan": "ai/tasks/MEMORIES-0002/execution-plan.json",
+  "scope_assessment": {
+    "acceptance_items": 215,
+    "risk_dimensions": [
+      "api",
+      "background",
+      "database",
+      "security",
+      "ui"
+    ],
+    "large": true
+  }
+}

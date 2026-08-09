@@ -1,0 +1,51 @@
+version: 1
+mandatory:
+- path: ai/shared/policies/security.md
+  reason: Security boundaries
+  load: initial
+- path: ai/shared/policies/git-policy.md
+  reason: Git restrictions
+  load: initial
+- path: ai/shared/policies/worktree-policy.md
+  reason: Worktree restrictions
+  load: initial
+- path: ai/shared/quality/definition-of-done.md
+  reason: Completion criteria
+  load: initial
+- path: ai/shared/workflows/requirement-change.md
+  reason: Requirement precedence and change-cycle rules
+  load: initial
+- path: ai/shared/workflows/user-acceptance.md
+  reason: User acceptance gate
+  load: initial
+repositories:
+  backend:
+  - path: ai/repos/backend/INDEX.md
+    reason: Repository knowledge index
+    load: initial
+  - path: ai/repos/backend/architecture.md
+    reason: Architecture and module boundaries
+    load: on-demand
+  - path: ai/repos/backend/conventions.md
+    reason: Repository conventions
+    load: on-demand
+  - path: ai/repos/backend/testing.md
+    reason: Testing requirements
+    load: on-demand
+  - path: ai/repos/backend/source-map.md
+    reason: Source navigation map
+    load: on-demand
+domains:
+- path: ai/domains/authorization/INDEX.md
+  reason: Authorization domain knowledge for this feature
+  load: on-demand
+exclude:
+- ai/runtime/**
+- ai/tasks/*/changes/*/baseline/**
+- ai/tasks/*/final-report.md
+- ai/tasks/*/review.json
+- '**/node_modules/**'
+- '**/dist/**'
+- '**/build/**'
+- '**/.env*'
+- '**/secrets/**'

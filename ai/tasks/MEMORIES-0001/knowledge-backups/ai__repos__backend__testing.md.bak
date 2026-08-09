@@ -1,0 +1,9 @@
+# Memories Backend Testing
+
+- Framework: Jest (`ts-jest`) + `@nestjs/testing`.
+- Unit/integration/e2e boundary: unit test nằm cạnh lib/module tại `<lib>/test/*.spec.ts`, chạy qua `npx jest`; e2e test nằm ở `apps/api/test/*.e2e-spec.ts`, chạy qua `npm run test:e2e` (config riêng `test/jest-e2e.json`), dựng thật 2 Nest application context (`api` + `worker`) cùng lúc.
+- Fixture/factory: helper function khai báo trực tiếp trong từng file spec (ví dụ `recentJob()`, `fakeConfigService()`), chưa có shared fixture/factory library dùng chung toàn repo.
+- Database test strategy: e2e test chạy migration thật (`npm run migration:run`) lên 1 Postgres container throwaway (docker-compose test), không mock ORM; unit test mock repository ở boundary port/interface.
+- Mock policy: unit test mock tại boundary port (repository, `BackgroundJobPublisher`, `RealtimePublisher`, v.v.), không mock nội bộ domain/use case; e2e test KHÔNG mock hạ tầng — Postgres/Redis/MinIO đều là container thật, xác nhận hành vi shutdown/timeout/lỗi thật thay vì giả lập.
+- Command theo phạm vi: `npm test` (toàn bộ unit), `npx jest <path>` (1 file/suite), `npm run test:e2e` (e2e), `npm run test:architecture` (`depcruise`, kiểm tra module boundary), `npm run typecheck`, `npm run lint`.
+- Test bắt buộc cho tính năng hiện tại: `[BỔ SUNG THEO TÍNH NĂNG]`
