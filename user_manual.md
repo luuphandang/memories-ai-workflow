@@ -52,6 +52,8 @@ Không thay marker bằng giả định chưa được kiểm chứng.
 - Python 3.10+.
 - Claude Code CLI đã cài và đăng nhập.
 - Codex CLI đã cài và đăng nhập.
+- CodeGraph CLI (khuyến nghị; bắt buộc khi `AI_CODEGRAPH_MODE=required`). CodeGraph chạy
+  cục bộ, cung cấp knowledge graph cho Claude/Codex qua MCP và không yêu cầu API key.
 - Toolchain của từng repository: Node.js `>=20.0.0` + npm (workspaces) cho cả `apps/backend` và `apps/frontend`; backend cần thêm PostgreSQL, Redis và 1 S3-compatible storage (MinIO ở local/dev) chạy qua `apps/backend/docker/docker-compose.yml`.
 
 Kiểm tra:
@@ -61,7 +63,36 @@ git --version
 python3 --version
 claude --version
 codex --version
+codegraph --version
 ```
+
+### 4.1 Cài CodeGraph CLI
+
+Chọn **một** trong hai cách sau.
+
+macOS/Linux, dùng standalone bundle chính thức:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh
+```
+
+Nếu máy đã có Node.js/npm:
+
+```bash
+npm install -g @colbymchenry/codegraph
+```
+
+Mở terminal mới nếu `codegraph` chưa xuất hiện trên `PATH`, sau đó kiểm tra:
+
+```bash
+codegraph --version
+codegraph help
+```
+
+Workflow này tự sinh MCP config riêng cho từng task/worktree khi gọi Claude và Codex,
+do đó **không cần** chạy `codegraph install` để sửa global config của agent. Không chạy
+`codegraph init` tại workspace root; mỗi repository phải có index riêng trong worktree
+đã đăng ký, được tạo bằng lệnh `ai task codegraph <ID> --init` ở mục 11.
 
 ## 5. Khởi tạo một lần
 
@@ -82,6 +113,8 @@ export CLAUDE_CONFIG_DIR="$HOME/.project-ai/claude"
 export CODEX_HOME="$HOME/.project-ai/codex"
 export CLAUDE_COMMAND="claude"
 export CODEX_COMMAND="codex"
+export CODEGRAPH_COMMAND="codegraph"
+export AI_CODEGRAPH_MODE="optional"
 export CLAUDE_TIMEOUT_SECONDS="3600"
 export CODEX_TIMEOUT_SECONDS="1800"
 export AI_MAX_TURNS="60"
@@ -105,6 +138,17 @@ Các biến `AI_*` kiểm soát ngân sách context:
 - `AI_MAX_CONTEXT_TOKENS`: ngưỡng ghi nhận budget breach và buộc phần việc tiếp theo dùng fresh bounded session; mặc định `80000`.
 
 Mỗi giá trị phải là số nguyên dương. Không tăng giới hạn ngay khi agent chưa hoàn tất; trước tiên kiểm tra slice có quá lớn, context có dư thừa hoặc validation có đang bị chạy lặp lại hay không.
+
+Các biến CodeGraph:
+
+- `CODEGRAPH_COMMAND`: tên command trên `PATH` hoặc đường dẫn tuyệt đối tới executable;
+  mặc định `codegraph`.
+- `AI_CODEGRAPH_MODE=optional`: chế độ mặc định; thiếu CLI/index thì workflow vẫn chạy
+  và agent dùng công cụ khám phá source thông thường.
+- `AI_CODEGRAPH_MODE=required`: `prepare-context`, implement hoặc review dừng nếu CLI hay
+  index của bất kỳ repository nào không sẵn sàng. Khuyến nghị cho CI hoặc team đã chuẩn
+  hóa CodeGraph.
+- `AI_CODEGRAPH_MODE=off`: không kiểm tra, sync hoặc nối CodeGraph MCP vào agent.
 
 ## 6. Đưa repository gốc vào `apps/`
 
@@ -245,7 +289,7 @@ Script ghi lại:
 
 Branch đã đăng ký được dùng để bảo vệ luồng reopened.
 
-## 11. Chuẩn bị plan, skill và context
+## 11. Chuẩn bị CodeGraph, plan, skill và context
 
 Thay domain mẫu bằng domain thật khi đã có dữ liệu:
 
@@ -260,8 +304,51 @@ Sau đó sửa `context.yaml` để tham chiếu domain mới. Chạy các bư�
 # kiểm tra đề xuất; chỉ áp dụng khi mapping phù hợp
 ./ai/bin/ai task classify-skills PROJ-1002 --apply
 ./ai/bin/ai task prepare-plan PROJ-1002 --force
+
+# Tạo index nếu worktree chưa có .codegraph/, đồng thời sync và health-check.
+./ai/bin/ai task codegraph PROJ-1002 --init
+
+# Luôn khóa context sau khi CodeGraph đã sẵn sàng.
 ./ai/bin/ai task prepare-context PROJ-1002
 ```
+
+`task codegraph` xử lý tất cả worktree đã khai báo trong `task.yaml` và in trạng thái
+JSON theo repository. Các biến thể:
+
+```bash
+# Tạo index còn thiếu, sync index hiện có và kiểm tra status
+./ai/bin/ai task codegraph PROJ-1002 --init
+
+# Chỉ sync và kiểm tra; trả mã lỗi nếu CLI/index chưa sẵn sàng
+./ai/bin/ai task codegraph PROJ-1002
+
+# Chỉ kiểm tra index, không chạy incremental sync
+./ai/bin/ai task codegraph PROJ-1002 --no-sync
+```
+
+Sau `--init`, mỗi worktree có thư mục `.codegraph/`. Khi agent chạy, workflow sinh một
+MCP server riêng cho mỗi repository với tên đã chuẩn hóa `codegraph_<repo>` và trỏ
+`--path` đúng worktree. Ví dụ repository `backend-api` dùng server
+`codegraph_backend_api`. Cách này ngăn Claude/Codex truy vấn nhầm graph khi một task có
+nhiều repository.
+
+`prepare-context` tự chạy incremental sync và `codegraph status --json` đối với index
+hiện có, sau đó ghi kết quả vào:
+
+```text
+ai/tasks/PROJ-1002/context.lock.json
+└── codegraph
+    ├── mode
+    └── repositories.<repo>
+        ├── available
+        ├── indexed
+        └── ready
+```
+
+Sau khi agent bắt đầu, CodeGraph MCP theo dõi thay đổi source và tự cập nhật graph.
+Agent ưu tiên CodeGraph cho kiến trúc, symbol flow, caller/callee và impact analysis;
+agent vẫn đọc file trực tiếp để xác minh nội dung vừa sửa, file phi mã nguồn hoặc phần
+CodeGraph báo thiếu/stale.
 
 `classify-skills` xác định skill implement/review cần dùng. `prepare-plan` tạo execution plan từ requirements và skill đã chọn. `prepare-context` là bước khóa cuối cùng, vì vậy phải chạy lại sau mọi thay đổi trong `task.md`, requirement addendum, `task.yaml.skills` hoặc execution plan.
 
@@ -273,6 +360,8 @@ Script sẽ:
 - Tạo SHA-256 cho tài liệu.
 - Khóa aggregate hash của các skill bắt buộc và execution plan.
 - Ghi `context.lock.json`.
+- Sync/health-check CodeGraph và khóa trạng thái từng repository trong
+  `context.lock.json.codegraph`.
 
 Nếu active change cycle còn marker chưa xử lý, script dừng để tránh agent làm theo yêu cầu thiếu.
 
@@ -723,7 +812,12 @@ worktrees/<ID>/.ai/
 # Chuẩn bị
 ./ai/bin/ai task classify-skills PROJ-1002 --apply
 ./ai/bin/ai task prepare-plan PROJ-1002 --force
+./ai/bin/ai task codegraph PROJ-1002 --init
 ./ai/bin/ai task prepare-context PROJ-1002
+
+# CodeGraph: sync/status hoặc chỉ status
+./ai/bin/ai task codegraph PROJ-1002
+./ai/bin/ai task codegraph PROJ-1002 --no-sync
 
 # Pipeline tự động (khuyến nghị)
 ./ai/bin/ai task run PROJ-1002 --dry-run
@@ -802,6 +896,9 @@ Toàn bộ nội dung ví dụ là trung lập và không dùng dữ liệu dự
 - [ ] Skill implement/review đã được classify, kiểm tra và apply.
 - [ ] `execution-plan.json` phản ánh requirements hiện hành.
 - [ ] Mỗi slice đủ nhỏ để hoàn thành trong ngân sách turn; dependency giữa các slice đúng.
+- [ ] Nếu dùng CodeGraph, `./ai/bin/ai task codegraph <ID> --init` đã pass cho mọi worktree.
+- [ ] `context.lock.json.codegraph.repositories.<repo>.ready` là `true` khi chạy ở mode
+  `required`.
 - [ ] `context.lock.json` được tạo sau lần sửa requirements/skill/plan cuối cùng.
 
 ### Trước Codex

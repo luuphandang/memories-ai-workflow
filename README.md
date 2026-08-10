@@ -37,6 +37,8 @@ source .env.ai
 
 - Hướng dẫn thao tác: [`user_manual.md`](user_manual.md)
 - Chức năng từng file/folder: [`folder_structure_guide.md`](folder_structure_guide.md)
+- CodeGraph theo task: cài CLI, chạy `./ai/bin/ai task codegraph <ID> --init`, rồi
+  `prepare-context`; xem chi tiết trong [`ai/README.md`](ai/README.md).
 
 ## An toàn
 

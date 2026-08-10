@@ -77,6 +77,7 @@ def main() -> None:
         "Edit",
         "Glob",
         "Grep",
+        "mcp__codegraph_*__*",
         "Bash(git rev-parse *)",
         "Bash(npm *)",
         "Bash(yarn *)",
@@ -102,6 +103,12 @@ def main() -> None:
     for command in ("git", "python3", "claude", "codex", "node", "npm", "docker"):
         if shutil.which(command) is None:
             errors.append(f"Required command is not available on PATH: {command}")
+
+    codegraph_mode = os.environ.get("AI_CODEGRAPH_MODE", "optional").strip().lower()
+    if codegraph_mode not in {"off", "optional", "required"}:
+        errors.append("AI_CODEGRAPH_MODE must be off, optional, or required")
+    if codegraph_mode == "required" and shutil.which(os.environ.get("CODEGRAPH_COMMAND", "codegraph")) is None:
+        errors.append("CodeGraph is required but CODEGRAPH_COMMAND is not available on PATH")
 
     if not any(shutil.which(command) for command in ("yarn", "pnpm", "npm")):
         errors.append("No supported JavaScript package manager is available on PATH")

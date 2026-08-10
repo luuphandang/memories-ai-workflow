@@ -23,6 +23,9 @@ luôn dùng đúng danh sách requirement đã khóa trong `context.lock.json`.
 - Đọc và áp dụng toàn bộ skill bắt buộc đã khóa trong `context.lock.json`; không dùng bản skill có hash khác.
 - Theo `execution-plan.json`, chỉ xử lý một vertical slice tại một thời điểm và cập nhật checkpoint.
 - Chỉ đọc tài liệu được liệt kê/khóa trong context, sau đó mở rộng on-demand khi thực sự liên quan.
+- Khi `context.lock.json.codegraph.repositories.<repo>.ready` là `true`, dùng MCP
+  `codegraph_<repo>` trước cho câu hỏi kiến trúc, symbol flow, caller/callee và impact.
+  Chỉ quay về grep/read khi kiểm tra nội dung vừa sửa, file phi mã nguồn hoặc graph báo thiếu/stale.
 - Giữ nguyên thay đổi không liên quan đang tồn tại trong worktree.
 - Không đọc secret, `.env`, token, credential hoặc dữ liệu người dùng thật.
 - Không commit, push, merge, rebase, reset, clean, checkout/switch branch hoặc quản lý worktree.

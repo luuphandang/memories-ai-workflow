@@ -20,6 +20,10 @@ Read in order:
 9. Every required implementation skill listed and hashed by the context lock
 10. `ai/tasks/<TASK-ID>/execution-plan.json`
 
+When a task's context lock marks a repository CodeGraph-ready, query its
+`codegraph_<repo>` MCP server first for architecture, symbol flow and impact analysis.
+Use direct file reads for live-edit verification, non-code artifacts, or graph gaps.
+
 The newest active unconsolidated addendum wins only for the conflicts it explicitly describes.
 
 # Boundaries

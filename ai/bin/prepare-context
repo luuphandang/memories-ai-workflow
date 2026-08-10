@@ -8,6 +8,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib.ai_common import (
     AI_ROOT,
+    ROOT,
     enforce_global_git_policy,
     ensure_task,
     git_value,
@@ -22,6 +23,7 @@ from lib.ai_common import (
     write_yaml,
     validate_json,
 )
+from lib.codegraph import inspect_task_repositories
 
 
 def iter_context_items(context: dict):
@@ -157,6 +159,8 @@ def main() -> None:
             "status": git_value(worktree_path, ["status", "--short"], ""),
         }
 
+    codegraph_repositories = inspect_task_repositories(ROOT, task, sync=True)
+
     if missing:
         raise SystemExit(
             "Missing/unresolved context or worktree:\n- " + "\n- ".join(missing)
@@ -188,6 +192,10 @@ def main() -> None:
         "files": files,
         "requirements": requirement_docs,
         "repositories": repositories,
+        "codegraph": {
+            "mode": __import__("os").environ.get("AI_CODEGRAPH_MODE", "optional"),
+            "repositories": codegraph_repositories,
+        },
         "skills": {"required": required_skills, "locked": locked_skills},
         "execution_plan": f"ai/tasks/{args.task_id}/execution-plan.json" if execution_plan.is_file() else None,
         "scope_assessment": {

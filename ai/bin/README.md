@@ -8,6 +8,8 @@
 - `prepare-context`: kiểm tra tài liệu/worktree, nạp các requirement addendum và tạo context lock.
 - `prepare-plan`: phân rã checkbox requirement thành vertical slices và tạo `execution-plan.json` cho cycle hiện hành.
 - `classify-skills`: đề xuất skill theo repository/nội dung; chỉ sửa `task.yaml` khi có `--apply`.
+- `manage-codegraph`: tạo/sync/kiểm tra CodeGraph index cho mọi worktree của task; MCP
+  được sinh động theo task cho Claude và Codex, không sửa global agent config.
 - `run-claude`: gọi Claude implementer cho cycle hiện hành; lưu checkpoint/log theo attempt và resume phiên bị gián đoạn khi có session ID.
 - `run-claude` đồng thời bắt buộc skill hash, handoff skill evidence và các deterministic implementation checks.
 - `run-task`: tự động lặp implement → validate → review → request-fixes; tự xếp validation failure cho attempt sau và dừng ở user acceptance hoặc trạng thái cần can thiệp.

@@ -32,3 +32,7 @@ for p in (AI / "bin").iterdir():
 print(f"Configured local AI home: {HOME}")
 print(f"export CLAUDE_CONFIG_DIR={HOME / 'claude'}")
 print(f"export CODEX_HOME={HOME / 'codex'}")
+if shutil.which(os.environ.get("CODEGRAPH_COMMAND", "codegraph")):
+    print("CodeGraph CLI detected; initialize task worktrees with: ai task codegraph <ID> --init")
+else:
+    print("CodeGraph CLI not found (optional). Install it, then run: ai task codegraph <ID> --init")

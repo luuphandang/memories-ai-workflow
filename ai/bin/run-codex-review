@@ -33,6 +33,7 @@ from lib.ai_common import (
     write_yaml,
     task_risk_level,
 )
+from lib.codegraph import codex_mcp_overrides, prompt_guidance
 
 
 def timeout_output(exc: subprocess.TimeoutExpired) -> str:
@@ -108,6 +109,7 @@ def main() -> None:
     implementation = read_json(implementation_path)
     validation = read_json(validation_path)
     context_lock = read_json(td / "context.lock.json")
+    codegraph_guidance = prompt_guidance(ROOT, context_lock)
     current_implementation_cycle = int(state.get("implementation_cycle", 1))
     current_change_cycle = int(state.get("change_cycle", 0))
     if implementation.get("implementation_cycle") != current_implementation_cycle or implementation.get("change_cycle") != current_change_cycle:
@@ -204,6 +206,9 @@ def main() -> None:
     )
     prompt = f"""Review the current implementation for Jira item {args.task_id}.
 
+Code intelligence:
+{codegraph_guidance}
+
 Current implementation cycle: {current_implementation_cycle}
 Current change cycle: {current_change_cycle}
 Configured blocking severities (review.fail_on): {fail_on_text}
@@ -266,6 +271,9 @@ missing. A pass means technically ready for user acceptance, not completed.
         str(review_path),
         prompt,
     ]
+    prompt_value = cmd.pop()
+    cmd.extend(codex_mcp_overrides(ROOT, context_lock))
+    cmd.append(prompt_value)
     if args.print_command or args.dry_run:
         print(" ".join(shlex.quote(value) for value in cmd))
         print(f"Timeout: {timeout_seconds} seconds")

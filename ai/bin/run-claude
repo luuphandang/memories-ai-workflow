@@ -32,6 +32,7 @@ from lib.ai_common import (
     active_execution_slice,
     token_budget,
 )
+from lib.codegraph import claude_mcp_config, prompt_guidance
 
 
 INTERRUPTION_MARKERS = (
@@ -106,6 +107,7 @@ def main() -> None:
     runtime = runtime_dir(args.task_id)
     requirements = requirement_documents(args.task_id, include_user_request=True)
     context_lock = read_json(td / "context.lock.json")
+    codegraph_guidance = prompt_guidance(ROOT, context_lock)
     budget = token_budget()
     active_slice = active_execution_slice(args.task_id)
     slice_id = active_slice.get("id") if active_slice else None
@@ -256,6 +258,9 @@ def main() -> None:
     bundle_path.write_text(json.dumps(context_bundle, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     prompt = f"""Implement Jira item {args.task_id}.
 
+Code intelligence:
+{codegraph_guidance}
+
 Current implementation cycle: {state.get('implementation_cycle', 1)}
 Current change cycle: {state.get('change_cycle', 0)}
 
@@ -338,6 +343,11 @@ Use these exact slice evidence keys for completed execution-plan slices:
     (runtime / "input" / "claude-prompt.md").write_text(invocation_prompt, encoding="utf-8")
 
     cmd = [command, "-p", "--output-format", "stream-json", "--verbose", "--dangerously-skip-permissions", "--max-turns", str(budget["max_turns"])]
+    mcp_config = claude_mcp_config(ROOT, context_lock)
+    if mcp_config["mcpServers"]:
+        mcp_config_path = runtime / "input" / "codegraph-mcp.json"
+        mcp_config_path.write_text(json.dumps(mcp_config, indent=2) + "\n", encoding="utf-8")
+        cmd.extend(["--mcp-config", str(mcp_config_path)])
     if session_id:
         cmd.extend(["--resume", str(session_id)])
     cmd.append(invocation_prompt)

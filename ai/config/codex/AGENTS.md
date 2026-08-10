@@ -22,6 +22,10 @@ Always read:
 10. Every required review skill, execution plan and deterministic skill evidence
 11. Every prior `fix-request-review-*.md` and current code paths that resolved those findings
 
+When a task's context lock marks a repository CodeGraph-ready, query its
+`codegraph_<repo>` MCP server first for architecture, symbol flow and impact analysis.
+Use direct file reads for live-edit verification, non-code artifacts, or graph gaps.
+
 The newest active unconsolidated addendum wins only for the conflicts it explicitly describes.
 
 Do not modify source code. Return only JSON matching `ai/schemas/review.schema.json`.

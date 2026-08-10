@@ -12,6 +12,7 @@
       "Edit",
       "Glob",
       "Grep",
+      "mcp__codegraph_*__*",
       "Bash",
       "Bash(git status *)",
       "Bash(git diff *)",
