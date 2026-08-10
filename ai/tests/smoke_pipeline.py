@@ -247,6 +247,9 @@ def run_cycle(root: Path, task_dir: Path, implementation_cycle: int, change_cycl
     write_json(task_dir / "implementation.json", with_skill_evidence(task_dir, implementation("TEST-1002", implementation_cycle, change_cycle), "implement"))
     write_validation(root, implementation_cycle, change_cycle)
     write_json(task_dir / "review.json", with_skill_evidence(task_dir, review("TEST-1002", implementation_cycle, change_cycle), "review"))
+    # This fixture represents a normal, complete (full) review; only a full review's
+    # pass can authorize report/acceptance (delta reviews cannot, by contract).
+    set_state_fields(task_dir / "state.yaml", last_review_mode="full")
     run([str(ai), "task", "report", "TEST-1002"], root)
     state = (task_dir / "state.yaml").read_text(encoding="utf-8")
     assert "awaiting_user_acceptance" in state
@@ -292,11 +295,12 @@ def main() -> None:
         write_json(task_dir / "review.json", with_skill_evidence(task_dir, review("TEST-1002", 1, 0, "changes_requested", [minor]), "review"))
         set_state_fields(task_dir / "state.yaml", review_cycle=1, status="changes_requested_by_codex")
         fix = run([str(ai), "task", "request-fixes", "TEST-1002"], root)
-        assert "fix-request-review-1.md" in fix.stdout
-        assert "[minor]" in (root / "worktrees" / "TEST-1002" / ".ai" / "input" / "fix-request-review-1.md").read_text()
+        assert "fix-request-review-001.md" in fix.stdout
+        assert "[minor]" in (root / "worktrees" / "TEST-1002" / ".ai" / "input" / "fix-request-review-001.md").read_text()
 
         # Complete the initial cycle.
         write_json(task_dir / "review.json", with_skill_evidence(task_dir, review("TEST-1002", 1, 0), "review"))
+        set_state_fields(task_dir / "state.yaml", last_review_mode="full")
         run([str(ai), "task", "report", "TEST-1002"], root)
 
         # Correction before acceptance, same worktree.

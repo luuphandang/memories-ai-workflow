@@ -4,10 +4,18 @@
 
 1. Ranh giới an toàn và policy trong `ai/shared/policies/`.
 2. Yêu cầu gốc trong `ai/tasks/<TASK-ID>/task.md`.
-3. Các requirement addendum theo thứ tự `changes/cycle-NNN/`; cycle mới hơn ghi đè phần xung đột được nêu rõ.
+3. Chỉ các requirement addendum **chưa được gộp** (unconsolidated), theo thứ tự
+   `changes/cycle-NNN/`, đúng như danh sách trong `context.lock.json.requirements`
+   (sinh bởi resolver `requirement_documents()` dùng chung cho mọi agent). Addendum của
+   cycle ≤ `requirements_consolidated_through_cycle` đã được gộp vào `task.md` — đây là
+   audit artifact lịch sử, **không đọc lại và không áp dụng lần nữa**. Trong các addendum
+   còn hiệu lực, addendum mới hơn chỉ ghi đè phần xung đột được nêu rõ.
 4. Knowledge theo repo/domain được liệt kê trong `context.yaml`.
 5. Source code thực tế trong worktree.
 6. Giả định được ghi rõ; không biến giả định thành sự thật.
+
+Không tự ý glob/tự đọc lại toàn bộ `changes/cycle-*/requirement-addendum.md` trên đĩa —
+luôn dùng đúng danh sách requirement đã khóa trong `context.lock.json`.
 
 ## Bắt buộc
 

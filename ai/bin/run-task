@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib.ai_common import AI_ROOT, ensure_task, now_iso, read_json, read_yaml, runtime_dir, write_yaml
+from lib.ai_common import AI_ROOT, ROOT, ensure_task, now_iso, read_json, read_yaml, runtime_dir, write_yaml
 
 
 def invoke(args: list[str]) -> int:
@@ -29,7 +29,8 @@ def validation_fix_request(task_id: str, attempt: int) -> Path:
     for repo in summary.get("repositories", []):
         for item in repo.get("commands", []):
             if item.get("required") and item.get("status") not in {"passed", "planned"}:
-                lines.extend([f"## {repo.get('repo')} — {item.get('name')}", "", f"- Command: `{item.get('command', '')}`", f"- Status: {item.get('status')}", f"- Output tail:\n\n```text\n{item.get('output_tail', '')[-4000:]}\n```", ""])
+                tail = item.get("output_tail", "").splitlines()[-40:]
+                lines.extend([f"## {repo.get('repo')} — {item.get('name')}", "", f"- Command: `{item.get('command', '')}`", f"- Status: {item.get('status')}", f"- Full log: `{summary_path.relative_to(ROOT)}`", f"- Relevant output (last {len(tail)} lines):\n\n```text\n" + "\n".join(tail) + "\n```", ""])
     path = runtime / "input" / f"fix-request-validation-attempt-{attempt:03d}.md"
     path.write_text("\n".join(lines), encoding="utf-8")
     return path
@@ -52,7 +53,8 @@ def delivery_gate_fix_request(task_id: str, attempt: int) -> Path:
         for missing in check.get("missing", []):
             lines.append(f"  - missing: {missing}")
         if check.get("output"):
-            lines.extend(["", "```text", check["output"][-4000:], "```"])
+            tail = check["output"].splitlines()[-40:]
+            lines.extend(["", "```text", "\n".join(tail), "```"])
     path = runtime / "input" / f"fix-request-delivery-gates-attempt-{attempt:03d}.md"
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return path
@@ -68,7 +70,12 @@ def main() -> None:
     args = parser.parse_args()
     td = ensure_task(args.task_id)
     task = read_yaml(td / "task.yaml")
-    max_attempts = args.max_attempts or int(task.get("review", {}).get("max_cycles", 5))
+    pending_slices = 0
+    plan_path = td / "execution-plan.json"
+    if task.get("scope", {}).get("execution_plan_required", False) and plan_path.exists():
+        pending_slices = sum(item.get("status") != "completed" for item in read_json(plan_path).get("slices", []))
+    correction_budget = int(task.get("review", {}).get("max_cycles", 5))
+    max_attempts = args.max_attempts or max(correction_budget, pending_slices + correction_budget)
     if max_attempts <= 0 or args.max_interrupted_retries < 0:
         raise SystemExit("max attempts/retries must be positive/non-negative")
     commands = ["implement", "validate-code", "review", "request-fixes", "report"]
@@ -119,7 +126,23 @@ def main() -> None:
             write_yaml(td / "state.yaml", state)
             raise SystemExit(code or 1)
 
-        code = invoke([str(AI_ROOT / "bin" / "validate"), args.task_id])
+        plan_path = td / "execution-plan.json"
+        plan_complete = True
+        if task.get("scope", {}).get("execution_plan_required", False) and plan_path.exists():
+            plan = read_json(plan_path)
+            plan_complete = all(item.get("status") == "completed" for item in plan.get("slices", []))
+        if not plan_complete:
+            code = invoke([str(AI_ROOT / "bin" / "validate"), args.task_id, "--tier", "quick"])
+            if code != 0:
+                request = validation_fix_request(args.task_id, attempt)
+                print(f"Quick slice validation failed; queued for next slice attempt: {request}")
+                if attempt < max_attempts:
+                    continue
+                break
+            print("Slice passed quick validation; continuing with a fresh bounded implementation session.")
+            continue
+
+        code = invoke([str(AI_ROOT / "bin" / "validate"), args.task_id, "--tier", "full"])
         if code != 0:
             request = validation_fix_request(args.task_id, attempt)
             print(f"Validation failed; queued for next implementation attempt: {request}")
@@ -135,6 +158,42 @@ def main() -> None:
             raise SystemExit(code or 1)
         review = read_json(td / "review.json")
         if review.get("verdict") == "pass":
+            state = read_yaml(td / "state.yaml")
+            if state.get("last_review_mode") == "delta":
+                print("Delta correction review passed; running one final full review before handoff.")
+                code = invoke([str(AI_ROOT / "bin" / "run-codex-review"), args.task_id, "--mode", "full"])
+                state = read_yaml(td / "state.yaml")
+                if code != 0 or state.get("status") in {"failed", "blocked", "needs_input"}:
+                    # Preserve the task status/last_error run-codex-review already wrote
+                    # (timeout, blocked verdict, invalid output, ...); only terminate automation.
+                    state.setdefault("automation", {}).update({"status": "stopped", "finished_at": now_iso()})
+                    write_yaml(td / "state.yaml", state)
+                    raise SystemExit(code or state.get("last_error") or "Final full review did not pass")
+                review = read_json(td / "review.json")
+                if review.get("verdict") == "changes_requested":
+                    if attempt < max_attempts:
+                        code = invoke([str(AI_ROOT / "bin" / "request-fixes"), args.task_id])
+                        if code != 0:
+                            state = read_yaml(td / "state.yaml")
+                            state.setdefault("automation", {}).update({"status": "blocked", "finished_at": now_iso()})
+                            write_yaml(td / "state.yaml", state)
+                            raise SystemExit(code)
+                        continue
+                    state = read_yaml(td / "state.yaml")
+                    state["status"] = "blocked"
+                    state["last_error"] = "Final full review requested changes but automation attempts are exhausted"
+                    state.setdefault("automation", {}).update({"status": "blocked", "finished_at": now_iso()})
+                    write_yaml(td / "state.yaml", state)
+                    raise SystemExit(state["last_error"])
+                if review.get("verdict") != "pass":
+                    # Defensive: run-codex-review's own gates should already have produced a
+                    # non-zero exit / failed-blocked-needs_input status caught above.
+                    state = read_yaml(td / "state.yaml")
+                    state["status"] = "blocked"
+                    state["last_error"] = f"Unexpected final full review verdict: {review.get('verdict')}"
+                    state.setdefault("automation", {}).update({"status": "blocked", "finished_at": now_iso()})
+                    write_yaml(td / "state.yaml", state)
+                    raise SystemExit(state["last_error"])
             code = invoke([str(AI_ROOT / "bin" / "finalize-task"), args.task_id])
             state = read_yaml(td / "state.yaml")
             state.setdefault("automation", {}).update({"status": "awaiting_user_acceptance", "finished_at": now_iso()})

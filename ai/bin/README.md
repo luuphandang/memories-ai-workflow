@@ -13,12 +13,61 @@
 - `run-task`: tự động lặp implement → validate → review → request-fixes; tự xếp validation failure cho attempt sau và dừng ở user acceptance hoặc trạng thái cần can thiệp.
 - `validate`: chạy command deterministic.
 - `run-codex-review`: chạy wiring/acceptance evidence gates rồi gọi Codex read-only với review skill bắt buộc.
-- `request-fixes`: tạo danh sách fix theo `review.fail_on` và acceptance/validation bị thiếu.
+- `request-fixes`: tạo danh sách fix theo `review.fail_on` và acceptance/validation bị thiếu,
+  kèm sidecar máy đọc được `correction-scope-review-<cycle>.json` (finding, acceptance
+  criteria, slice bị ảnh hưởng khi xác định được, risk category, có cần full-plan fallback
+  hay không và lý do). `run-claude` dùng sidecar này để giới hạn phiên correction vào đúng
+  slice bị ảnh hưởng (+ dependency trực tiếp) thay vì luôn mở lại toàn bộ plan; correction
+  nhạy cảm (auth/security/migration/...) hoặc không xác định được slice luôn fallback về
+  full-plan, lý do được ghi vào `state.yaml` và metrics.
 - `finalize-task`: sinh báo cáo theo `report.*`, từ chối dry-run validation và chuyển task đạt gate sang `awaiting_user_acceptance`.
 - `accept-task`: ghi xác nhận người dùng và chuyển task sang `completed`.
 - `request-change`: tạo correction hoặc post-completion requirement-change cycle, lưu baseline và tái sử dụng worktree đã đăng ký.
 - `update-knowledge`: lập kế hoạch hoặc áp dụng update sau khi task đã được người dùng xác nhận.
+- `consolidate-requirements`: khi task ở trạng thái `completed`, archive draft/manifest cũ
+  (nếu có), gọi Claude soạn một `task.md` gộp các requirement addendum của các cycle đã
+  được chấp nhận thành `requirements-consolidation-draft.md`, kèm
+  `requirements-consolidation-manifest.json` ghi sha256 của `task.md` nguồn, từng addendum
+  và draft sinh ra; không tự ghi đè `task.md`.
+- `apply-requirements-consolidation`: yêu cầu cả draft lẫn manifest, đối chiếu lại toàn bộ
+  sha256/`task_id`/cycle trong manifest với trạng thái hiện tại — từ chối áp dụng nếu
+  `task.md`, addendum nguồn hoặc chính draft đã bị sửa, hoặc manifest thuộc cycle khác. Nếu
+  hợp lệ: yêu cầu `--approved-by` không rỗng, backup `task.md` cũ cùng draft/manifest vào
+  `task-md-history/` (giữ nguyên để audit, không xóa), ghi đè `task.md` và đánh dấu cycle đã
+  gộp trong `state.yaml`.
 - `rebuild-indexes`: sinh chỉ mục trạng thái.
 - `metrics`: tổng hợp attempt, resume, duration và token usage do CLI cung cấp.
 
 Chạy `./ai/bin/ai --help` để xem command.
+
+## Token-efficient orchestration
+
+`ai task run` chạy đúng một execution-plan slice trong mỗi Claude session mới,
+dùng quick validation giữa các slice và chỉ chạy full validation trước review.
+Session mặc định tối đa 60 turns và nhận compact slice-context bundle. Có thể chỉnh
+bằng `AI_MAX_TURNS`, `AI_WARN_CONTEXT_TOKENS` và `AI_MAX_CONTEXT_TOKENS`.
+
+Review tự dùng delta mode cho correction không nhạy cảm; auth, security, API
+contract, database, migration, transaction và concurrency luôn được nâng lên full.
+Delta chỉ được chọn khi review liền trước là một full review (không bao giờ có hai
+delta liên tiếp); delta không bao giờ tự authorize report/user acceptance — luôn cần
+một full review đạt `pass` theo sau. Delta pass luôn được theo sau bởi một final full
+review. Có thể ép mode qua `ai task review <ID> --mode full|delta`.
+
+Correction sau review chỉ mở lại đúng slice bị finding ảnh hưởng (+ dependency trực
+tiếp) khi `correction-scope-review-<cycle>.json` xác định được rõ ràng; slice khác giữ
+nguyên evidence cũ. Không xác định được, hoặc finding thuộc nhóm nhạy cảm, thì fallback
+về toàn bộ execution plan.
+
+`ai metrics <ID>` báo input, cache creation/read, output, turns, cost và tổng theo
+slice — cho cả Claude (implement) và Codex (review, qua `codex exec --json`). Fix
+request chỉ giữ đoạn lỗi giới hạn và trỏ về artifact đầy đủ; validation summary chỉ
+giữ output đầy đủ (12000 ký tự) cho command thất bại, command đã pass chỉ giữ tail
+ngắn.
+
+`implement`/`review` chỉ đọc `task.md` cùng requirement addendum của các cycle
+*chưa* được gộp (`requirements_consolidated_through_cycle` trong `state.yaml`);
+`report` vẫn liệt kê toàn bộ lịch sử addendum để giữ audit trail đầy đủ. Dùng
+`consolidate-requirements` + `apply-requirements-consolidation` để gộp addendum đã
+chấp nhận vào `task.md`, tránh mỗi session phải đọc lại toàn bộ lịch sử requirement
+của task nhiều cycle.

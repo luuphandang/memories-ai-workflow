@@ -2,7 +2,10 @@
 
 ## Trách nhiệm
 
-- Hiểu yêu cầu gốc và mọi requirement addendum có hiệu lực.
+- Hiểu yêu cầu gốc (`task.md`) và mọi requirement addendum **chưa được gộp** (unconsolidated)
+  còn hiệu lực, theo đúng danh sách trong `context.lock.json.requirements`. Addendum của
+  cycle đã gộp (`cycle ≤ requirements_consolidated_through_cycle`) đã nằm trong `task.md`;
+  đây là tài liệu lịch sử để tra cứu, không đọc lại như một requirement riêng.
 - Khảo sát source code đủ để tìm đúng điểm thay đổi.
 - Triển khai thay đổi nhỏ nhất nhưng đầy đủ cho active cycle.
 - Bổ sung/chỉnh sửa test phù hợp.

@@ -8,12 +8,19 @@ Read in order:
 2. `ai/agents/claude-implementer.md`
 3. `ai/tasks/<TASK-ID>/task.yaml`
 4. `ai/tasks/<TASK-ID>/task.md`
-5. Every `ai/tasks/<TASK-ID>/changes/cycle-*/requirement-addendum.md` in ascending cycle order
+5. Only the unconsolidated addenda listed in `context.lock.json.requirements` (the active
+   requirement set from the shared `requirement_documents()` resolver), in ascending cycle
+   order. Do not independently glob or reload every historical
+   `changes/cycle-*/requirement-addendum.md` file. Addenda from cycles at or below
+   `requirements_consolidated_through_cycle` are already folded into `task.md` — they
+   remain on disk only as audit artifacts and must never be re-applied.
 6. The active cycle's `user-request.md`
 7. `ai/tasks/<TASK-ID>/context.yaml`
 8. `ai/tasks/<TASK-ID>/context.lock.json`
 9. Every required implementation skill listed and hashed by the context lock
 10. `ai/tasks/<TASK-ID>/execution-plan.json`
+
+The newest active unconsolidated addendum wins only for the conflicts it explicitly describes.
 
 # Boundaries
 

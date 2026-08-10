@@ -1,0 +1,183 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import os
+from pathlib import Path
+import re
+import shlex
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib.ai_common import (
+    ROOT,
+    change_dirs,
+    ensure_task,
+    env_timeout_seconds,
+    now_iso,
+    read_yaml,
+    relative_to_root,
+    run,
+    runtime_dir,
+    sha256_file,
+    write_json,
+)
+
+
+MANIFEST_NAME = "requirements-consolidation-manifest.json"
+DRAFT_NAME = "requirements-consolidation-draft.md"
+
+
+def sanitize_for_path(value: str) -> str:
+    return re.sub(r"[^0-9A-Za-z_-]", "-", value)
+
+
+def archive_stale_files(td: Path, draft_path: Path, manifest_path: Path) -> None:
+    """Move any pre-existing draft/manifest out of the way before generating a new
+    one, so a Claude no-op (e.g. it fails silently) can never leave a stale draft
+    sitting at the live path where apply-requirements-consolidation could pick it up."""
+    if not draft_path.exists() and not manifest_path.exists():
+        return
+    history_dir = td / "task-md-history" / f"stale-draft-{sanitize_for_path(now_iso())}"
+    history_dir.mkdir(parents=True, exist_ok=True)
+    if draft_path.exists():
+        draft_path.replace(history_dir / DRAFT_NAME)
+    if manifest_path.exists():
+        manifest_path.replace(history_dir / MANIFEST_NAME)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Draft a consolidated task.md that folds in requirement addenda from "
+            "already-accepted cycles. Writes a draft + manifest only; review them, "
+            "then run apply-requirements-consolidation to commit it."
+        )
+    )
+    parser.add_argument("task_id")
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--print-command", action="store_true")
+    args = parser.parse_args()
+
+    td = ensure_task(args.task_id)
+    state = read_yaml(td / "state.yaml")
+    if state.get("status") != "completed":
+        raise SystemExit(
+            "Requirements consolidation requires the task to be completed (between "
+            f"accepted cycles); found status={state.get('status')}"
+        )
+    change_cycle = int(state.get("change_cycle", 0))
+    consolidated_through = int(state.get("requirements_consolidated_through_cycle", 0) or 0)
+    if change_cycle <= consolidated_through:
+        raise SystemExit("No unconsolidated requirement-change cycles remain")
+
+    pending_cycles = [
+        cycle
+        for cycle in change_dirs(td)
+        if consolidated_through < int(cycle.name.rsplit("-", 1)[-1]) <= change_cycle
+    ]
+    addenda = [
+        cycle / "requirement-addendum.md"
+        for cycle in pending_cycles
+        if (cycle / "requirement-addendum.md").exists()
+    ]
+    addendum_lines = "\n".join(f"- {relative_to_root(path)}" for path in addenda) or "- none"
+
+    draft_path = td / DRAFT_NAME
+    manifest_path = td / MANIFEST_NAME
+    task_md_path = td / "task.md"
+
+    prompt = f"""Consolidate the requirement documents for Jira item {args.task_id}.
+
+Read, in order:
+- {relative_to_root(task_md_path)}
+{addendum_lines}
+
+These addenda were already accepted by the user in earlier cycles
+({consolidated_through + 1}..{change_cycle}). Write ONE consolidated document that
+will fully replace task.md going forward.
+
+Rules (do not violate any of these):
+- Preserve every requirement and acceptance criterion from task.md that no addendum
+  explicitly overrides, removes, or narrows. When in doubt, KEEP the original content —
+  never silently drop a requirement.
+- Apply each addendum's explicit overrides/replacements/removals exactly as stated.
+- Do not introduce any new requirement, acceptance criterion, or scope that is not
+  already present in task.md or one of the addenda above.
+- Preserve the numbering/section structure of task.md where practical, so existing
+  references (AC numbers, section numbers) used elsewhere in this task's artifacts
+  keep making sense.
+- At the top of the output, add a short "Consolidation history" note listing which
+  cycles ({consolidated_through + 1}..{change_cycle}) were folded in and the date.
+- Output ONLY the final consolidated document body (Markdown). Do not include
+  commentary, explanations, or a diff — just the document that should become the
+  new task.md.
+
+Write the result to: {draft_path.relative_to(ROOT)}
+Do not modify task.md or any other file. Do not commit, push, or touch Git.
+"""
+    input_dir = runtime_dir(args.task_id) / "input"
+    input_dir.mkdir(parents=True, exist_ok=True)
+    (input_dir / "consolidate-requirements-prompt.md").write_text(prompt, encoding="utf-8")
+
+    command = os.environ.get("CLAUDE_COMMAND", "claude")
+    timeout_seconds = env_timeout_seconds("CLAUDE_TIMEOUT_SECONDS", 1800)
+    cmd = [
+        command,
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--dangerously-skip-permissions",
+        "--max-turns",
+        "20",
+        prompt,
+    ]
+    if args.print_command or args.dry_run:
+        print(" ".join(shlex.quote(value) for value in cmd))
+        print(f"Timeout: {timeout_seconds} seconds")
+        if args.dry_run:
+            return
+
+    # Remove/archive any pre-existing draft+manifest now, right before the real
+    # generation run, so a Claude no-op can never leave a stale draft at the live path.
+    archive_stale_files(td, draft_path, manifest_path)
+
+    # Write the manifest BEFORE invoking Claude: it records the exact source state
+    # (task.md + addenda hashes) this draft is derived from, so apply can later refuse
+    # to use it if any of that source content changes before approval.
+    manifest = {
+        "schema_version": 1,
+        "task_id": args.task_id,
+        "generated_at": now_iso(),
+        "source_task_md_sha256": sha256_file(task_md_path),
+        "source_consolidated_through_cycle": consolidated_through,
+        "target_change_cycle": change_cycle,
+        "addenda": [
+            {"path": relative_to_root(path), "sha256": sha256_file(path)}
+            for path in addenda
+        ],
+        "draft_path": relative_to_root(draft_path),
+        "draft_sha256": None,
+    }
+    write_json(manifest_path, manifest)
+
+    exchange_dir = runtime_dir(args.task_id) / "exchange"
+    exchange_dir.mkdir(parents=True, exist_ok=True)
+    log_path = exchange_dir / "consolidate-requirements-session.log"
+    result = run(cmd, cwd=ROOT, timeout=timeout_seconds)
+    log_path.write_text(result.stdout, encoding="utf-8")
+    if result.returncode != 0 or not draft_path.is_file() or not draft_path.read_text(encoding="utf-8").strip():
+        raise SystemExit(f"Consolidation draft failed or is empty; see {log_path}")
+
+    manifest["draft_sha256"] = sha256_file(draft_path)
+    write_json(manifest_path, manifest)
+
+    print(f"Draft written: {draft_path.relative_to(ROOT)}")
+    print(f"Manifest written: {manifest_path.relative_to(ROOT)}")
+    print(f"Folds cycles {consolidated_through + 1}..{change_cycle}. Review it, then run:")
+    print(f"  ./ai/bin/ai task apply-requirements-consolidation {args.task_id} --approved-by <name>")
+
+
+if __name__ == "__main__":
+    main()

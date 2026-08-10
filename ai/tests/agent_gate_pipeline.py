@@ -55,14 +55,14 @@ def main() -> None:
         assert state["status"] == "interrupted" and state["claude_session_id"] == "fake-claude-session"
         command(root, [str(ai), "task", "run", "TEST-1002", "--resume-interrupted", "--max-attempts", "3"], {**env, "FAKE_CLAUDE_MODE": "success", "FAKE_CODEX_CHANGES_ONCE": "1"})
         prompt = (root / "worktrees" / "TEST-1002" / ".ai" / "input" / "claude-prompt.md").read_text()
-        assert "fix-request-review-1.md" in prompt
+        assert "fix-request-review-001.md" in prompt
         state = yaml.safe_load((task_dir / "state.yaml").read_text())
         assert state["status"] == "awaiting_user_acceptance" and state["automation"]["attempts"] == 2
         command(root, [str(ai), "task", "accept", "TEST-1002", "--accepted-by", "fake-e2e"], env)
 
         metrics = command(root, [str(ai), "metrics", "TEST-1002"], env)
         data = json.loads(metrics.stdout)
-        assert data["implement_attempts"] == 3 and data["review_attempts"] == 2 and data["resumed_attempts"] == 1
+        assert data["implement_attempts"] == 3 and data["review_attempts"] == 3 and data["resumed_attempts"] == 1
 
         # A changed reference invalidates the aggregate skill hash, not only SKILL.md changes.
         reference = root / "ai" / "skills" / "decompose-implementation-task" / "references" / "scope-thresholds.md"

@@ -76,12 +76,18 @@ def main() -> None:
     blocking_findings = [
         item for item in review.get("findings", []) if item.get("severity") in fail_on
     ]
+    # A delta review's own "pass" can never directly authorize user acceptance — it only
+    # reviewed the latest fix's diff/dependencies, not the full seven passes. Checked here
+    # too (not only in run-task/finalize-task) so a direct manual `accept` call can't
+    # bypass the requirement for a passing full review.
+    last_review_mode = state.get("last_review_mode")
     gates_passed = (
         review.get("verdict") == "pass"
         and summary.get("passed") is True
         and summary.get("dry_run") is not True
         and cycles_match
         and not blocking_findings
+        and last_review_mode == "full"
     )
     if not gates_passed:
         reasons = []
@@ -91,6 +97,8 @@ def main() -> None:
             reasons.append("configured blocking review findings remain")
         if not cycles_match:
             reasons.append("outputs belong to a different cycle")
+        if last_review_mode != "full":
+            reasons.append(f"last review mode was {last_review_mode!r}, not a passing full review")
         raise SystemExit(
             "Acceptance blocked: current review/validation gates are not satisfied"
             + (f" ({'; '.join(reasons)})" if reasons else "")

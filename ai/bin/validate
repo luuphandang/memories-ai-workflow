@@ -13,6 +13,7 @@ def main() -> None:
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--include-optional", action="store_true")
     p.add_argument("--command", action="append", help="Only run named command; repeatable")
+    p.add_argument("--tier", choices=("quick", "full"), default="full", help="Quick runs changed-scope static checks; full is required before final review")
     args = p.parse_args()
     td = ensure_task(args.task_id)
     task = read_yaml(td / "task.yaml")
@@ -39,6 +40,8 @@ def main() -> None:
             continue
         commands_config = read_yaml(config_path).get("commands", {})
         selected = task.get("validation", {}).get(repo, list(commands_config))
+        if args.tier == "quick" and not args.command:
+            selected = [name for name in selected if name in {"lint", "typecheck", "test-architecture"}]
         if args.command: selected = [x for x in selected if x in args.command]
         results = []
         for name in selected:
@@ -58,7 +61,9 @@ def main() -> None:
             try:
                 cp = run(spec["command"], cwd=wp, timeout=int(spec.get("timeout_seconds", 900)), shell=True)
                 status = "passed" if cp.returncode == 0 else "failed"
-                output = cp.stdout[-12000:]
+                # Passed output is rarely inspected downstream; keep a short tail and
+                # reserve the full 12000-char tail for failures that need debugging.
+                output = cp.stdout[-12000:] if status != "passed" else cp.stdout[-300:]
             except Exception as exc:
                 status, output, cp = "error", str(exc), None
             item = {"name":name,"command":spec["command"],"status":status,"required":required,"duration_seconds":round(time.time()-started,2),"exit_code":None if cp is None else cp.returncode,"output_tail":output}
@@ -73,7 +78,7 @@ def main() -> None:
         }
         write_json(validation_dir / f"{repo}.json", summary)
         repo_summaries.append(summary)
-    write_json(validation_dir / "summary.json", {"task_id":args.task_id,"generated_at":now_iso(),"implementation_cycle":implementation_cycle,"change_cycle":change_cycle,"passed":overall,"repositories":repo_summaries,"dry_run":args.dry_run})
+    write_json(validation_dir / "summary.json", {"task_id":args.task_id,"generated_at":now_iso(),"implementation_cycle":implementation_cycle,"change_cycle":change_cycle,"passed":overall,"repositories":repo_summaries,"dry_run":args.dry_run,"tier":args.tier})
 
     state = read_yaml(td / "state.yaml")
     state["status"] = "reviewing" if overall and not args.dry_run else ("prepared" if args.dry_run else "failed")

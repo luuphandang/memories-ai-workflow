@@ -19,6 +19,19 @@ ROOT = Path(__file__).resolve().parents[3]
 AI_ROOT = ROOT / "ai"
 TASK_ID_RE = re.compile(r"^[A-Z][A-Z0-9]+-[0-9]+$")
 
+# Shared with run-codex-review's delta-safety check and request-fixes' correction-scope
+# sidecar so both use the identical vocabulary for "this change is too sensitive to
+# narrowly scope/delta-review".
+SENSITIVE_CORRECTION_TERMS = (
+    "auth", "security", "migration", "database", "transaction", "concurrency",
+    "public api", "contract",
+)
+
+
+def detect_risk_categories(text: str) -> list[str]:
+    lowered = text.lower()
+    return sorted({term for term in SENSITIVE_CORRECTION_TERMS if term in lowered})
+
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
@@ -214,6 +227,63 @@ def append_agent_metric(task_id: str, event: dict[str, Any]) -> None:
         handle.write(json.dumps(event, ensure_ascii=False) + "\n")
 
 
+def token_budget() -> dict[str, int]:
+    """Central, environment-overridable budgets for bounded agent sessions."""
+    import os
+
+    defaults = {
+        "max_turns": 60,
+        "warn_context_tokens": 60000,
+        "max_context_tokens": 80000,
+    }
+    result: dict[str, int] = {}
+    for key, default in defaults.items():
+        name = "AI_" + key.upper()
+        raw = os.environ.get(name, str(default))
+        try:
+            value = int(raw)
+        except ValueError as exc:
+            raise SystemExit(f"{name} must be an integer, found {raw!r}") from exc
+        if value <= 0:
+            raise SystemExit(f"{name} must be greater than zero")
+        result[key] = value
+    return result
+
+
+def active_execution_slice(task_id: str) -> dict[str, Any] | None:
+    """Return exactly one runnable slice, preferring the checkpoint selection."""
+    td = ensure_task(task_id)
+    task = read_yaml(td / "task.yaml")
+    if not task.get("scope", {}).get("execution_plan_required", False):
+        return None
+    plan = read_json(td / "execution-plan.json")
+    slices = plan.get("slices", [])
+    by_id = {item["id"]: item for item in slices}
+    progress_path = td / "implementation-progress.json"
+    selected = read_json(progress_path).get("current_slice") if progress_path.exists() else None
+    if selected and selected in by_id and by_id[selected].get("status") != "completed":
+        return by_id[selected]
+    completed = {item["id"] for item in slices if item.get("status") == "completed"}
+    for item in slices:
+        if item.get("status") not in {"pending", "in_progress", "blocked"}:
+            continue
+        if set(item.get("depends_on", [])).issubset(completed):
+            return item
+    # A post-review correction happens after the plan is complete. The finding can be
+    # in any slice, so the caller falls back to a full-plan scope instead of picking one.
+    return None
+
+
+def task_risk_level(task: dict[str, Any], context_lock: dict[str, Any]) -> str:
+    """Choose economical reasoning unless the locked scope has material risk."""
+    dimensions = set(context_lock.get("scope_assessment", {}).get("risk_dimensions", []))
+    if dimensions & {"security", "database", "api", "background"}:
+        return "high"
+    if context_lock.get("scope_assessment", {}).get("large"):
+        return "medium"
+    return "low"
+
+
 def relative_to_root(path: Path) -> str:
     return str(path.resolve().relative_to(ROOT.resolve()))
 
@@ -364,10 +434,33 @@ def change_dirs(td: Path) -> list[Path]:
     return sorted(p for p in changes.glob("cycle-*") if p.is_dir())
 
 
-def requirement_documents(task_id: str, include_user_request: bool = True) -> list[str]:
+def requirement_documents(
+    task_id: str,
+    include_user_request: bool = True,
+    audit: bool = False,
+) -> list[str]:
+    """Canonical effective-requirements resolver, shared by run-claude, run-codex-review,
+    prepare-plan and prepare-context so they always see the same active requirement set.
+
+    Default (audit=False): the ACTIVE/effective set — task.md plus only the addenda from
+    cycles strictly after `requirements_consolidated_through_cycle` (state.yaml). Cycles at
+    or below that mark are already folded into task.md by apply-requirements-consolidation,
+    so their addenda are excluded here to avoid re-reading settled history (and, in
+    prepare-plan, to avoid generating duplicate acceptance-criteria slices for content that
+    now also exists in task.md).
+
+    audit=True is an explicit opt-in for historical/report views (finalize-task) that must
+    always list the complete requirement history regardless of consolidation progress.
+    """
     td = ensure_task(task_id)
     docs = [relative_to_root(td / "task.md")]
+    consolidated_through = 0
+    if not audit:
+        state = read_yaml(td / "state.yaml")
+        consolidated_through = int(state.get("requirements_consolidated_through_cycle", 0) or 0)
     for cycle in change_dirs(td):
+        if not audit and int(cycle.name.rsplit("-", 1)[-1]) <= consolidated_through:
+            continue
         addendum = cycle / "requirement-addendum.md"
         request = cycle / "user-request.md"
         if addendum.exists():

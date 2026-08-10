@@ -93,12 +93,18 @@ def main() -> None:
         for item in review_data.get("findings", [])
         if item.get("severity") in fail_on
     ]
+    # A delta review's own "pass" can never directly authorize report/acceptance — it
+    # only reviewed the latest fix's diff/dependencies, not the full seven passes. Only
+    # a full review's pass counts here; run-task always runs one mandatory full review
+    # after any delta pass before reaching this gate.
+    last_review_mode = state.get("last_review_mode")
     gates_passed = (
         review_data.get("verdict") == "pass"
         and validation.get("passed") is True
         and validation.get("dry_run") is not True
         and cycles_match
         and not blocking_findings
+        and last_review_mode == "full"
     )
     if not gates_passed and not (args.report_only or args.force):
         details = []
@@ -110,6 +116,8 @@ def main() -> None:
             )
         if not cycles_match:
             details.append("cycle identity does not match the current task state")
+        if last_review_mode != "full":
+            details.append(f"last review mode was {last_review_mode!r}, not a passing full review")
         suffix = f" ({'; '.join(details)})" if details else ""
         raise SystemExit(
             "Cannot prepare acceptance: review/validation gates must pass" + suffix
@@ -228,7 +236,9 @@ def main() -> None:
             else "This report was generated before all technical gates passed or in report-only mode."
         )
 
-    requirement_docs = requirement_documents(args.task_id, include_user_request=False)
+    # Explicit audit mode: the final report is a historical record and must always list
+    # the complete requirement history, regardless of consolidation progress.
+    requirement_docs = requirement_documents(args.task_id, include_user_request=False, audit=True)
     values = {
         "TASK_ID": args.task_id,
         "TITLE": task.get("title", ""),

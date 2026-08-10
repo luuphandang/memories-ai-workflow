@@ -15,6 +15,7 @@ from lib.ai_common import (
     AI_ROOT,
     ROOT,
     configured_fail_severities,
+    detect_risk_categories,
     enforce_global_git_policy,
     ensure_task,
     env_timeout_seconds,
@@ -30,6 +31,7 @@ from lib.ai_common import (
     run_delivery_quality_gates,
     validate_json,
     write_yaml,
+    task_risk_level,
 )
 
 
@@ -38,11 +40,51 @@ def timeout_output(exc: subprocess.TimeoutExpired) -> str:
     return value.decode(errors="replace") if isinstance(value, bytes) else value
 
 
+CODEX_USAGE_FIELDS = {
+    "input_tokens": "input_tokens",
+    "cached_input_tokens": "cache_read_input_tokens",
+    "cache_write_input_tokens": "cache_creation_input_tokens",
+    "output_tokens": "output_tokens",
+    "reasoning_output_tokens": "reasoning_output_tokens",
+}
+
+
+def codex_stream_metadata(output: str) -> tuple[dict, str]:
+    """Sum usage across turn.completed events and extract the last agent message
+    from `codex exec --json` output (confirmed schema: thread.started, turn.started,
+    item.completed{item.type=agent_message}, turn.completed{usage})."""
+    usage: dict = {}
+    final_text = ""
+    turns = 0
+    for line in output.splitlines():
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(event, dict):
+            continue
+        if event.get("type") == "turn.completed":
+            turns += 1
+            turn_usage = event.get("usage") or {}
+            for codex_key, metric_key in CODEX_USAGE_FIELDS.items():
+                value = turn_usage.get(codex_key)
+                if value is not None:
+                    usage[metric_key] = usage.get(metric_key, 0) + int(value)
+        elif event.get("type") == "item.completed":
+            item = event.get("item") or {}
+            if item.get("type") == "agent_message" and item.get("text"):
+                final_text = item["text"]
+    if turns:
+        usage["num_turns"] = turns
+    return usage, final_text
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run Codex read-only review")
     parser.add_argument("task_id")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--print-command", action="store_true")
+    parser.add_argument("--mode", choices=("auto", "full", "delta"), default="auto")
     args = parser.parse_args()
 
     td = ensure_task(args.task_id)
@@ -74,6 +116,8 @@ def main() -> None:
         raise SystemExit("Validation summary belongs to an older cycle; run validation for the current cycle")
     if validation.get("dry_run") is True or validation.get("passed") is not True:
         raise SystemExit("Codex review requires a real, passing validation run; dry-run/planned validation is not sufficient")
+    if validation.get("tier", "full") != "full":
+        raise SystemExit("Codex review requires full validation; run validate-code --tier full")
 
     locked_skills = context_lock.get("skills", {}).get("locked", {})
     verify_locked_skills(context_lock)
@@ -129,8 +173,35 @@ def main() -> None:
         f"not the sha256 of SKILL.md alone; do not compare it against a single-file hash)"
         for name in required_review_skills if name in locked_skills
     ) or "- none"
-    prior_fix_requests = sorted((runtime / "input").glob("fix-request-review-*.md"))
+    def fix_request_cycle(path: Path) -> int:
+        digits = "".join(ch for ch in path.stem.rsplit("-", 1)[-1] if ch.isdigit())
+        return int(digits) if digits else -1
+
+    prior_fix_requests = sorted((runtime / "input").glob("fix-request-review-*.md"), key=fix_request_cycle)
     prior_fix_lines = "\n".join(f"- {path.relative_to(ROOT)}" for path in prior_fix_requests) or "- none (first review cycle)"
+    fix_text = "\n".join(path.read_text(encoding="utf-8").lower() for path in prior_fix_requests)
+    # Delta is only allowed directly after a FULL review produced the correction request
+    # being reviewed now; this prevents delta->delta chains that never re-run the full
+    # seven-pass review. Every delta pass is itself required (by run-task/finalize-task/
+    # accept-task) to be followed by one more full review before report/acceptance.
+    delta_safe = (
+        bool(prior_fix_requests)
+        and not detect_risk_categories(fix_text)
+        and state.get("last_review_mode") == "full"
+    )
+    review_mode = args.mode if args.mode != "auto" else ("delta" if delta_safe else "full")
+    if args.mode == "delta" and not delta_safe:
+        raise SystemExit(
+            "Delta review is unsafe here: it requires a prior full review's correction "
+            "request, no sensitive-term findings, and the immediately preceding review "
+            f"to have been full (last_review_mode={state.get('last_review_mode')!r}); use full review"
+        )
+    review_pass_instruction = (
+        "Review only the latest fix request, its affected diff/dependencies, tests, and regression. "
+        "Complete diff, behavior, tests, and regression passes."
+        if review_mode == "delta" else
+        "Complete all seven independent review passes (requirements, diff, architecture, behavior, tests, security, regression)."
+    )
     prompt = f"""Review the current implementation for Jira item {args.task_id}.
 
 Current implementation cycle: {current_implementation_cycle}
@@ -158,9 +229,10 @@ Deterministic skill evidence:
 Prior Codex findings that must each be retested against the current code:
 {prior_fix_lines}
 
-Evaluate only current-cycle validation. Complete all seven independent review passes
-(requirements, diff, architecture, behavior, tests, security, regression) even when
-an early pass finds defects. Inventory every tracked and untracked implementation file.
+Review mode: {review_mode}.
+Evaluate only current-cycle validation. {review_pass_instruction}
+In delta mode, inventory every file affected by the latest correction and its direct dependencies;
+in full mode inventory every tracked and untracked implementation file.
 Do not issue a partial defect list: aggregate findings only after coverage is complete.
 Do not modify files. Return only JSON matching ai/schemas/review.schema.json. Include
 applied_skills with the locked hash and completed checks for every required review
@@ -183,8 +255,11 @@ missing. A pass means technically ready for user acceptance, not completed.
         "--sandbox",
         "read-only",
         "--skip-git-repo-check",
+        "--json",
         "--cd",
         str(ROOT),
+        "-c",
+        f"model_reasoning_effort={'medium' if review_mode == 'delta' else task_risk_level(task, context_lock)}",
         "--output-schema",
         str(AI_ROOT / "schemas" / "review.schema.json"),
         "--output-last-message",
@@ -198,6 +273,7 @@ missing. A pass means technically ready for user acceptance, not completed.
             return
 
     state["status"] = "reviewing"
+    state["last_review_mode"] = review_mode
     state["review_cycle"] = int(state.get("review_cycle", 0)) + 1
     state["review_cycles_total"] = int(state.get("review_cycles_total", 0)) + 1
     state.setdefault("timestamps", {})["review_started_at"] = now_iso()
@@ -208,7 +284,9 @@ missing. A pass means technically ready for user acceptance, not completed.
     try:
         result = run(cmd, cwd=ROOT, timeout=timeout_seconds)
     except subprocess.TimeoutExpired as exc:
-        log_path.write_text(timeout_output(exc), encoding="utf-8")
+        partial_output = timeout_output(exc)
+        log_path.write_text(partial_output, encoding="utf-8")
+        partial_usage, _ = codex_stream_metadata(partial_output)
         state = read_yaml(td / "state.yaml")
         state["status"] = "blocked"
         state["last_error"] = (
@@ -217,24 +295,31 @@ missing. A pass means technically ready for user acceptance, not completed.
         )
         state.setdefault("timestamps", {})["review_finished_at"] = now_iso()
         write_yaml(td / "state.yaml", state)
-        append_agent_metric(args.task_id, {"generated_at": now_iso(), "agent": "codex", "phase": "review", "attempt": state.get("review_cycle", 0), "implementation_cycle": int(state.get("implementation_cycle", 1)), "change_cycle": int(state.get("change_cycle", 0)), "status": "blocked", "duration_seconds": round(time.monotonic() - started_monotonic, 2), "resumed": False, "usage": {}})
+        append_agent_metric(args.task_id, {"generated_at": now_iso(), "agent": "codex", "phase": "review", "attempt": state.get("review_cycle", 0), "implementation_cycle": int(state.get("implementation_cycle", 1)), "change_cycle": int(state.get("change_cycle", 0)), "status": "blocked", "duration_seconds": round(time.monotonic() - started_monotonic, 2), "resumed": False, "usage": partial_usage})
         raise SystemExit(state["last_error"])
 
     log_path.write_text(result.stdout, encoding="utf-8")
     state = read_yaml(td / "state.yaml")
     effective_returncode = result.returncode
+    review: dict | None = None
     if result.returncode != 0:
         state["status"] = "failed"
         state["last_error"] = f"Codex exited {result.returncode}; see {log_path}"
     else:
-        require_file(review_path, "Codex review output", f"inspect {log_path}")
-        validate_json(review_path, AI_ROOT / "schemas" / "review.schema.json")
-        review = json.loads(review_path.read_text(encoding="utf-8"))
+        try:
+            require_file(review_path, "Codex review output", f"inspect {log_path}")
+            validate_json(review_path, AI_ROOT / "schemas" / "review.schema.json")
+            review = json.loads(review_path.read_text(encoding="utf-8"))
+        except (SystemExit, Exception) as exc:
+            state["status"] = "failed"
+            state["last_error"] = f"Codex returned invalid/unparseable review output: {exc}; see {log_path}"
+            effective_returncode = 6
+    if review is not None:
         coverage = review.get("review_coverage", {})
-        required_passes = {"requirements", "diff", "architecture", "behavior", "tests", "security", "regression"}
+        required_passes = ({"diff", "behavior", "tests", "regression"} if review_mode == "delta" else {"requirements", "diff", "architecture", "behavior", "tests", "security", "regression"})
         completed_passes = set(coverage.get("review_passes", []))
         incomplete_coverage = []
-        if completed_passes != required_passes or len(coverage.get("review_passes", [])) != len(required_passes):
+        if not required_passes.issubset(completed_passes):
             missing_passes = sorted(required_passes - completed_passes)
             detail = ",".join(missing_passes) if missing_passes else "duplicate or unexpected pass entries"
             incomplete_coverage.append("invalid review passes: " + detail)
@@ -293,8 +378,14 @@ missing. A pass means technically ready for user acceptance, not completed.
             effective_returncode = 5
     state.setdefault("timestamps", {})["review_finished_at"] = now_iso()
     write_yaml(td / "state.yaml", state)
-    append_agent_metric(args.task_id, {"generated_at": now_iso(), "agent": "codex", "phase": "review", "attempt": state.get("review_cycle", 0), "implementation_cycle": int(state.get("implementation_cycle", 1)), "change_cycle": int(state.get("change_cycle", 0)), "status": state["status"], "duration_seconds": round(time.monotonic() - started_monotonic, 2), "resumed": False, "usage": {}, "output_bytes": len(result.stdout.encode("utf-8"))})
-    print(result.stdout)
+    extracted_usage, final_message = codex_stream_metadata(result.stdout)
+    usage = {
+        "review_mode": review_mode,
+        "reasoning_effort": "medium" if review_mode == "delta" else task_risk_level(task, context_lock),
+        **extracted_usage,
+    }
+    append_agent_metric(args.task_id, {"generated_at": now_iso(), "agent": "codex", "phase": "review", "attempt": state.get("review_cycle", 0), "implementation_cycle": int(state.get("implementation_cycle", 1)), "change_cycle": int(state.get("change_cycle", 0)), "status": state["status"], "duration_seconds": round(time.monotonic() - started_monotonic, 2), "resumed": False, "review_mode": review_mode, "usage": usage, "output_bytes": len(result.stdout.encode("utf-8"))})
+    print(final_message or result.stdout)
     raise SystemExit(effective_returncode)
 
 

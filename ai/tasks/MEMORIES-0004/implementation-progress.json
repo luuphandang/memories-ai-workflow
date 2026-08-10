@@ -1,0 +1,64 @@
+{
+  "task_id": "MEMORIES-0004",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "updated_at": "2026-08-10T11:05:00+07:00",
+  "completed_criteria": [
+    "Domain model, schema và seed data",
+    "Public read API và facet semantics"
+  ],
+  "changed_files": [
+    "backend: libs/modules/catalog/** (new module)",
+    "backend: libs/modules/card-catalog/** (filled skeleton: CardTemplate domain/persistence/application/presentation)",
+    "backend: libs/modules/product-catalog/** (filled skeleton: Product/ProductVariant domain/persistence/application/presentation)",
+    "backend: libs/platform/database/src/migrations/1722560000000-CreateCatalogSchema.ts",
+    "backend: libs/platform/database/src/migrations/1722570000000-CreateCardCatalogSchema.ts",
+    "backend: libs/platform/database/src/migrations/1722580000000-CreateProductCatalogSchema.ts",
+    "backend: tsconfig.json, nest-cli.json (registered @memories/modules/catalog)",
+    "backend: apps/{api,worker,scheduler,cli}/src/business-modules.ts (wired CatalogModule)",
+    "backend: apps/cli/src/commands/seed.command.ts (wired 3 new seed use cases, ordered)",
+    "backend: openapi-contracts.json (+3 operations), apps/api/test/openapi-contract.e2e-spec.ts (+3 assertions)",
+    "backend: apps/api/test/{catalog,card-templates,products}.e2e-spec.ts (new, 25 tests)",
+    "backend: libs/modules/identity-access/src/presentation/http/auth.controller.ts (formatting-only: collapsed multi-line @ApiResponse decorators to single-line — required to unblock check_openapi_contract.py's brace-boundary heuristic, which mis-parses a decorator's own closing `})` as a method boundary when multi-line; documented as a deliberate minimal fix, no behavior change)",
+    "backend: openapi.json regenerated"
+  ],
+  "decisions": [
+    "Single shared catalog.catalog_terms table discriminated by catalog_type (see prior note) — verified end-to-end against a real Postgres instance: migration up/down, idempotent reseed, and category parent/child hierarchy all confirmed via direct DB queries.",
+    "card-catalog/product-catalog facet counts: for catalog-term-backed facets (occasion/style/format/colorFamily/accessTier for cards; category/occasion/recipient/personalization/material/rush for products) each facet excludes only its OWN active filter when computing its own option counts (others AND'd in) — verified by e2e test; category facet counts are descendant-inclusive via a recursive closure CTE.",
+    "price/preparation/rating are filter-only (no enumerated facet-count group) since they are continuous ranges, not discrete catalog options — documented in ListProductsFilter/product.repository.ts.",
+    "Each product modeled with exactly one representative variant in seed data (schema supports many); effective price/prep/rush read from the cheapest available variant via a LATERAL join in list(), and from an EXISTS-with-combined-conditions clause in filtering, per code comments in typeorm-product.repository.ts.",
+    "Fixed a real bug found via e2e testing: card-catalog's buildMatchConditions hardcoded a param-index offset assuming a caller-reserved $1, breaking computeAccessTierFacet (which has no such reservation) with 'could not determine data type of parameter $1' whenever a search-only or filter-only facet query ran — fixed by parameterizing startIndex per call site (0 vs 1), matching the pattern already used correctly in product-catalog.",
+    "Fixed a real bug: ListProductsUseCase collapsed a requested-but-nonexistent categoryIds filter to an empty array after descendant resolution, which the repository treats as 'no filter' — now falls back to the original nonexistent ids (still non-empty) so the filter still correctly matches zero products instead of silently ignoring the filter."
+  ],
+  "validation": [
+    "backend lint: PASS",
+    "backend typecheck: PASS",
+    "backend test (277 tests / 61 suites incl. new modules): PASS",
+    "backend test:architecture (depcruise, 441 modules / 1566 deps): PASS, 0 violations",
+    "backend test:e2e (66 tests / 9 suites incl. 25 new catalog/card-template/product/openapi-contract tests): PASS",
+    "backend build (nest build, all apps): PASS",
+    "backend export:openapi: PASS, openapi.json regenerated with /api/v1/catalogs, /api/v1/card-templates, /api/v1/products",
+    "migration up (3 new migrations) against live test Postgres: PASS",
+    "migration down (revert x3) against live test Postgres: PASS, clean rollback",
+    "npm run start:cli -- seed run twice: idempotent (70 catalog_terms, 16 card_templates/77 links, 16 products/16 variants/165 links, unchanged on rerun)",
+    "check_openapi_contract.py: PASSED (4 operations)",
+    "check_port_bindings.py: PASSED (32 injected tokens)",
+    "check_module_wiring.py: PASSED (37 use-case/controller classes)",
+    "check_auth_invariants.py: PASSED"
+  ],
+  "current_slice": "frontend-api-integration",
+  "current_step": "Starting frontend: regenerate api-client schema.d.ts from backend openapi.json, then typed wrappers, query hooks, URL state, integrate /mau-thiep and /qua-ky-niem",
+  "remaining_steps": [
+    "packages/api-client: copy backend openapi.json, run generate script, add catalogs/card-templates/products typed wrapper + extend buildUrl for arrays",
+    "packages/query: add resource query-key factories + useQuery hooks with AbortSignal forwarding",
+    "URL search-params state hook (filters/search/sort/page) for both routes",
+    "Integrate /mau-thiep (CardCatalog) and /qua-ky-niem (GiftCatalog) with real API, preserving layout; loading/error/empty/zero-count states",
+    "Update/extend frontend tests (card-catalog.spec.tsx, gift-catalog.spec.tsx, new api-client wrapper tests, query hook tests)",
+    "Run frontend lint/typecheck/test/build",
+    "Slice 4: knowledge_updates, final implementation.json, evidence matrix check"
+  ],
+  "notes": [
+    "Backend slices 1+2 fully complete and validated against a live Postgres/Redis/MinIO test stack (docker containers memories-test-postgres/redis/minio already running in this environment).",
+    "Frontend worktree confirmed clean at task start except an unrelated package-lock.json diff (pre-existing, not touched)."
+  ]
+}

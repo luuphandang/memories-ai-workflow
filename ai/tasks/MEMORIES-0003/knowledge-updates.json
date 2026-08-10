@@ -1,4 +1,12 @@
 {
   "task_id": "MEMORIES-0003",
-  "updates": []
+  "updates": [
+    {
+      "target": "ai/repos/frontend/conventions.md",
+      "type": "append",
+      "summary": "packages/ui previously had no vitest config, test script or testing-library devDependencies (unlike apps/public-web and packages/config); this task added a minimal vitest+jsdom+testing-library setup (vitest.config.ts, test/setup.ts, package.json changes) as part of closing test-v-validation. Recommend documenting this as the standard pattern for any package that owns UI primitives, so future packages don't reintroduce the same gap.",
+      "content": "- Testing setup: package sở hữu UI primitive (ví dụ `packages/ui`) phải có vitest + jsdom + `@testing-library/react` (`vitest.config.ts`, `test/setup.ts`, dev dependencies tương ứng trong `package.json`), cùng chuẩn với `apps/public-web` và `packages/config`; đây là pattern bắt buộc khi tạo mới hoặc mở rộng package UI primitive, tránh thiếu test tooling.",
+      "approved": true
+    }
+  ]
 }

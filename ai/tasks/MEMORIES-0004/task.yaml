@@ -1,0 +1,61 @@
+version: 1
+id: MEMORIES-0004
+title: Catalog, Taxonomy & Faceted Filtering Implementation
+jira:
+  type: epic
+  parent_id: null
+  epic_id: MEMORIES-0004
+priority: high
+status: ready
+children: []
+worktrees:
+- repo: backend
+  path: worktrees/MEMORIES-0004/backend
+  base_ref: origin/master
+  writable: true
+- repo: frontend
+  path: worktrees/MEMORIES-0004/frontend
+  base_ref: origin/master
+  writable: true
+agents:
+  implementer: claude
+  reviewer: codex
+skills:
+  implement:
+  - decompose-implementation-task
+  - implement-nestjs-vertical-slice
+  - implement-auth-security-change
+  - verify-openapi-contract
+  - implement-nextjs-vertical-slice
+  - migrate-prototype-nextjs-page
+  review:
+  - review-vertical-slice-completeness
+  - review-frontend-ui-fidelity
+scope:
+  execution_plan_required: true
+review:
+  max_cycles: 10
+  fail_on:
+  - blocker
+  - major
+validation:
+  backend:
+  - lint
+  - typecheck
+  - test
+  - test:architecture
+  - test:e2e
+  - build
+  - export:openapi
+  frontend:
+  - lint
+  - typecheck
+  - test
+  - build
+report:
+  language: vi
+  include_diff_stat: true
+  include_changed_files: true
+  include_test_results: true
+  include_review_findings: true
+  include_knowledge_updates: true

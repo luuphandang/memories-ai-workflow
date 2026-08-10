@@ -180,8 +180,10 @@ def main() -> None:
         "change_cycle": state.get("change_cycle", 0),
         "active_change": state.get("active_change"),
         "requirement_precedence": (
-            "task.md then requirement addenda by ascending cycle; "
-            "newest explicit conflict wins"
+            "task.md then unconsolidated requirement addenda by ascending cycle "
+            "(addenda from cycles at or below requirements_consolidated_through_cycle "
+            "are already folded into task.md and excluded here); "
+            "newest active unconsolidated addendum wins only for explicit conflicts"
         ),
         "files": files,
         "requirements": requirement_docs,

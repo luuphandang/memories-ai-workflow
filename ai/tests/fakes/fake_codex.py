@@ -21,8 +21,56 @@ def main() -> None:
     counter = root / "worktrees" / task_id / ".ai" / "fake-codex-count"
     count = int(counter.read_text() if counter.exists() else "0") + 1
     counter.write_text(str(count), encoding="utf-8")
-    changes_requested = os.environ.get("FAKE_CODEX_CHANGES_ONCE") == "1" and count == 1
-    findings = [{"severity": "major", "repo": task.get("worktrees", [{}])[0].get("repo", "unknown"), "file": "README.md", "line": 1, "title": "Synthetic first-cycle finding", "evidence": "fake-agent-e2e", "expected_fix": "Run the automated fix cycle"}] if changes_requested else []
+
+    # run-codex-review consumes --mode itself; it never forwards it to the underlying
+    # `codex` CLI. The mode is only visible to us via the prompt's "Review mode: X."
+    # line. The mandatory final full review (after a delta pass) is the first "full"
+    # mode call that isn't the very first review of the cycle.
+    is_final_full = count > 1 and "Review mode: full." in prompt
+    final_full_mode = os.environ.get("FAKE_CODEX_FINAL_FULL_MODE") if is_final_full else None
+    if final_full_mode == "exit_nonzero":
+        print("simulated codex crash during final full review", file=sys.stderr)
+        sys.exit(1)
+
+    changes_requested_count = int(os.environ.get("FAKE_CODEX_CHANGES_REQUESTED_COUNT", "0") or 0)
+    changes_requested = (
+        (os.environ.get("FAKE_CODEX_CHANGES_ONCE") == "1" and count == 1)
+        or (changes_requested_count > 0 and count <= changes_requested_count)
+    )
+    finding_file = os.environ.get("FAKE_CODEX_FINDING_FILE", "README.md")
+    finding_title = os.environ.get("FAKE_CODEX_FINDING_TITLE", "Synthetic first-cycle finding")
+    findings = [{"severity": "major", "repo": task.get("worktrees", [{}])[0].get("repo", "unknown"), "file": finding_file, "line": 1, "title": finding_title, "evidence": "fake-agent-e2e", "expected_fix": "Run the automated fix cycle"}] if changes_requested else []
+
+    if final_full_mode == "blocked":
+        artifact = {
+            "task_id": task_id, "verdict": "blocked",
+            "applied_skills": [{"name": name, "sha256": lock["skills"]["locked"][name]["sha256"], "checks_completed": ["fake-agent-e2e"]} for name in task["skills"]["review"]],
+            "reviewed_repositories": [item["repo"] for item in task.get("worktrees", [])],
+            "review_coverage": {
+                "review_passes": ["diff"],
+                "changed_files": [],
+                "risk_areas": [],
+                "prior_findings": [],
+                "completion_statement": False,
+            },
+            "findings": [], "validation_assessment": {"passed": True, "missing": []},
+            "acceptance_criteria": [], "knowledge_updates": [],
+            "summary": "Simulated blocked final full review: could not complete coverage.",
+            "implementation_cycle": int(state.get("implementation_cycle", 1)), "change_cycle": int(state.get("change_cycle", 0)),
+        }
+        output.write_text(json.dumps(artifact, indent=2) + "\n", encoding="utf-8")
+        print(json.dumps({"type": "thread.started", "thread_id": "fake-codex-thread"}))
+        print(json.dumps({"type": "turn.completed", "usage": {"input_tokens": 10, "cached_input_tokens": 0, "cache_write_input_tokens": 0, "output_tokens": 10, "reasoning_output_tokens": 0}}))
+        return
+
+    if final_full_mode == "invalid_verdict":
+        # Deliberately violates review.schema.json's verdict enum to exercise the
+        # invalid/unparseable-output path in run-codex-review.
+        output.write_text(json.dumps({"task_id": task_id, "verdict": "not-a-real-verdict"}) + "\n", encoding="utf-8")
+        print(json.dumps({"type": "thread.started", "thread_id": "fake-codex-thread"}))
+        print(json.dumps({"type": "turn.completed", "usage": {"input_tokens": 10, "cached_input_tokens": 0, "cache_write_input_tokens": 0, "output_tokens": 10, "reasoning_output_tokens": 0}}))
+        return
+
     artifact = {
         "task_id": task_id, "verdict": "changes_requested" if changes_requested else "pass",
         "applied_skills": [{"name": name, "sha256": lock["skills"]["locked"][name]["sha256"], "checks_completed": ["fake-agent-e2e"]} for name in task["skills"]["review"]],
@@ -44,7 +92,10 @@ def main() -> None:
         "implementation_cycle": int(state.get("implementation_cycle", 1)), "change_cycle": int(state.get("change_cycle", 0)),
     }
     output.write_text(json.dumps(artifact, indent=2) + "\n", encoding="utf-8")
-    print("fake review complete")
+    print(json.dumps({"type": "thread.started", "thread_id": "fake-codex-thread"}))
+    print(json.dumps({"type": "turn.started"}))
+    print(json.dumps({"type": "item.completed", "item": {"id": "item_0", "type": "agent_message", "text": "fake review complete"}}))
+    print(json.dumps({"type": "turn.completed", "usage": {"input_tokens": 1000, "cached_input_tokens": 400, "cache_write_input_tokens": 0, "output_tokens": 50, "reasoning_output_tokens": 5}}))
 
 
 if __name__ == "__main__":

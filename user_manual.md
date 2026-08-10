@@ -32,6 +32,11 @@ Hai trường hợp thay đổi yêu cầu được hỗ trợ:
 | Requirement change | Thay đổi yêu cầu sau khi task đã được xác nhận completed |
 | Baseline | Bản lưu implementation/review/report/validation của vòng trước |
 | Effective requirements | `task.md` cộng các requirement addendum theo thứ tự cycle |
+| Execution-plan slice | Phần việc độc lập nhỏ nhất được xử lý trong một Claude session |
+| Quick validation | Kiểm tra nhanh giữa các slice: lint, typecheck và architecture check khi được cấu hình |
+| Full validation | Toàn bộ validation bắt buộc trước khi Codex review |
+| Delta review | Review correction và dependency trực tiếp, chỉ dùng khi phạm vi không nhạy cảm |
+| Full review | Review đầy đủ bảy lượt trên toàn bộ implementation hiện hành |
 
 ## 3. Quy ước placeholder
 
@@ -79,6 +84,9 @@ export CLAUDE_COMMAND="claude"
 export CODEX_COMMAND="codex"
 export CLAUDE_TIMEOUT_SECONDS="3600"
 export CODEX_TIMEOUT_SECONDS="1800"
+export AI_MAX_TURNS="60"
+export AI_WARN_CONTEXT_TOKENS="60000"
+export AI_MAX_CONTEXT_TOKENS="80000"
 ```
 
 Nạp biến và cấu hình:
@@ -89,6 +97,14 @@ source .env.ai
 ```
 
 Không lưu token, secret hoặc credential trong workspace. `CLAUDE_TIMEOUT_SECONDS` và `CODEX_TIMEOUT_SECONDS` phải là số nguyên dương. Khi Claude implement bị timeout, quota hoặc session limit, task chuyển sang `interrupted`; mỗi attempt có log riêng và lần `implement` sau resume session nếu có, hoặc phục hồi từ `implementation-progress.json` cùng Git diff. Timeout của các bước khác vẫn được xử lý theo script tương ứng.
+
+Các biến `AI_*` kiểm soát ngân sách context:
+
+- `AI_MAX_TURNS`: giới hạn cứng số agent turn trong một Claude session; mặc định `60`.
+- `AI_WARN_CONTEXT_TOKENS`: ngưỡng ghi cảnh báo token vào `state.yaml`; mặc định `60000`.
+- `AI_MAX_CONTEXT_TOKENS`: ngưỡng ghi nhận budget breach và buộc phần việc tiếp theo dùng fresh bounded session; mặc định `80000`.
+
+Mỗi giá trị phải là số nguyên dương. Không tăng giới hạn ngay khi agent chưa hoàn tất; trước tiên kiểm tra slice có quá lớn, context có dư thừa hoặc validation có đang bị chạy lặp lại hay không.
 
 ## 6. Đưa repository gốc vào `apps/`
 
@@ -269,7 +285,28 @@ Nếu active change cycle còn marker chưa xử lý, script dừng để tránh
 ./ai/bin/ai task run PROJ-1002
 ```
 
-Pipeline tự lặp `implement → validate-code → review → request-fixes`. Validation failure được chuyển thành fix request cho implementation attempt kế tiếp. Khi Codex pass, pipeline sinh report và dừng ở `awaiting_user_acceptance`; pipeline không tự accept task.
+Pipeline vận hành theo luồng tiết kiệm token:
+
+```text
+chọn một runnable slice
+→ fresh Claude session có giới hạn turn
+→ quick validation
+→ slice tiếp theo
+→ full validation sau slice cuối
+→ full Codex review
+→ correction bằng bounded implement session
+→ delta review khi an toàn
+→ final full review
+→ report
+```
+
+Mỗi Claude session chỉ được xử lý một slice. Script tạo compact context bundle tại `worktrees/<ID>/.ai/input/slice-context-<slice>.json`; agent đọc bundle trước và chỉ mở knowledge/requirement liên quan khi cần. Evidence và changed files của slice đã hoàn thành phải được merge vào `implementation.json`, không được ghi đè bằng dữ liệu của riêng slice hiện tại.
+
+Danh sách requirement document đưa vào implement/review chỉ gồm `task.md` cùng
+addendum của các cycle *chưa gộp* (xem mục 17 về `consolidate-requirements`); addendum
+đã gộp không bị đọc lại mỗi session nữa.
+
+Validation failure được chuyển thành fix request giới hạn tối đa 40 dòng output liên quan và trỏ về artifact đầy đủ. Khi Codex pass, pipeline sinh report và dừng ở `awaiting_user_acceptance`; pipeline không tự accept task.
 
 Tuỳ chọn kiểm soát:
 
@@ -286,15 +323,26 @@ Xem metrics cục bộ bằng:
 ./ai/bin/ai metrics PROJ-1002
 ```
 
-Dữ liệu runtime gồm attempt, cycle, resume, thời lượng và token usage khi CLI trả về.
+Dữ liệu runtime gồm:
+
+- Số implement/review attempt và resume.
+- Thời lượng.
+- Input token, cache creation token, cache-read token và output token — cho cả Claude
+  (implement) và Codex (review, trích từ `codex exec --json`).
+- Tổng context token, agent turn và chi phí khi CLI cung cấp.
+- Tổng hợp chi phí/token theo execution-plan slice.
+- Review mode và reasoning effort của Codex.
+
+Khi đánh giá chi phí, không chỉ nhìn `input_tokens`: với session dài, phần lớn chi phí có thể nằm trong `cache_read_input_tokens`.
 
 ### 12.1.1 Luồng thủ công để chẩn đoán hoặc can thiệp
 
 ```bash
 ./ai/bin/ai task implement PROJ-1002 --dry-run
 ./ai/bin/ai task implement PROJ-1002
-./ai/bin/ai task validate-code PROJ-1002
-./ai/bin/ai task review PROJ-1002
+./ai/bin/ai task validate-code PROJ-1002 --tier quick
+./ai/bin/ai task validate-code PROJ-1002 --tier full
+./ai/bin/ai task review PROJ-1002 --mode auto
 ./ai/bin/ai task request-fixes PROJ-1002  # khi review yêu cầu sửa
 ./ai/bin/ai task report PROJ-1002         # khi validation và review đã pass
 ```
@@ -305,10 +353,14 @@ Luồng này hữu ích khi cần xem hoặc xử lý riêng từng gate. Bình 
 
 ```bash
 ./ai/bin/ai task validate-code PROJ-1002 --dry-run
-./ai/bin/ai task validate-code PROJ-1002
+./ai/bin/ai task validate-code PROJ-1002 --tier quick
+./ai/bin/ai task validate-code PROJ-1002 --tier full
 ```
 
 `--dry-run` chỉ hiển thị/kế hoạch hóa command. Kết quả dry-run không được phép dùng để review, sinh acceptance report hoặc accept task.
+
+- `--tier quick`: chạy các static/architecture check phù hợp để phản hồi sớm giữa các slice. Kết quả này không đủ điều kiện để review.
+- `--tier full`: chạy toàn bộ command bắt buộc và là tier duy nhất được dùng trước Codex review.
 
 Command thật lấy từ `ai/repos/<repo>/commands.yaml`.
 
@@ -316,16 +368,24 @@ Command thật lấy từ `ai/repos/<repo>/commands.yaml`.
 
 ```bash
 ./ai/bin/ai task review PROJ-1002 --dry-run
-./ai/bin/ai task review PROJ-1002
+./ai/bin/ai task review PROJ-1002 --mode auto
 ```
+
+Review mode:
+
+- `auto` — khuyến nghị: full review lần đầu; delta review cho correction an toàn.
+- `delta` — chỉ review finding mới nhất, diff bị ảnh hưởng, dependency trực tiếp, test và regression. Script từ chối mode này nếu fix request liên quan auth, security, API contract, database, migration, transaction hoặc concurrency.
+- `full` — đủ bảy lượt requirements, diff, architecture, behavior, tests, security và regression.
+
+Codex reasoning effort được chọn theo risk trong context lock: task ít rủi ro dùng `low`, task lớn dùng `medium`, còn security/database/API/background dùng `high`. Delta review dùng `medium`. Trong pipeline tự động, delta pass luôn được xác nhận lại bằng một final full review trước khi sinh report.
 
 Nếu Codex yêu cầu sửa, lưu ý `review.max_cycles` áp dụng cho implementation cycle hiện hành. Mặc định là `5`: nếu lần review thứ năm vẫn không đạt, `request-fixes` chuyển task sang `blocked` và cần người dùng quyết định bổ sung thông tin, đổi yêu cầu hoặc xử lý thủ công.
 
 ```bash
 ./ai/bin/ai task request-fixes PROJ-1002
 ./ai/bin/ai task implement PROJ-1002
-./ai/bin/ai task validate-code PROJ-1002
-./ai/bin/ai task review PROJ-1002
+./ai/bin/ai task validate-code PROJ-1002 --tier full
+./ai/bin/ai task review PROJ-1002 --mode auto
 ```
 
 ### 12.4 Sinh báo cáo kỹ thuật
@@ -553,7 +613,34 @@ policy an toàn
 
 Addendum mới chỉ ghi đè nội dung cũ khi nó mô tả rõ phần xung đột hoặc bị thay thế.
 
-Không xóa/sửa lịch sử cycle cũ để “làm sạch” yêu cầu.
+Không xóa/sửa lịch sử cycle cũ để “làm sạch” yêu cầu — các file `requirement-addendum.md`
+trong `changes/cycle-*/` không bao giờ bị xóa.
+
+Để tránh mỗi implement/review session phải đọc lại toàn bộ chuỗi addendum khi task đã
+qua nhiều cycle, có thể **gộp** (không xóa) các addendum đã được chấp nhận vào `task.md`
+khi task ở trạng thái `completed`:
+
+```bash
+./ai/bin/ai task consolidate-requirements PROJ-1002
+# review requirements-consolidation-draft.md
+./ai/bin/ai task apply-requirements-consolidation PROJ-1002 --approved-by "Tên người duyệt"
+```
+
+`consolidate-requirements` archive draft/manifest cũ (nếu còn sót) rồi mới gọi Claude
+soạn draft mới, kèm `requirements-consolidation-manifest.json` ghi sha256 của `task.md`
+nguồn, từng addendum được gộp và chính draft — không tự ghi `task.md`.
+
+`apply-requirements-consolidation` đối chiếu lại toàn bộ manifest với trạng thái hiện tại
+trước khi áp dụng: `task_id`, cycle range, sha256 của `task.md`/từng addendum/draft. Nếu
+bất kỳ phần nào đã bị sửa, thiếu, hoặc thuộc cycle khác (vd. có cycle mới mở ra sau khi
+tạo draft) — lệnh từ chối áp dụng thay vì âm thầm dùng dữ liệu cũ/sai. `--approved-by`
+không được rỗng. Khi hợp lệ: ghi đè `task.md`, backup bản cũ **cùng với** draft và
+manifest đã dùng vào `task-md-history/<khoảng cycle>/` (giữ nguyên để audit, không xóa
+provenance), rồi ghi nhận cycle đã gộp vào `state.yaml`. Từ lần `implement`/`review` kế
+tiếp, các addendum đã gộp không còn bị bắt buộc đọc lại (file gốc vẫn còn trên đĩa để tra
+cứu); `report` vẫn luôn liệt kê đầy đủ lịch sử addendum. Luôn review draft trước khi áp
+dụng — đây là bước gộp nội dung bằng ngôn ngữ tự nhiên, không có schema kiểm chứng được
+tính đúng đắn ngữ nghĩa (chỉ kiểm chứng được tính toàn vẹn/không bị tamper qua sha256).
 
 ## 18. Cập nhật knowledge base
 
@@ -615,7 +702,13 @@ ai/tasks/<ID>/
 ├── implementation-progress.json    # Checkpoint dùng khi implementation bị gián đoạn
 ├── review.json                     # Verdict/findings hiện hành
 ├── final-report.md                 # Báo cáo chờ nghiệm thu
-└── validation/                     # Bằng chứng validation hiện hành
+└── (runtime nằm tại worktrees/<ID>/.ai/)
+
+worktrees/<ID>/.ai/
+├── input/                          # Slice context và bounded fix request
+├── exchange/                       # Claude/Codex session log
+├── validation/                     # Quick/full validation và skill evidence hiện hành
+└── metrics/                        # Token, turn, cost và attempt metrics
 ```
 
 ## 21. Lệnh thường dùng
@@ -641,8 +734,9 @@ ai/tasks/<ID>/
 
 # Pipeline thủ công
 ./ai/bin/ai task implement PROJ-1002
-./ai/bin/ai task validate-code PROJ-1002
-./ai/bin/ai task review PROJ-1002
+./ai/bin/ai task validate-code PROJ-1002 --tier quick
+./ai/bin/ai task validate-code PROJ-1002 --tier full
+./ai/bin/ai task review PROJ-1002 --mode auto
 ./ai/bin/ai task report PROJ-1002
 
 # Metrics
@@ -707,14 +801,16 @@ Toàn bộ nội dung ví dụ là trung lập và không dùng dữ liệu dự
 - [ ] Active change addendum không còn placeholder chưa xử lý.
 - [ ] Skill implement/review đã được classify, kiểm tra và apply.
 - [ ] `execution-plan.json` phản ánh requirements hiện hành.
+- [ ] Mỗi slice đủ nhỏ để hoàn thành trong ngân sách turn; dependency giữa các slice đúng.
 - [ ] `context.lock.json` được tạo sau lần sửa requirements/skill/plan cuối cùng.
 
 ### Trước Codex
 
 - [ ] `implementation.json` hợp lệ.
-- [ ] Validation của cycle hiện hành đã chạy.
+- [ ] Full validation của cycle hiện hành đã chạy; quick validation không được dùng thay thế.
 - [ ] Không dùng validation cũ trong baseline.
 - [ ] Implementation progress và Git diff của attempt hiện hành đã được ghi nhận.
+- [ ] Nếu đã dùng delta review, final full review cũng đã pass.
 
 ### Trước accept
 

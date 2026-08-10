@@ -1,0 +1,125 @@
+{
+  "task_id": "MEMORIES-0004",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "status": "ready",
+  "slices": [
+    {
+      "id": "domain-model-schema-v-seed-data",
+      "title": "Domain model, schema và seed data",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Domain model, schema và seed data"
+      ],
+      "requirement_details": {
+        "Domain model, schema và seed data": [
+          "Tạo bounded context/module phù hợp cho catalog và dữ liệu có thể duyệt của card template/product theo đúng 4 lớp hiện có; không đặt logic nghiệp vụ trong controller hoặc ORM entity.",
+          "Tạo migration cho các catalog chuẩn hóa: occasion dùng chung, card style, product category phân cấp, recipient segment, material, card format/capability, color family và personalization capability.",
+          "Mỗi catalog có tối thiểu `id`, `code` hoặc `slug` ổn định, tên hiển thị, `status`, `sort_order`, timestamps phù hợp convention; taxonomy phân cấp có `parent_id` nullable và ràng buộc chống self-parent/quan hệ không hợp lệ ở mức phù hợp.",
+          "Tạo model/bảng tối thiểu cho card template, product và sellable variant/offer đủ để phục vụ hai trang; không xây dựng toàn bộ commerce lifecycle.",
+          "Tạo quan hệ nhiều-nhiều template/product với catalog; hỗ trợ `is_primary` hoặc trọng số cho occasion, style, recipient và các quan hệ cần xác định giá trị chính/độ phù hợp; bổ sung uniqueness/index phục vụ join/filter.",
+          "Lưu access tier trên template; giá hiệu lực trên variant/offer; preparation min/max, fulfillment mode và rush trên product/variant; rating average/count là dữ liệu tổng hợp nullable. Không tạo catalog cho price range, preparation bucket hoặc rating bucket.",
+          "Seed idempotent bộ dữ liệu phát triển tương ứng dữ liệu hợp lệ đang hiển thị ở frontend/prototype, dùng code/slug tiếng Anh ổn định và nhãn tiếng Việt; phân loại category, material, personalization capability và collection đúng mô hình đã nêu trong Epic thay vì chép nguyên nhãn prototype sai nhóm."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "public-read-api-v-facet-semantics",
+      "title": "Public read API và facet semantics",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Public read API và facet semantics"
+      ],
+      "requirement_details": {
+        "Public read API và facet semantics": [
+          "Cung cấp endpoint public đọc metadata/options catalog cần cho UI, chỉ trả item `active`, theo `sort_order` ổn định.",
+          "Cung cấp endpoint danh sách card template và product với pagination, deterministic sort, tìm kiếm và multi-select filters tương ứng hai prototype.",
+          "Response list trả items, metadata phân trang và facet groups/options có `count`; định nghĩa rõ count theo kết quả sau khi áp dụng các filter khác trong cùng query để UI có thể hiển thị option còn khả dụng.",
+          "Card filters tối thiểu: occasion, style, format/capability, color family và access tier.",
+          "Product filters tối thiểu: category (có quy tắc descendant), occasion, recipient segment, personalization capability, material, effective price range, preparation range, rush support và minimum rating.",
+          "Multi-value trong cùng facet dùng OR; giữa các facet dùng AND. Quan hệ nhiều-nhiều không được làm trùng item/count.",
+          "Price range dùng khoảng nửa mở `[min, max)`, cho phép thiếu một đầu; filter theo effective/current price của variant khả dụng. Preparation lọc bằng số ngày/SLA hiện hành, tách khỏi `supportsRush`.",
+          "Search chuẩn hóa whitespace/case, input enum/slug/range/sort/pagination được validate; slug không tồn tại trả danh sách rỗng và facet nhất quán, còn query sai kiểu/range mâu thuẫn trả lỗi validation chuẩn.",
+          "Không bắt buộc JWT cho public read endpoints; vẫn áp dụng global validation, error shape và rate limit hiện hữu.",
+          "Controller/DTO có Swagger đầy đủ; export `openapi.json` và xác minh contract sau thay đổi."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "frontend-api-integration",
+      "title": "Frontend API integration",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Frontend API integration"
+      ],
+      "requirement_details": {
+        "Frontend API integration": [
+          "Sinh lại `packages/api-client/src/generated/schema.d.ts` từ OpenAPI backend; không sửa file generated bằng tay.",
+          "Bổ sung typed API wrapper cho catalog/card/product list, query serialization nhiều giá trị/range/pagination và response/error handling theo convention `ApiClient`.",
+          "Dùng TanStack Query với query key chứa toàn bộ normalized filter/search/sort/page state; request cũ phải được hủy hoặc không được ghi đè kết quả mới khi người dùng đổi filter nhanh.",
+          "URL search params là nguồn trạng thái có thể chia sẻ/khôi phục cho filter, search, sort và page; giá trị URL không hợp lệ được bỏ qua hoặc chuẩn hóa an toàn, không làm crash/hydration mismatch.",
+          "Tích hợp `/mau-thiep` và `/qua-ky-niem` với API thật, giữ layout/design hiện hữu; render filter options/count từ response thay vì mảng nhãn hard-code.",
+          "Có loading, background refresh, API error + retry, empty state và zero-count/disabled option hợp lý; đổi filter/search/sort reset về trang đầu.",
+          "Quick-view/product card/template card dùng dữ liệu API và xử lý trường optional/ảnh thiếu an toàn. Cart, checkout và mutation quản trị vẫn là mock/ngoài phạm vi.",
+          "Không lưu access token hoặc dữ liệu nhạy cảm trong browser storage; public endpoints không được thêm auth workaround."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "test-contract-v-documentation",
+      "title": "Test, contract và documentation",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Test, contract và documentation"
+      ],
+      "requirement_details": {
+        "Test, contract và documentation": [
+          "Backend unit test domain/use case/repository boundary; integration/e2e chạy migration thật và kiểm tra list/filter/facet/count, taxonomy dùng chung, duplicate join, range boundary, invalid query và public access.",
+          "Frontend test API wrapper/query serialization và component integration cho URL state, multi-filter, pagination reset, loading/error/empty, stale response và facet count.",
+          "Chạy backend `lint`, `typecheck`, `test`, `test:architecture`, `test:e2e`, `build`, `export:openapi`; frontend `lint`, `typecheck`, `test`, `build`.",
+          "Cập nhật repository/domain knowledge nếu implementation tạo quyết định bền vững về schema, API hoặc facet semantics."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    }
+  ]
+}

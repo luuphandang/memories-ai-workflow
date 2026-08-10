@@ -7,3 +7,5 @@
 - Error/loading/empty state: mỗi app có `app/error.tsx`/`app/loading.tsx`/`app/not-found.tsx` ở cấp root (quy ước Next.js App Router); thông báo lỗi/thành công dùng `toast` (`packages/ui`'s `useToast`, Radix Toast).
 - i18n/date/number: `packages/i18n` đã code đầy đủ (`t(locale, key)` type-safe, dictionary `en`/`vi`) nhưng CHƯA được import/sử dụng ở app nào — cả 2 app hiện hardcode text tiếng Việt trực tiếp trong JSX (`<html lang="vi">` cố định); coi package này là hạ tầng sẵn có cho tương lai, không phải convention đang áp dụng thật.
 - Import/format: ESLint `import/order` (warn) + `import/no-cycle` (error) qua `packages/eslint-config`; Prettier cho format; `next lint --max-warnings 0` chạy riêng cho từng app.
+
+- Testing setup: package sở hữu UI primitive (ví dụ `packages/ui`) phải có vitest + jsdom + `@testing-library/react` (`vitest.config.ts`, `test/setup.ts`, dev dependencies tương ứng trong `package.json`), cùng chuẩn với `apps/public-web` và `packages/config`; đây là pattern bắt buộc khi tạo mới hoặc mở rộng package UI primitive, tránh thiếu test tooling.

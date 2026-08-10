@@ -4,4 +4,6 @@
 # reject that as an ambiguous legacy duplicate.
 approval_policy = "never"
 sandbox_mode = "read-only"
+# The wrapper overrides this per task risk and uses medium for safe delta reviews.
+# Keep this fallback at "high": it only applies if that override fails to apply.
 model_reasoning_effort = "high"

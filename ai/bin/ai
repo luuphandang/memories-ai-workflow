@@ -15,13 +15,15 @@ def usage():
   ai task classify-skills <ID> [--apply]
   ai task implement <ID> [--dry-run]
   ai task run <ID> [--dry-run] [--max-attempts N] [--resume-interrupted]
-  ai task validate-code <ID> [--dry-run]
-  ai task review <ID> [--dry-run]
+  ai task validate-code <ID> [--dry-run] [--tier quick|full]
+  ai task review <ID> [--dry-run] [--mode auto|full|delta]
   ai task request-fixes <ID>
   ai task report <ID>
   ai task accept <ID> [--accepted-by NAME] [--note TEXT]
   ai task request-change <ID> --title <TITLE> [--kind auto|correction|requirement_change] [--from-file FILE]
   ai task update-knowledge <ID> [--apply]
+  ai task consolidate-requirements <ID> [--dry-run]
+  ai task apply-requirements-consolidation <ID> --approved-by NAME
   ai indexes rebuild
   ai metrics <ID>
 """)
@@ -35,7 +37,7 @@ def main():
     elif args[:2]==["indexes","rebuild"]: script,rest="rebuild-indexes",args[2:]
     elif args[0]=="metrics": script,rest="metrics",args[1:]
     elif args[0]=="task" and len(args)>=2:
-        mapping={"create":"create-task","register-worktree":"register-worktree","prepare-context":"prepare-context","prepare-plan":"prepare-plan","classify-skills":"classify-skills","implement":"run-claude","run":"run-task","validate-code":"validate","review":"run-codex-review","request-fixes":"request-fixes","report":"finalize-task","accept":"accept-task","request-change":"request-change","update-knowledge":"update-knowledge"}
+        mapping={"create":"create-task","register-worktree":"register-worktree","prepare-context":"prepare-context","prepare-plan":"prepare-plan","classify-skills":"classify-skills","implement":"run-claude","run":"run-task","validate-code":"validate","review":"run-codex-review","request-fixes":"request-fixes","report":"finalize-task","accept":"accept-task","request-change":"request-change","update-knowledge":"update-knowledge","consolidate-requirements":"consolidate-requirements","apply-requirements-consolidation":"apply-requirements-consolidation"}
         script=mapping.get(args[1]); rest=args[2:]
         if not script: usage(); raise SystemExit(2)
     else: usage(); raise SystemExit(2)

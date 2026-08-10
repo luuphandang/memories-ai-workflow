@@ -7,15 +7,116 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib.ai_common import (
+    ROOT,
     configured_fail_severities,
+    detect_risk_categories,
     ensure_task,
     now_iso,
     read_json,
     read_yaml,
     require_file,
     runtime_dir,
+    write_json,
     write_yaml,
 )
+
+
+def impacted_slice_ids_for_file(file_path: str, slices: list[dict]) -> list[str]:
+    """Match a finding's file against slice deliverables (conservative: the file path
+    must appear inside the deliverable text, not the reverse, to avoid a short/generic
+    deliverable string spuriously matching an unrelated file)."""
+    if not file_path:
+        return []
+    return [
+        item["id"]
+        for item in slices
+        if any(file_path in deliverable for deliverable in item.get("deliverables", []) if deliverable)
+    ]
+
+
+def impacted_slice_ids_for_criterion(criterion: str, slices: list[dict]) -> list[str]:
+    if criterion.startswith("slice:"):
+        slice_id = criterion.split(":", 1)[1]
+        return [slice_id] if any(item["id"] == slice_id for item in slices) else []
+    return [item["id"] for item in slices if criterion in item.get("acceptance_criteria", [])]
+
+
+def build_correction_scope(
+    task_id: str,
+    cycle: int,
+    execution_plan_required: bool,
+    slices: list[dict],
+    findings: list[dict],
+    failed_criteria: list[dict],
+    missing_validation: list[str],
+) -> dict:
+    risk_text = "\n".join(
+        [
+            *(f"{item.get('title', '')} {item.get('evidence', '')} {item.get('expected_fix', '')}" for item in findings),
+            *(str(item.get("criterion", "")) for item in failed_criteria),
+            *(str(item) for item in missing_validation),
+        ]
+    )
+    risk_categories = detect_risk_categories(risk_text)
+
+    scope = {
+        "task_id": task_id,
+        "review_cycle": cycle,
+        "generated_at": now_iso(),
+        "execution_plan_required": execution_plan_required,
+        "findings": [
+            {
+                "id": index,
+                "title": finding.get("title"),
+                "severity": finding.get("severity"),
+                "repo": finding.get("repo"),
+                "file": finding.get("file"),
+            }
+            for index, finding in enumerate(findings, 1)
+        ],
+        "impacted_acceptance_criteria": [item.get("criterion") for item in failed_criteria],
+        "risk_categories": risk_categories,
+    }
+
+    if not execution_plan_required:
+        scope["impacted_slices"] = []
+        scope["full_plan_fallback_required"] = False
+        scope["full_plan_fallback_reason"] = "execution plan not required for this task"
+        return scope
+
+    impacted: set[str] = set()
+    unmapped_count = 0
+    for finding in findings:
+        matches = impacted_slice_ids_for_file(str(finding.get("file") or ""), slices)
+        if matches:
+            impacted.update(matches)
+        else:
+            unmapped_count += 1
+    for item in failed_criteria:
+        matches = impacted_slice_ids_for_criterion(str(item.get("criterion", "")), slices)
+        if matches:
+            impacted.update(matches)
+        else:
+            unmapped_count += 1
+
+    fallback_reasons = []
+    if risk_categories:
+        fallback_reasons.append(
+            "sensitive correction (risk categories: " + ", ".join(risk_categories) + ") always escalates to full-plan scope"
+        )
+    if unmapped_count:
+        fallback_reasons.append(
+            f"{unmapped_count} finding(s)/criterion(criteria) could not be mapped to a specific slice"
+        )
+    if missing_validation:
+        fallback_reasons.append("missing validation evidence is not attributable to a specific slice")
+    if not impacted and (findings or failed_criteria):
+        fallback_reasons.append("no finding or criterion mapped to any slice")
+
+    scope["impacted_slices"] = sorted(impacted)
+    scope["full_plan_fallback_required"] = bool(fallback_reasons)
+    scope["full_plan_fallback_reason"] = "; ".join(fallback_reasons) if fallback_reasons else None
+    return scope
 
 
 def main() -> None:
@@ -71,16 +172,20 @@ def main() -> None:
         location = f"{finding.get('repo')}:{finding.get('file')}"
         if finding.get("line"):
             location += f":{finding.get('line')}"
+        evidence = str(finding.get("evidence", ""))
+        expected_fix = str(finding.get("expected_fix", ""))
         lines.extend(
             [
                 f"## {index}. [{finding.get('severity')}] {finding.get('title')}",
                 "",
                 f"- Location: `{location}`",
-                f"- Evidence: {finding.get('evidence')}",
-                f"- Expected fix: {finding.get('expected_fix')}",
-                "",
+                f"- Evidence: {evidence[:800]}",
+                f"- Expected fix: {expected_fix[:500]}",
             ]
         )
+        if len(evidence) > 800 or len(expected_fix) > 500:
+            lines.append(f"- Full finding: `{review_path.relative_to(ROOT)}` (finding #{index})")
+        lines.append("")
 
     failed_criteria = [
         item
@@ -106,13 +211,48 @@ def main() -> None:
             "or missing validation evidence was found. Re-run or inspect review.json."
         )
 
-    path = runtime_dir(args.task_id) / "input" / f"fix-request-review-{cycle}.md"
+    execution_plan_required = bool(task.get("scope", {}).get("execution_plan_required", False))
+    slices: list = []
+    if execution_plan_required and (td / "execution-plan.json").exists():
+        slices = read_json(td / "execution-plan.json").get("slices", [])
+    correction_scope = build_correction_scope(
+        args.task_id, cycle, execution_plan_required, slices, findings, failed_criteria, missing_validation
+    )
+    if correction_scope["full_plan_fallback_required"]:
+        lines.extend([
+            "## Correction scope",
+            "",
+            f"Full-plan scope required: {correction_scope['full_plan_fallback_reason']}",
+            "",
+        ])
+    elif correction_scope["impacted_slices"]:
+        lines.extend([
+            "## Correction scope",
+            "",
+            "Impacted slices (plus their direct dependencies): " + ", ".join(correction_scope["impacted_slices"]),
+            "",
+        ])
+
+    path = runtime_dir(args.task_id) / "input" / f"fix-request-review-{cycle:03d}.md"
     path.write_text("\n".join(lines), encoding="utf-8")
+    scope_path = runtime_dir(args.task_id) / "input" / f"correction-scope-review-{cycle:03d}.json"
+    write_json(scope_path, correction_scope)
+
     state["status"] = "changes_requested_by_codex"
     state.setdefault("timestamps", {})["fix_requested_at"] = now_iso()
     state["last_error"] = None
+    # Record the scope decision (and fallback reason, if any) in state for audit — not
+    # only in the sidecar file — per the "sensitive/ambiguous corrections must safely
+    # escalate, and the reason must be recorded" requirement.
+    state["last_correction_scope"] = {
+        "review_cycle": cycle,
+        "impacted_slices": correction_scope["impacted_slices"],
+        "full_plan_fallback_required": correction_scope["full_plan_fallback_required"],
+        "full_plan_fallback_reason": correction_scope["full_plan_fallback_reason"],
+    }
     write_yaml(td / "state.yaml", state)
     print(path)
+    print(scope_path)
 
 
 if __name__ == "__main__":
