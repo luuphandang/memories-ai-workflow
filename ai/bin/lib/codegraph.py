@@ -5,10 +5,19 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 from typing import Any
 
 
 VALID_MODES = {"off", "optional", "required"}
+
+# codegraph's own MCP setup docs wire `serve --mcp` with no path-like argument
+# (README's manual-config example is `{"command":"codegraph","args":["serve","--mcp"]}`),
+# and the CLI reference has no documented `--path`/project flag for any command.
+# The only way to scope a `serve --mcp` process to one worktree is therefore its
+# process cwd, so per-repository servers are launched through this tiny wrapper
+# instead of a `--path` flag that may not exist.
+SERVE_WRAPPER = Path(__file__).resolve().parent / "codegraph_serve.py"
 
 
 def mode() -> str:
@@ -25,15 +34,25 @@ def executable() -> str | None:
 
 
 def _run(command: list[str], cwd: Path, timeout: int = 300) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        command,
-        cwd=cwd,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        timeout=timeout,
-        check=False,
-    )
+    try:
+        return subprocess.run(
+            command,
+            cwd=cwd,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        # subprocess.run raises this regardless of check=False, so without this
+        # catch a slow/hung `codegraph` call crashes prepare-context/manage-codegraph
+        # even in optional mode, which must never fail the workflow on its own.
+        output = exc.stdout or ""
+        if isinstance(output, bytes):
+            output = output.decode(errors="replace")
+        output += f"\n[codegraph] timed out after {timeout}s"
+        return subprocess.CompletedProcess(command, returncode=124, stdout=output)
 
 
 def inspect_repository(path: Path, *, sync: bool = False, initialize: bool = False) -> dict[str, Any]:
@@ -87,28 +106,36 @@ def inspect_repository(path: Path, *, sync: bool = False, initialize: bool = Fal
                 raise SystemExit(f"{result['reason']} for {path}:\n{synced.stdout}")
             return result
 
-    status = _run([binary, "status", str(path), "--json"], cwd=path)
+    # The official CLI reference only documents `codegraph status [path]`, with no
+    # `--json` flag, so this must not depend on `--json` being supported: request
+    # plain output and best-effort parse it as JSON in case the CLI does emit it.
+    status = _run([binary, "status", str(path)], cwd=path)
     if status.returncode != 0:
         result["reason"] = f"codegraph status exited {status.returncode}"
         if configured_mode == "required":
             raise SystemExit(f"{result['reason']} for {path}:\n{status.stdout}")
         return result
+    result["status_text"] = status.stdout.strip()
     try:
         result["status"] = json.loads(status.stdout)
     except json.JSONDecodeError:
-        result["status_text"] = status.stdout.strip()
+        pass
     result["ready"] = True
     result.pop("reason", None)
     return result
 
 
 def inspect_task_repositories(root: Path, task: dict, *, sync: bool = False, initialize: bool = False) -> dict[str, dict[str, Any]]:
-    return {
-        item["repo"]: inspect_repository(
-            root / item["path"], sync=sync, initialize=initialize
-        )
-        for item in task.get("worktrees", [])
-    }
+    result: dict[str, dict[str, Any]] = {}
+    resolved_root = root.resolve()
+    for item in task.get("worktrees", []):
+        path = (root / item["path"]).resolve()
+        try:
+            path.relative_to(resolved_root)
+        except ValueError:
+            raise SystemExit(f"CodeGraph repository path escapes workspace: {item['path']}")
+        result[item["repo"]] = inspect_repository(path, sync=sync, initialize=initialize)
+    return result
 
 
 def ready_repositories(context_lock: dict) -> list[tuple[str, str]]:
@@ -122,6 +149,11 @@ def ready_repositories(context_lock: dict) -> list[tuple[str, str]]:
 
 
 def runtime_ready_repositories(root: Path, context_lock: dict) -> list[tuple[str, str]]:
+    # Re-check the *current* mode, not just the mode recorded at lock time: if an
+    # operator sets AI_CODEGRAPH_MODE=off after prepare-context without re-locking,
+    # a stale lock with ready:true repositories must not still connect MCP servers.
+    if mode() == "off":
+        return []
     ready = ready_repositories(context_lock)
     binary = executable()
     live = [item for item in ready if (root / item[1] / ".codegraph").is_dir()]
@@ -136,27 +168,61 @@ def runtime_ready_repositories(root: Path, context_lock: dict) -> list[tuple[str
     return live if binary else []
 
 
+def _safe_repo_name(name: str) -> str:
+    return "codegraph_" + "".join(ch if ch.isalnum() else "_" for ch in name)
+
+
+def _named_ready_repositories(root: Path, context_lock: dict) -> list[tuple[str, str, str]]:
+    """Ready repositories paired with their sanitized MCP server name.
+
+    Raises if two distinct repository names normalize to the same server name
+    (e.g. "backend-api" and "backend_api"), which would otherwise silently drop
+    or overwrite one repository's MCP server.
+    """
+    seen: dict[str, str] = {}
+    named: list[tuple[str, str, str]] = []
+    for name, relative_path in runtime_ready_repositories(root, context_lock):
+        safe_name = _safe_repo_name(name)
+        if safe_name in seen and seen[safe_name] != name:
+            raise SystemExit(
+                f"CodeGraph repository names {seen[safe_name]!r} and {name!r} both "
+                f"normalize to MCP server {safe_name!r}; rename one repository to "
+                "avoid a silent MCP server collision"
+            )
+        seen[safe_name] = name
+        named.append((safe_name, name, relative_path))
+    return named
+
+
+def _serve_command_args(root: Path, binary: str, relative_path: str) -> tuple[str, list[str]]:
+    """Build the (command, args) that scope `codegraph serve --mcp` to one worktree.
+
+    Neither Claude Code's --mcp-config schema (stdio servers: command/args/env
+    only) nor the CodeGraph CLI reference document a way to pass a project path
+    to `serve`; its own manual-setup example is `serve --mcp` with no path
+    argument. The only documented scoping mechanism for CodeGraph in general is
+    running commands with the worktree as cwd, so the server is spawned through
+    a wrapper that chdirs into the worktree before exec'ing `codegraph`.
+    """
+    return sys.executable, [str(SERVE_WRAPPER), str(root / relative_path), binary, "serve", "--mcp"]
+
+
 def claude_mcp_config(root: Path, context_lock: dict) -> dict[str, Any]:
     binary = executable() or os.environ.get("CODEGRAPH_COMMAND", "codegraph")
     servers = {}
-    for name, relative_path in runtime_ready_repositories(root, context_lock):
-        safe_name = "codegraph_" + "".join(ch if ch.isalnum() else "_" for ch in name)
-        servers[safe_name] = {
-            "type": "stdio",
-            "command": binary,
-            "args": ["serve", "--mcp", "--path", str(root / relative_path)],
-        }
+    for safe_name, _name, relative_path in _named_ready_repositories(root, context_lock):
+        command, args = _serve_command_args(root, binary, relative_path)
+        servers[safe_name] = {"type": "stdio", "command": command, "args": args}
     return {"mcpServers": servers}
 
 
 def codex_mcp_overrides(root: Path, context_lock: dict) -> list[str]:
     binary = executable() or os.environ.get("CODEGRAPH_COMMAND", "codegraph")
     overrides: list[str] = []
-    for name, relative_path in runtime_ready_repositories(root, context_lock):
-        safe_name = "codegraph_" + "".join(ch if ch.isalnum() else "_" for ch in name)
-        args = json.dumps(["serve", "--mcp", "--path", str(root / relative_path)])
-        overrides.extend(["-c", f"mcp_servers.{safe_name}.command={json.dumps(binary)}"])
-        overrides.extend(["-c", f"mcp_servers.{safe_name}.args={args}"])
+    for safe_name, _name, relative_path in _named_ready_repositories(root, context_lock):
+        command, args = _serve_command_args(root, binary, relative_path)
+        overrides.extend(["-c", f"mcp_servers.{safe_name}.command={json.dumps(command)}"])
+        overrides.extend(["-c", f"mcp_servers.{safe_name}.args={json.dumps(args)}"])
     return overrides
 
 

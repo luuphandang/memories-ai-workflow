@@ -21,6 +21,10 @@ commands:
     command: npm run build
     required: true
     timeout_seconds: 900
+  export-openapi:
+    command: npm run export:openapi
+    required: true
+    timeout_seconds: 300
   test-architecture:
     command: npm run test:architecture
     required: true

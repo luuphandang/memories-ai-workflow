@@ -46,8 +46,9 @@ Chạy `./ai/bin/ai --help` để xem command.
 
 `ai task run` chạy đúng một execution-plan slice trong mỗi Claude session mới,
 dùng quick validation giữa các slice và chỉ chạy full validation trước review.
-Session mặc định tối đa 60 turns và nhận compact slice-context bundle. Có thể chỉnh
-bằng `AI_MAX_TURNS`, `AI_WARN_CONTEXT_TOKENS` và `AI_MAX_CONTEXT_TOKENS`.
+Session nhận compact slice-context bundle và không bị workflow áp đặt giới hạn số
+agent turn. Các ngưỡng context được cấu hình bằng `AI_WARN_CONTEXT_TOKENS` và
+`AI_MAX_CONTEXT_TOKENS`.
 
 Review tự dùng delta mode cho correction không nhạy cảm; auth, security, API
 contract, database, migration, transaction và concurrency luôn được nâng lên full.

@@ -43,10 +43,10 @@ validation:
   - lint
   - typecheck
   - test
-  - test:architecture
-  - test:e2e
+  - test-architecture
+  - test-e2e
   - build
-  - export:openapi
+  - export-openapi
   frontend:
   - lint
   - typecheck

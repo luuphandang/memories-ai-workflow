@@ -129,8 +129,6 @@ Do not modify task.md or any other file. Do not commit, push, or touch Git.
         "stream-json",
         "--verbose",
         "--dangerously-skip-permissions",
-        "--max-turns",
-        "20",
         prompt,
     ]
     if args.print_command or args.dry_run:

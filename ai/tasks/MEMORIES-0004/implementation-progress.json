@@ -2,63 +2,40 @@
   "task_id": "MEMORIES-0004",
   "implementation_cycle": 1,
   "change_cycle": 0,
-  "updated_at": "2026-08-10T11:05:00+07:00",
+  "updated_at": "2026-08-11T21:00:00+07:00",
   "completed_criteria": [
     "Domain model, schema và seed data",
-    "Public read API và facet semantics"
+    "Public read API và facet semantics",
+    "Frontend API integration",
+    "Test, contract và documentation"
   ],
   "changed_files": [
-    "backend: libs/modules/catalog/** (new module)",
-    "backend: libs/modules/card-catalog/** (filled skeleton: CardTemplate domain/persistence/application/presentation)",
-    "backend: libs/modules/product-catalog/** (filled skeleton: Product/ProductVariant domain/persistence/application/presentation)",
-    "backend: libs/platform/database/src/migrations/1722560000000-CreateCatalogSchema.ts",
-    "backend: libs/platform/database/src/migrations/1722570000000-CreateCardCatalogSchema.ts",
-    "backend: libs/platform/database/src/migrations/1722580000000-CreateProductCatalogSchema.ts",
-    "backend: tsconfig.json, nest-cli.json (registered @memories/modules/catalog)",
-    "backend: apps/{api,worker,scheduler,cli}/src/business-modules.ts (wired CatalogModule)",
-    "backend: apps/cli/src/commands/seed.command.ts (wired 3 new seed use cases, ordered)",
-    "backend: openapi-contracts.json (+3 operations), apps/api/test/openapi-contract.e2e-spec.ts (+3 assertions)",
-    "backend: apps/api/test/{catalog,card-templates,products}.e2e-spec.ts (new, 25 tests)",
-    "backend: libs/modules/identity-access/src/presentation/http/auth.controller.ts (formatting-only: collapsed multi-line @ApiResponse decorators to single-line — required to unblock check_openapi_contract.py's brace-boundary heuristic, which mis-parses a decorator's own closing `})` as a method boundary when multi-line; documented as a deliberate minimal fix, no behavior change)",
-    "backend: openapi.json regenerated"
+    "backend: see implementation.json repositories[0].changed_files. Review-cycle-7 delta: none (evidence/documentation-only fix; added libs/platform/database/src/migrations/1722590000000-AddCatalogTermsHierarchyGuard.ts and apps/api/test/catalog-hierarchy-guard.e2e-spec.ts to the changed_files inventory — these files already existed in the worktree from review cycles 5-6 but were missing from the handoff's file list)",
+    "frontend: see implementation.json repositories[1].changed_files (unchanged this attempt)",
+    "worktree-level: worktrees/MEMORIES-0004/.ai/validation/ui-fidelity/matrix.json (4 entries' evidence text corrected: qua-ky-niem background-refresh 375x812/1440x900 and dialog 375x812/1440x900), worktrees/MEMORIES-0004/.ai/validation/ui-fidelity/actual/*.png (all 34 recaptured against live dev servers on the correctly seeded DB), worktrees/MEMORIES-0004/.ai/validation/skills/acceptance-evidence.json (regenerated from the updated implementation.json), ai/tasks/MEMORIES-0004/implementation.json (stale-evidence corrections)"
   ],
   "decisions": [
-    "Single shared catalog.catalog_terms table discriminated by catalog_type (see prior note) — verified end-to-end against a real Postgres instance: migration up/down, idempotent reseed, and category parent/child hierarchy all confirmed via direct DB queries.",
-    "card-catalog/product-catalog facet counts: for catalog-term-backed facets (occasion/style/format/colorFamily/accessTier for cards; category/occasion/recipient/personalization/material/rush for products) each facet excludes only its OWN active filter when computing its own option counts (others AND'd in) — verified by e2e test; category facet counts are descendant-inclusive via a recursive closure CTE.",
-    "price/preparation/rating are filter-only (no enumerated facet-count group) since they are continuous ranges, not discrete catalog options — documented in ListProductsFilter/product.repository.ts.",
-    "Each product modeled with exactly one representative variant in seed data (schema supports many); effective price/prep/rush read from the cheapest available variant via a LATERAL join in list(), and from an EXISTS-with-combined-conditions clause in filtering, per code comments in typeorm-product.repository.ts.",
-    "Fixed a real bug found via e2e testing: card-catalog's buildMatchConditions hardcoded a param-index offset assuming a caller-reserved $1, breaking computeAccessTierFacet (which has no such reservation) with 'could not determine data type of parameter $1' whenever a search-only or filter-only facet query ran — fixed by parameterizing startIndex per call site (0 vs 1), matching the pattern already used correctly in product-catalog.",
-    "Fixed a real bug: ListProductsUseCase collapsed a requested-but-nonexistent categoryIds filter to an empty array after descendant resolution, which the repository treats as 'no filter' — now falls back to the original nonexistent ids (still non-empty) so the filter still correctly matches zero products instead of silently ignoring the filter."
+    "Review-cycle-7 finding #1 (stale handoff/migration evidence): confirmed the worktree's real inventory is 4 migrations (not 3) and 77 e2e tests/10 suites (not 72/9) — the 4th migration (AddCatalogTermsHierarchyGuard) and 10th suite (catalog-hierarchy-guard.e2e-spec.ts) were added in review cycles 5-6 but the handoff/acceptance-evidence were never refreshed afterward. Fixed by updating every stale count in implementation.json and regenerating acceptance-evidence.json via build_evidence_matrix.py rather than hand-editing it (it's a pure derivation of implementation.json's acceptance_criteria).",
+    "Ran a full isolated empty-database migration cycle as required evidence for AC1: spun up a brand-new, never-before-used Postgres 16 container (memories-migration-check-0004, since removed) rather than reusing the shared memories-test-postgres container (which already had prior migration/seed history and would not prove a true empty-database apply-all-four). Applied all 4 migrations, seeded (twice, to reconfirm seed idempotency), ran the full e2e suite (77/77 passing), reverted all 4 catalog migrations one at a time via migration:revert (verified back to the 5-migration pre-existing baseline via migration:show), reapplied all 4 via migration:run, reseeded, and reran the full e2e suite a second time (77/77 again). Container removed after the run; no lasting infra change.",
+    "Review-cycle-7 finding #2 (stale UI-fidelity evidence): root-caused the 4 flagged gift background-refresh/dialog captures showing 'Chưa có ảnh' to the capture script's apiUrl default (http://localhost:3000) no longer matching the frontend's real configured backend (http://localhost:3010, per apps/public-web/.env.local) — an unrelated process from a different project (lms-backend admin-bff) was squatting port 3000, so any run using the default silently hit the wrong (or no) backend. The capture script already had an assertRepresentativeProductSeed() precondition (added in review cycle 5) meant to catch exactly this, but it had apparently never actually been run against the real target since the port moved. Fixed by discovering/restarting the real dev servers (apps/api on :3010, apps/public-web on :3100 — the latter's existing process was returning 500s and had to be restarted) and rerunning the capture script with FRONTEND_URL/API_URL explicitly set, rather than editing the script's default (out of scope for an evidence-only fix; documented as a testing.md pitfall instead).",
+    "Did not touch any product/application code this attempt — both findings were evidence/documentation staleness, not functional bugs. Re-ran the complete backend and frontend validation command sets (lint/typecheck/test/test:architecture/test:e2e/build/export:openapi for backend; lint/typecheck/test/build for frontend, all --workspaces --if-present) plus all 7 deterministic skill scripts and the UI-fidelity matrix schema check to confirm no regression, then ran build_evidence_matrix.py as the final required gate: passed=true, 0 missing criteria."
   ],
   "validation": [
-    "backend lint: PASS",
-    "backend typecheck: PASS",
-    "backend test (277 tests / 61 suites incl. new modules): PASS",
-    "backend test:architecture (depcruise, 441 modules / 1566 deps): PASS, 0 violations",
-    "backend test:e2e (66 tests / 9 suites incl. 25 new catalog/card-template/product/openapi-contract tests): PASS",
-    "backend build (nest build, all apps): PASS",
-    "backend export:openapi: PASS, openapi.json regenerated with /api/v1/catalogs, /api/v1/card-templates, /api/v1/products",
-    "migration up (3 new migrations) against live test Postgres: PASS",
-    "migration down (revert x3) against live test Postgres: PASS, clean rollback",
-    "npm run start:cli -- seed run twice: idempotent (70 catalog_terms, 16 card_templates/77 links, 16 products/16 variants/165 links, unchanged on rerun)",
-    "check_openapi_contract.py: PASSED (4 operations)",
-    "check_port_bindings.py: PASSED (32 injected tokens)",
-    "check_module_wiring.py: PASSED (37 use-case/controller classes)",
-    "check_auth_invariants.py: PASSED"
+    "backend: lint/typecheck/test(277/61)/test:architecture(0 violations)/test:e2e(77/10, reconfirmed identical via the isolated empty-DB cycle)/build/export:openapi all PASS",
+    "backend: check_openapi_contract.py(4 ops)/check_port_bindings.py(32 tokens)/check_module_wiring.py(37 classes)/check_auth_invariants.py/validate_execution_plan.py(4 slices) all PASS",
+    "backend: isolated empty-database cycle (fresh container) — migrate x4, seed x2 (idempotent), e2e 77/77, revert x4 (verified empty via migration:show), reapply x4, reseed, e2e 77/77 again — all PASS",
+    "frontend: lint/typecheck/test(public-web 54/9, api-client 13/4, config 3/3, admin-web 1/1)/build --workspaces --if-present all PASS",
+    "frontend: check_frontend_security.py and check_prototype_migration.py both PASS",
+    "UI-fidelity: capture-fidelity.mjs rerun with FRONTEND_URL=http://localhost:3100 API_URL=http://localhost:3010 against real live dev servers on the correctly seeded DB; assertRepresentativeProductSeed precondition passed (16/16 products with non-null imageUrl); 34/34 captures written; check_fidelity_matrix.py PASSED (34 entries); SHA-256 spot-check confirmed no duplicate captures; visually re-verified the 4 previously-flagged gift background-refresh/dialog screenshots now show real seeded product images, not the 'Chưa có ảnh' placeholder",
+    "build_evidence_matrix.py: passed=true, 0 missing criteria (final required gate, run after all other validation)"
   ],
-  "current_slice": "frontend-api-integration",
-  "current_step": "Starting frontend: regenerate api-client schema.d.ts from backend openapi.json, then typed wrappers, query hooks, URL state, integrate /mau-thiep and /qua-ky-niem",
-  "remaining_steps": [
-    "packages/api-client: copy backend openapi.json, run generate script, add catalogs/card-templates/products typed wrapper + extend buildUrl for arrays",
-    "packages/query: add resource query-key factories + useQuery hooks with AbortSignal forwarding",
-    "URL search-params state hook (filters/search/sort/page) for both routes",
-    "Integrate /mau-thiep (CardCatalog) and /qua-ky-niem (GiftCatalog) with real API, preserving layout; loading/error/empty/zero-count states",
-    "Update/extend frontend tests (card-catalog.spec.tsx, gift-catalog.spec.tsx, new api-client wrapper tests, query hook tests)",
-    "Run frontend lint/typecheck/test/build",
-    "Slice 4: knowledge_updates, final implementation.json, evidence matrix check"
-  ],
+  "current_slice": null,
+  "current_step": "Review-cycle-7 fix request resolved: both verified findings (stale migration/e2e-count evidence; stale gift UI-fidelity captures) fixed with fresh, honest evidence; implementation.json and acceptance-evidence.json refreshed and regenerated; all validation commands and the final build_evidence_matrix.py gate pass; done",
+  "remaining_steps": [],
   "notes": [
-    "Backend slices 1+2 fully complete and validated against a live Postgres/Redis/MinIO test stack (docker containers memories-test-postgres/redis/minio already running in this environment).",
-    "Frontend worktree confirmed clean at task start except an unrelated package-lock.json diff (pre-existing, not touched)."
+    "Epic fully implemented across both worktrees; this attempt (16) was a documentation/evidence-only correction cycle in response to review cycle 7's fix request, not a functional change.",
+    "The isolated-migration-cycle container (memories-migration-check-0004, port 15433) was created and removed within this session; no lasting change to shared infrastructure. The shared memories-test-postgres/redis/minio containers were reused for the live dev-server recapture (already had the correct current seed).",
+    "apps/public-web's dev server process (port 3100) was found returning HTTP 500 at the start of this attempt and was restarted; apps/api was not previously running on any MEMORIES-0004-owned port (port 3000 was occupied by an unrelated project's process) and was started fresh on port 3010 to match the frontend's existing NEXT_PUBLIC_API_BASE_URL configuration.",
+    "Knowledge updates proposed (not applied directly, per boundary rules) in implementation.json.knowledge_updates, including two new review-cycle-7 additions: the DB-level hierarchy-guard trigger pattern (database-rules.md) and the capture-script default-port-drift pitfall (testing.md)."
   ]
 }

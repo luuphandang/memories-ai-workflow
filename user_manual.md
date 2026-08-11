@@ -21,6 +21,115 @@ Hai trường hợp thay đổi yêu cầu được hỗ trợ:
 1. **Correction trước nghiệm thu**: Codex đã pass nhưng người dùng phát hiện kết quả chưa đúng.
 2. **Requirement change sau completion**: người dùng đã xác nhận hoàn thành, sau đó yêu cầu thay đổi và muốn tiếp tục trên worktree hiện có.
 
+## Cài đặt và sử dụng CodeGraph — hướng dẫn nhanh
+
+CodeGraph là lớp knowledge graph cục bộ giúp Claude và Codex tìm symbol, call path và
+phạm vi ảnh hưởng của thay đổi mà không phải khám phá toàn bộ repository bằng grep/read.
+Workflow tạo một CodeGraph MCP server riêng cho mỗi repository trong task.
+
+### Bước 1 — Cài CodeGraph
+
+Chọn một cách cài:
+
+```bash
+# macOS/Linux: standalone bundle chính thức
+curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh
+
+# Hoặc cài qua npm
+npm install -g @colbymchenry/codegraph
+```
+
+Mở terminal mới nếu cần, rồi kiểm tra:
+
+```bash
+codegraph --version
+codegraph help
+```
+
+Không cần chạy `codegraph install`: AI workflow tự sinh MCP config theo task và không
+sửa global config của Claude/Codex.
+
+### Bước 2 — Cấu hình `.env.ai`
+
+```bash
+export CODEGRAPH_COMMAND="codegraph"
+export AI_CODEGRAPH_MODE="optional"
+```
+
+Chọn mode phù hợp:
+
+| Mode | Hành vi |
+|---|---|
+| `optional` | Mặc định; thiếu CLI/index thì agent fallback sang công cụ đọc source thông thường |
+| `required` | Dừng workflow nếu bất kỳ repository nào chưa có CodeGraph sẵn sàng |
+| `off` | Tắt kiểm tra, sync và MCP CodeGraph |
+
+Sau khi sửa `.env.ai`:
+
+```bash
+source .env.ai
+./ai/bin/ai self-check
+```
+
+### Bước 3 — Khởi tạo graph cho task
+
+Chỉ chạy sau khi developer đã tạo và đăng ký worktree:
+
+```bash
+# Tạo index còn thiếu, sync và health-check mọi worktree của task
+./ai/bin/ai task codegraph <TASK-ID> --init
+
+# Khóa trạng thái graph cùng requirements/skills/plan
+./ai/bin/ai task prepare-context <TASK-ID>
+```
+
+Không chạy `codegraph init` ở workspace root. Mỗi worktree cần index `.codegraph/` riêng
+để task đa repository không bị trỏ nhầm source.
+
+### Bước 4 — Sử dụng hằng ngày
+
+```bash
+# Incremental sync + status
+./ai/bin/ai task codegraph <TASK-ID>
+
+# Chỉ status, không sync
+./ai/bin/ai task codegraph <TASK-ID> --no-sync
+
+# Chạy pipeline; MCP CodeGraph được gắn tự động vào Claude và Codex
+./ai/bin/ai task run <TASK-ID>
+```
+
+Sau khi CodeGraph ready, không cần gọi CLI thủ công trong mỗi agent session. Claude và
+Codex nhận MCP server `codegraph_<repo>` tự động. File watcher của CodeGraph cập nhật
+graph khi source thay đổi; `prepare-context` cũng sync và health-check trước khi khóa
+context.
+
+### Kiểm tra trạng thái và xử lý lỗi
+
+Lệnh `task codegraph` in JSON cho từng repository. Trạng thái tốt có:
+
+```json
+{
+  "available": true,
+  "indexed": true,
+  "ready": true
+}
+```
+
+Các lỗi thường gặp:
+
+| Hiện tượng | Cách xử lý |
+|---|---|
+| `codegraph command is not available on PATH` | Mở terminal mới, kiểm tra `codegraph --version` hoặc đặt `CODEGRAPH_COMMAND` bằng đường dẫn tuyệt đối |
+| `index is missing` | Chạy `./ai/bin/ai task codegraph <TASK-ID> --init` |
+| Sync/status lỗi | Chạy `codegraph status <worktree-path>` để xem chi tiết, sau đó chạy lại command theo task |
+| Graph bị xóa sau khi khóa context | Khởi tạo lại index và chạy lại `prepare-context` |
+| Chưa muốn dùng CodeGraph | Đặt `AI_CODEGRAPH_MODE=off` |
+
+Thông tin chi tiết còn được nhắc lại tại mục **4.1 Cài CodeGraph CLI**, mục **5 Khởi tạo
+một lần**, mục **11 Chuẩn bị CodeGraph, plan, skill và context**, và mục **21 Lệnh thường
+dùng**.
+
 ## 2. Thuật ngữ quan trọng
 
 | Thuật ngữ | Ý nghĩa |
@@ -117,7 +226,6 @@ export CODEGRAPH_COMMAND="codegraph"
 export AI_CODEGRAPH_MODE="optional"
 export CLAUDE_TIMEOUT_SECONDS="3600"
 export CODEX_TIMEOUT_SECONDS="1800"
-export AI_MAX_TURNS="60"
 export AI_WARN_CONTEXT_TOKENS="60000"
 export AI_MAX_CONTEXT_TOKENS="80000"
 ```
@@ -133,11 +241,10 @@ Không lưu token, secret hoặc credential trong workspace. `CLAUDE_TIMEOUT_SEC
 
 Các biến `AI_*` kiểm soát ngân sách context:
 
-- `AI_MAX_TURNS`: giới hạn cứng số agent turn trong một Claude session; mặc định `60`.
 - `AI_WARN_CONTEXT_TOKENS`: ngưỡng ghi cảnh báo token vào `state.yaml`; mặc định `60000`.
 - `AI_MAX_CONTEXT_TOKENS`: ngưỡng ghi nhận budget breach và buộc phần việc tiếp theo dùng fresh bounded session; mặc định `80000`.
 
-Mỗi giá trị phải là số nguyên dương. Không tăng giới hạn ngay khi agent chưa hoàn tất; trước tiên kiểm tra slice có quá lớn, context có dư thừa hoặc validation có đang bị chạy lặp lại hay không.
+Mỗi giá trị phải là số nguyên dương. Workflow không áp đặt giới hạn số agent turn cho Claude; phiên implement tiếp tục cho tới khi hoàn tất, timeout, hoặc gặp lỗi dịch vụ thực sự.
 
 Các biến CodeGraph:
 

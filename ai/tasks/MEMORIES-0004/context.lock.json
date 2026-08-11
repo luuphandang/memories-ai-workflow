@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-08-10T03:04:40+07:00",
+  "generated_at": "2026-08-10T22:38:31+07:00",
   "task_id": "MEMORIES-0004",
   "implementation_cycle": 1,
   "change_cycle": 0,
   "active_change": null,
-  "requirement_precedence": "task.md then requirement addenda by ascending cycle; newest explicit conflict wins",
+  "requirement_precedence": "task.md then unconsolidated requirement addenda by ascending cycle (addenda from cycles at or below requirements_consolidated_through_cycle are already folded into task.md and excluded here); newest active unconsolidated addendum wins only for explicit conflicts",
   "files": [
     {
       "path": "ai/shared/policies/security.md",
@@ -119,7 +119,7 @@
       "head_sha": "8a06fa104186540afc9aa50620d9f9e48e0107f8",
       "branch": "feature/MEMORIES-0004-catalog-taxonomy-implementation",
       "registered_branch": "feature/MEMORIES-0004-catalog-taxonomy-implementation",
-      "status": ""
+      "status": "M .gitignore\n M apps/api/src/business-modules.ts\n M apps/api/test/openapi-contract.e2e-spec.ts\n M apps/cli/src/business-modules.ts\n M apps/cli/src/commands/seed.command.ts\n M apps/scheduler/src/business-modules.ts\n M apps/worker/src/business-modules.ts\n M libs/modules/card-catalog/src/card-catalog.module.ts\n M libs/modules/card-catalog/src/public-api.ts\n M libs/modules/identity-access/src/presentation/http/auth.controller.ts\n M libs/modules/product-catalog/src/product-catalog.module.ts\n M libs/modules/product-catalog/src/public-api.ts\n M nest-cli.json\n M openapi-contracts.json\n M tsconfig.json\n?? apps/api/test/card-templates.e2e-spec.ts\n?? apps/api/test/catalog.e2e-spec.ts\n?? apps/api/test/products.e2e-spec.ts\n?? libs/modules/card-catalog/src/application/use-cases/\n?? libs/modules/card-catalog/src/domain/card-template/\n?? libs/modules/card-catalog/src/infrastructure/persistence/\n?? libs/modules/card-catalog/src/presentation/http/\n?? libs/modules/card-catalog/test/\n?? libs/modules/catalog/\n?? libs/modules/product-catalog/src/application/use-cases/\n?? libs/modules/product-catalog/src/domain/product/\n?? libs/modules/product-catalog/src/infrastructure/persistence/\n?? libs/modules/product-catalog/src/presentation/http/\n?? libs/modules/product-catalog/test/\n?? libs/platform/database/src/migrations/1722560000000-CreateCatalogSchema.ts\n?? libs/platform/database/src/migrations/1722570000000-CreateCardCatalogSchema.ts\n?? libs/platform/database/src/migrations/1722580000000-CreateProductCatalogSchema.ts"
     },
     "frontend": {
       "path": "worktrees/MEMORIES-0004/frontend",
@@ -127,7 +127,30 @@
       "head_sha": "0fb9b6e2a66e16b01e328f164367e92164b34620",
       "branch": "feature/MEMORIES-0004-catalog-taxonomy-implementation",
       "registered_branch": "feature/MEMORIES-0004-catalog-taxonomy-implementation",
-      "status": ""
+      "status": "M .gitignore\n M apps/public-web/app/(marketing)/mau-thiep/page.tsx\n M apps/public-web/app/(marketing)/qua-ky-niem/page.tsx\n M apps/public-web/app/providers.tsx\n M apps/public-web/components/card-templates/card-catalog.tsx\n M apps/public-web/components/gift-products/gift-catalog.tsx\n M apps/public-web/components/gift-products/quick-view-dialog.tsx\n M apps/public-web/components/home/gifts-teaser.tsx\n M apps/public-web/components/shop/product-card.tsx\n M apps/public-web/lib/mock/gift-products.ts\n M apps/public-web/lib/store/shop-store.tsx\n M apps/public-web/lib/types/gift-product.ts\n M package-lock.json\n M packages/api-client/src/generated/schema.d.ts\n M packages/api-client/src/http-client.ts\n M packages/api-client/src/index.ts\n M packages/api-client/src/routes.ts\n?? apps/public-web/components/common/catalog-skeleton-grid.tsx\n?? apps/public-web/components/common/error-state.tsx\n?? apps/public-web/lib/api/\n?? apps/public-web/lib/hooks/\n?? apps/public-web/lib/queries/\n?? apps/public-web/lib/utils/\n?? apps/public-web/test/utils/\n?? packages/api-client/src/card-template-client.ts\n?? packages/api-client/src/catalog-client.ts\n?? packages/api-client/src/product-client.ts\n?? packages/api-client/test/catalog-resource-clients.spec.ts\n?? packages/api-client/test/query-serialization.spec.ts"
+    }
+  },
+  "codegraph": {
+    "mode": "optional",
+    "repositories": {
+      "backend": {
+        "mode": "optional",
+        "path": "/Users/cmc/Documents/Memories/worktrees/MEMORIES-0004/backend",
+        "available": true,
+        "indexed": true,
+        "ready": true,
+        "command": "/Users/cmc/.local/bin/codegraph",
+        "status_text": "CodeGraph Status\n\nProject: /Users/cmc/Documents/Memories/worktrees/MEMORIES-0004/backend\n\nIndex Statistics:\n  Files:     409\n  Nodes:     3,583\n  Edges:     8,417\n  DB Size:   11.91 MB\n  Backend:   node:sqlite — built-in (full WAL)\n  Journal:   wal\n\nNodes by Kind:\n  import          1,447\n  method          593\n  file            404\n  property        401\n  class           241\n  interface       158\n  constant        130\n  function        120\n  enum_member     43\n  route           25\n  enum            13\n  type_alias      8\n\nFiles by Language:\n  typescript      400\n  yaml            5\n  javascript      4\n\n✓ Index is up to date"
+      },
+      "frontend": {
+        "mode": "optional",
+        "path": "/Users/cmc/Documents/Memories/worktrees/MEMORIES-0004/frontend",
+        "available": true,
+        "indexed": true,
+        "ready": true,
+        "command": "/Users/cmc/.local/bin/codegraph",
+        "status_text": "CodeGraph Status\n\nProject: /Users/cmc/Documents/Memories/worktrees/MEMORIES-0004/frontend\n\nIndex Statistics:\n  Files:     254\n  Nodes:     1,440\n  Edges:     2,974\n  DB Size:   3.77 MB\n  Backend:   node:sqlite — built-in (full WAL)\n  Journal:   wal\n\nNodes by Kind:\n  import          596\n  file            249\n  function        222\n  constant        137\n  interface       92\n  type_alias      49\n  route           42\n  method          25\n  component       14\n  class           6\n  property        4\n  variable        4\n\nFiles by Language:\n  tsx             130\n  typescript      104\n  javascript      15\n  yaml            5\n\n✓ Index is up to date"
+      }
     }
   },
   "skills": {

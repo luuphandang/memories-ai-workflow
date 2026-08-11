@@ -39,17 +39,69 @@ INTERRUPTION_MARKERS = (
     "hit your session limit",
     "usage limit",
     "rate limit",
-    "rate_limit",
     "quota exceeded",
     "credit balance",
     "maximum context length",
     "context window",
 )
 
+# result.subtype values that mean Claude stopped on its own configured cap
+# rather than a real Anthropic-side usage/rate limit.
+CAP_SUBTYPES = ("error_max_turns", "error_max_budget_usd")
 
-def is_interruption(output: str) -> bool:
-    lowered = output.lower()
-    return any(marker in lowered for marker in INTERRUPTION_MARKERS)
+# rate_limit_info.status values that do NOT indicate the request was blocked
+# (e.g. "allowed_warning" is still an allowed request, just close to a
+# threshold); anything else, including unknown future statuses, is treated
+# as a real block.
+NON_BLOCKING_RATE_LIMIT_STATUSES = ("allowed", "allowed_warning")
+
+
+def classify_termination(output: str) -> tuple[str, str]:
+    """Classify why a non-zero-exit Claude invocation stopped.
+
+    Returns (category, detail). category is one of:
+    - "usage_limit": a real Anthropic-side rate/usage limit was hit
+    - "turn_or_budget_cap": Claude stopped after its own turn/budget cap
+    - "ok": the structured result event reports a normal/non-limit outcome
+    - "unstructured": no structured result event was found at all
+
+    Structured JSONL events (rate_limit_event, result) are parsed and trusted
+    first. Free-text marker matching is used only as a fallback over lines
+    that are NOT valid JSON, so assistant-generated prose that happens to
+    mention e.g. "rate limit" as a normal domain term (inside a JSON
+    "assistant" message event) is never mistaken for a real interruption.
+    """
+    result_event: dict | None = None
+    rate_limited = False
+    unstructured_lines: list[str] = []
+    for line in output.splitlines():
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            if line.strip():
+                unstructured_lines.append(line)
+            continue
+        if not isinstance(event, dict):
+            continue
+        if event.get("type") == "rate_limit_event":
+            status = (event.get("rate_limit_info") or {}).get("status")
+            if status and status not in NON_BLOCKING_RATE_LIMIT_STATUSES:
+                rate_limited = True
+        elif event.get("type") == "result":
+            result_event = event
+
+    if rate_limited:
+        return "usage_limit", "rate_limit_info.status != allowed"
+    if result_event is not None:
+        subtype = result_event.get("subtype")
+        if subtype in CAP_SUBTYPES:
+            return "turn_or_budget_cap", subtype
+        return "ok", subtype or "unknown"
+
+    unstructured = "\n".join(unstructured_lines).lower()
+    if any(marker in unstructured for marker in INTERRUPTION_MARKERS):
+        return "usage_limit", "unstructured output marker match"
+    return "unstructured", "no result event found"
 
 
 def stream_metadata(output: str) -> tuple[str | None, str, dict]:
@@ -290,10 +342,10 @@ Execution plan:
 {evidence_key_lines}
 {evidence_check_command}
 
-Session budget:
-- Maximum {budget['max_turns']} agent turns. Prefer batched reads/searches and bundled validation commands.
+Session execution:
+- Continue until the assigned implementation work is complete; there is no workflow-imposed agent-turn limit.
+- Prefer batched reads/searches and bundled validation commands.
 - Do not repeatedly update todos or narrate individual commands.
-- If the slice cannot finish within the budget, write a concise checkpoint and stop cleanly.
 
 Continuation protocol:
 - This is implementation attempt {attempt}. Previous status: {previous_status}.
@@ -342,12 +394,16 @@ Use these exact slice evidence keys for completed execution-plan slices:
 """
     (runtime / "input" / "claude-prompt.md").write_text(invocation_prompt, encoding="utf-8")
 
-    cmd = [command, "-p", "--output-format", "stream-json", "--verbose", "--dangerously-skip-permissions", "--max-turns", str(budget["max_turns"])]
+    cmd = [command, "-p", "--output-format", "stream-json", "--verbose", "--dangerously-skip-permissions"]
     mcp_config = claude_mcp_config(ROOT, context_lock)
     if mcp_config["mcpServers"]:
         mcp_config_path = runtime / "input" / "codegraph-mcp.json"
         mcp_config_path.write_text(json.dumps(mcp_config, indent=2) + "\n", encoding="utf-8")
-        cmd.extend(["--mcp-config", str(mcp_config_path)])
+        # claude's --mcp-config takes a variadic list (`<configs...>`), so a
+        # separate "--mcp-config", path pair would swallow the trailing
+        # invocation_prompt positional as an extra (bogus) config file
+        # whenever no --resume flag sits between them; `=` pins it to one value.
+        cmd.append(f"--mcp-config={mcp_config_path}")
     if session_id:
         cmd.extend(["--resume", str(session_id)])
     cmd.append(invocation_prompt)
@@ -392,12 +448,17 @@ Use these exact slice evidence keys for completed execution-plan slices:
         state["claude_session_id"] = detected_session_id
     state["last_implementation_log"] = str(log_path)
     state.setdefault("timestamps", {})["implementation_finished_at"] = now_iso()
-    if result.returncode != 0 and is_interruption(result.stdout):
-        state["status"] = "interrupted"
-        state["last_error"] = f"Claude was interrupted by a usage/session limit; retry implement to resume. See {log_path}"
-    elif result.returncode != 0:
-        state["status"] = "failed"
-        state["last_error"] = f"Claude exited {result.returncode}; see {log_path}"
+    if result.returncode != 0:
+        category, detail = classify_termination(result.stdout)
+        if category == "usage_limit":
+            state["status"] = "interrupted"
+            state["last_error"] = f"Claude was interrupted by a usage/session limit ({detail}); retry implement to resume. See {log_path}"
+        elif category == "turn_or_budget_cap":
+            state["status"] = "interrupted"
+            state["last_error"] = f"Claude stopped after reaching its own turn/budget cap ({detail}); retry implement to resume. See {log_path}"
+        else:
+            state["status"] = "failed"
+            state["last_error"] = f"Claude exited {result.returncode}; see {log_path}"
     else:
         checker_failures: list[str] = []
         handoff_path = td / "implementation.json"

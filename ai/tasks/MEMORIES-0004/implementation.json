@@ -1,14 +1,512 @@
 {
   "task_id": "MEMORIES-0004",
-  "status": "not_started",
-  "summary": "",
-  "applied_skills": [],
-  "repositories": [],
-  "decisions": [],
-  "assumptions": [],
-  "validation_commands": [],
-  "acceptance_criteria": [],
-  "knowledge_updates": [],
+  "status": "implemented",
   "implementation_cycle": 1,
-  "change_cycle": 0
+  "change_cycle": 0,
+  "summary": "Implemented the catalog/taxonomy/faceted-filtering epic end to end: a new shared `catalog` bounded context (occasion, card_style, product_category, recipient_segment, material, card_format, color_family, personalization_capability as one discriminated catalog_terms table, with real parent/child hierarchy for product_category), the previously-empty `card-catalog` and `product-catalog` module skeletons filled in with domain/application/infrastructure/presentation layers, three migrations, idempotent seed data matching the mau-thiep/qua-ky-niem prototypes, three public GET endpoints (/api/v1/catalogs, /api/v1/card-templates, /api/v1/products) with pagination, deterministic sort, search, multi-select filters and facet counts (AND across facets, OR within a facet, descendant-inclusive category counts, no M2M duplicate counting), full Swagger/OpenAPI documentation and a verified generated-document contract test. On the frontend: array-aware query serialization and typed catalogs/card-templates/products API wrappers generated from the backend's real OpenAPI schema, TanStack Query hooks with AbortSignal-based request cancellation, a URL-search-params-as-source-of-truth filter/search/sort/page hook, and both `/mau-thiep` and `/qua-ky-niem` migrated off local mock arrays onto the real API with loading/background-refresh/error-retry/empty/zero-count-disabled states, while preserving the existing MEMORIES-0003 layout and presentation components (adapted via view-model mapper functions instead of rewriting them).\n\nReview-cycle-4 fix pass (this attempt): fixed a real boolean-query-param parsing bug (`rush=false` was silently read as `true` under the global `enableImplicitConversion` ValidationPipe setting) uncovered while verifying the multi-variant facet/list-consistency fix against a live Postgres instance; the multi-variant every-matching-variant facet logic itself was already correct in the worktree but had no passing regression coverage until the DTO bug was fixed. Restored the qua-ky-niem hero artwork on mobile/tablet (previously `hidden lg:block`). Added 15 new GiftCatalog integration tests (loading/retry/background-refresh/stale-response/pagination-reset/multi-facet AND-OR serialization/derived-filter serialization/zero-count-disabled/nullable-image-and-rating). Replaced the UI-fidelity capture script, which had silently saved Chrome's ERR_CONNECTION_REFUSED page as \"passed\" evidence for 13 of 18 entries because the API/frontend weren't running, with a CDP-driven script (`worktrees/MEMORIES-0004/.ai/validation/ui-fidelity/capture-fidelity.mjs`) that fails loudly on a browser error page or missing route marker, captures the full scrollable page (the previous viewport-only capture silently clipped every mobile/tablet state to an identical above-the-fold hero), and adds 16 new loading/api-error/background-refresh/dialog risk-state captures using real Fetch-domain interception of each route's actual network call.\n\nReview-cycle-7 fix pass (this attempt): resolved two verified findings without touching product code. Finding #1 (stale handoff/migration evidence): the worktree had grown a 4th migration (AddCatalogTermsHierarchyGuard, from review cycles 5-6) and a 10th e2e suite (catalog-hierarchy-guard.e2e-spec.ts, 77 tests/10 suites total) that this handoff and acceptance-evidence.json still described as 3 migrations / 72 tests / 9 suites; refreshed every stale count in this document and ran a full isolated empty-database validation cycle (fresh Postgres container, apply all 4 migrations, seed, e2e, revert all 4, reapply, reseed, e2e again — all passing identically both times) to substantiate AC1. Finding #2 (stale UI-fidelity evidence): the 4 qua-ky-niem background-refresh/dialog risk-state captures were taken against a database the capture script's own port-mismatched default (`apiUrl` defaulting to :3000, while the frontend's real configured backend is :3010) never actually reached, so its `assertRepresentativeProductSeed()` precondition was never truly exercised and every product silently rendered the \"Chưa có ảnh\" placeholder despite real seeded images; recaptured all 34 entries against the real live dev servers with the precondition passing and corrected matrix.json's evidence text (including a previously false claim that a clicked product had no seeded image).\n\nValidation-fix attempt 2 (earlier pass): fixed a frontend-wide typecheck/build break in packages/config/src/env.ts — an unsound `as NodeJS.ProcessEnv` cast on a snapshot object that only ever carries the 6 NEXT_PUBLIC_* keys — by replacing it with a narrow `PublicEnvSource` type matching the property set getAppEnv actually reads (and that its existing test suite already exercises via partial object literals). No behavior change; all six frontend validation commands (lint/typecheck/test/build for both apps plus the two skill checks) now pass.",
+  "repositories": [
+    {
+      "name": "backend",
+      "changed_files": [
+        ".gitignore",
+        "apps/api/src/business-modules.ts",
+        "apps/api/test/catalog.e2e-spec.ts",
+        "apps/api/test/card-templates.e2e-spec.ts",
+        "apps/api/test/products.e2e-spec.ts",
+        "apps/api/test/openapi-contract.e2e-spec.ts",
+        "apps/cli/src/business-modules.ts",
+        "apps/cli/src/commands/seed.command.ts",
+        "apps/scheduler/src/business-modules.ts",
+        "apps/worker/src/business-modules.ts",
+        "tsconfig.json",
+        "nest-cli.json",
+        "openapi-contracts.json",
+        "libs/modules/identity-access/src/presentation/http/auth.controller.ts",
+        "libs/modules/catalog/src/domain/catalog-term/catalog-term.ts",
+        "libs/modules/catalog/src/domain/catalog-term/catalog-term.repository.ts",
+        "libs/modules/catalog/src/application/ports/catalog-terms-reader.ts",
+        "libs/modules/catalog/src/application/use-cases/list-catalog-terms.use-case.ts",
+        "libs/modules/catalog/src/application/use-cases/seed-catalog-terms.use-case.ts",
+        "libs/modules/catalog/src/infrastructure/persistence/catalog-term.orm-entity.ts",
+        "libs/modules/catalog/src/infrastructure/persistence/catalog-term.mapper.ts",
+        "libs/modules/catalog/src/infrastructure/persistence/typeorm-catalog-term.repository.ts",
+        "libs/modules/catalog/src/infrastructure/contracts/catalog-term-lookup.service.ts",
+        "libs/modules/catalog/src/presentation/http/catalog-term-response.dto.ts",
+        "libs/modules/catalog/src/presentation/http/list-catalog-terms.dto.ts",
+        "libs/modules/catalog/src/presentation/http/catalog.controller.ts",
+        "libs/modules/catalog/src/catalog.module.ts",
+        "libs/modules/catalog/src/public-api.ts",
+        "libs/modules/catalog/tsconfig.lib.json",
+        "libs/modules/catalog/test/catalog-term.spec.ts",
+        "libs/modules/catalog/test/list-catalog-terms.use-case.spec.ts",
+        "libs/modules/card-catalog/src/domain/card-template/card-template.ts",
+        "libs/modules/card-catalog/src/domain/card-template/card-template.repository.ts",
+        "libs/modules/card-catalog/src/application/use-cases/list-card-templates.use-case.ts",
+        "libs/modules/card-catalog/src/application/use-cases/seed-card-templates.use-case.ts",
+        "libs/modules/card-catalog/src/infrastructure/persistence/card-template.orm-entity.ts",
+        "libs/modules/card-catalog/src/infrastructure/persistence/card-template-catalog-term.orm-entity.ts",
+        "libs/modules/card-catalog/src/infrastructure/persistence/card-template.mapper.ts",
+        "libs/modules/card-catalog/src/infrastructure/persistence/typeorm-card-template.repository.ts",
+        "libs/modules/card-catalog/src/presentation/http/card-template-response.dto.ts",
+        "libs/modules/card-catalog/src/presentation/http/list-card-templates.dto.ts",
+        "libs/modules/card-catalog/src/presentation/http/card-template.controller.ts",
+        "libs/modules/card-catalog/src/card-catalog.module.ts",
+        "libs/modules/card-catalog/src/public-api.ts",
+        "libs/modules/card-catalog/test/card-template.spec.ts",
+        "libs/modules/card-catalog/test/list-card-templates.use-case.spec.ts",
+        "libs/modules/product-catalog/src/domain/product/product.ts",
+        "libs/modules/product-catalog/src/domain/product/product-variant.ts",
+        "libs/modules/product-catalog/src/domain/product/product.repository.ts",
+        "libs/modules/product-catalog/src/application/use-cases/list-products.use-case.ts",
+        "libs/modules/product-catalog/src/application/use-cases/seed-products.use-case.ts",
+        "libs/modules/product-catalog/src/infrastructure/persistence/product.orm-entity.ts",
+        "libs/modules/product-catalog/src/infrastructure/persistence/product-variant.orm-entity.ts",
+        "libs/modules/product-catalog/src/infrastructure/persistence/product-catalog-term.orm-entity.ts",
+        "libs/modules/product-catalog/src/infrastructure/persistence/product.mapper.ts",
+        "libs/modules/product-catalog/src/infrastructure/persistence/typeorm-product.repository.ts",
+        "libs/modules/product-catalog/src/presentation/http/product-response.dto.ts",
+        "libs/modules/product-catalog/src/presentation/http/list-products.dto.ts",
+        "libs/modules/product-catalog/src/presentation/http/product.controller.ts",
+        "libs/modules/product-catalog/src/product-catalog.module.ts",
+        "libs/modules/product-catalog/src/public-api.ts",
+        "libs/modules/product-catalog/test/product.spec.ts",
+        "libs/modules/product-catalog/test/product-variant.spec.ts",
+        "libs/modules/product-catalog/test/list-products.use-case.spec.ts",
+        "libs/platform/database/src/migrations/1722560000000-CreateCatalogSchema.ts",
+        "libs/platform/database/src/migrations/1722570000000-CreateCardCatalogSchema.ts",
+        "libs/platform/database/src/migrations/1722580000000-CreateProductCatalogSchema.ts",
+        "libs/platform/database/src/migrations/1722590000000-AddCatalogTermsHierarchyGuard.ts",
+        "apps/api/test/catalog-hierarchy-guard.e2e-spec.ts"
+      ]
+    },
+    {
+      "name": "frontend",
+      "changed_files": [
+        ".gitignore",
+        "packages/api-client/src/http-client.ts",
+        "packages/api-client/src/routes.ts",
+        "packages/api-client/src/catalog-client.ts",
+        "packages/api-client/src/card-template-client.ts",
+        "packages/api-client/src/product-client.ts",
+        "packages/api-client/src/index.ts",
+        "packages/api-client/src/generated/schema.d.ts",
+        "packages/api-client/test/query-serialization.spec.ts",
+        "packages/api-client/test/catalog-resource-clients.spec.ts",
+        "apps/public-web/app/providers.tsx",
+        "apps/public-web/app/(marketing)/mau-thiep/page.tsx",
+        "apps/public-web/app/(marketing)/qua-ky-niem/page.tsx",
+        "apps/public-web/lib/api/api-client-context.tsx",
+        "apps/public-web/lib/api/map-card-template.ts",
+        "apps/public-web/lib/api/map-product.ts",
+        "apps/public-web/lib/hooks/use-url-filter-state.ts",
+        "apps/public-web/lib/queries/query-keys.ts",
+        "apps/public-web/lib/queries/use-catalog-terms.ts",
+        "apps/public-web/lib/queries/use-card-templates.ts",
+        "apps/public-web/lib/queries/use-products.ts",
+        "apps/public-web/lib/utils/compact.ts",
+        "apps/public-web/lib/types/gift-product.ts",
+        "apps/public-web/lib/mock/gift-products.ts",
+        "apps/public-web/lib/store/shop-store.tsx",
+        "apps/public-web/components/card-templates/card-catalog.tsx",
+        "apps/public-web/components/gift-products/gift-catalog.tsx",
+        "apps/public-web/components/gift-products/quick-view-dialog.tsx",
+        "apps/public-web/components/shop/product-card.tsx",
+        "apps/public-web/components/home/gifts-teaser.tsx",
+        "apps/public-web/components/common/catalog-skeleton-grid.tsx",
+        "apps/public-web/components/common/error-state.tsx",
+        "apps/public-web/test/card-catalog.spec.tsx",
+        "apps/public-web/test/gift-catalog.spec.tsx",
+        "apps/public-web/test/routes.spec.tsx",
+        "apps/public-web/test/utils/api-fixtures.ts",
+        "apps/public-web/test/utils/navigation-mock.ts",
+        "apps/public-web/test/utils/render-with-providers.tsx",
+        "packages/config/src/env.ts"
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "One shared `catalog.catalog_terms` table discriminated by `catalog_type`, instead of eight near-identical tables, for occasion/card_style/product_category/recipient_segment/material/card_format/color_family/personalization_capability.",
+      "reason": "All eight share the exact same id/code/name/status/sort_order/timestamps shape; only product_category needs parent_id hierarchy. A single table with a discriminator avoids duplicating identical schema/domain/repository code eight times while still satisfying every catalog's individual requirements (unique code per type, active-only + sort_order listing, hierarchy where needed)."
+    },
+    {
+      "decision": "New bounded context `libs/modules/catalog` (registered in tsconfig.json/nest-cli.json/business-modules.ts across api/worker/scheduler/cli) owns every centrally-managed catalog; `card-catalog` and `product-catalog` depend on it only through `CATALOG_TERMS_READER` from its public-api.ts, never its repository or ORM entity.",
+      "reason": "Matches the epic's explicit technical-notes recommendation and keeps occasion genuinely shared (Epic AC #3) between card templates and products without either module owning the other's taxonomy."
+    },
+    {
+      "decision": "Cross-module references from card_template_catalog_terms/product_catalog_terms to catalog_terms are plain UUID columns with no DB foreign key.",
+      "reason": "Confirmed as the existing module-boundary convention (identity_access -> user_profiles is the precedent); referential integrity for cross-module ids is enforced at the application boundary (CatalogTermsReader) at seed/write time instead."
+    },
+    {
+      "decision": "product_category seeded with 2 parent + 7 leaf terms forming a real two-level tree (handmade-gifts, photo-personalized-gifts as parents), derived from the qua-ky-niem prototype's `cat` field; the prototype's 'Quà handmade'/'Combo thiệp và quà' filter tags are intentionally not modeled as categories, materials or a collection.",
+      "reason": "Epic AC #4 requires a real, testable parent/child descendant-filter behavior, not just schema capability. The two dropped prototype tags are collection-like labels the Epic explicitly allows deferring ('có thể hoãn collection nếu không cần để tái hiện chính xác hai catalog page') and don't correspond to any of the Epic's three background data groups."
+    },
+    {
+      "decision": "swatch_hex is a nullable column on the shared catalog_terms table (only populated for COLOR_FAMILY rows) rather than a separate per-type side table.",
+      "reason": "Avoids an EAV model for one optional presentation field while keeping every other catalog type's rows unaffected; documented in catalog-term.ts."
+    },
+    {
+      "decision": "Facet counts: for catalog-term-backed facets (card: occasion/style/format/colorFamily/accessTier; product: category/occasion/recipient/personalization/material/rush) each facet's own option counts are computed excluding only that facet's own active filter, with every other active filter (including price/prep/rush/rating for products) still applied — implemented as a per-facet `buildMatchConditions`/`buildConditions` call parameterized by an `exclude` key.",
+      "reason": "Matches the Epic's explicit definition: 'count theo kết quả sau khi áp dụng CÁC FILTER KHÁC trong cùng query' — verified with an e2e test asserting that filtering by a nonexistent occasion zeroes every other facet's counts while the occasion facet itself still shows its normal unfiltered counts (since it excludes itself)."
+    },
+    {
+      "decision": "product_category facet counts are descendant-inclusive via a recursive `WITH RECURSIVE` closure CTE over parent_id, not just direct-assignment counts.",
+      "reason": "Selecting a parent category must let a user browse everything under it (Epic AC #4); the same closure is used for the category FILTER via `CatalogTermsReader.resolveDescendantIds`, called once from the use case before the repository ever sees the filter."
+    },
+    {
+      "decision": "Price/preparation/rating remain derived query attributes rather than catalog tables, but the product response exposes UI-aligned derived facet groups with counts for the documented price, cumulative preparation and minimum-rating options.",
+      "reason": "The Epic forbids persistent bucket catalogs, not response-time derived counts. TypeormProductRepository computes all three from effective product/variant data, and products.e2e-spec.ts now compares every derived option count with the corresponding real filtered query."
+    },
+    {
+      "decision": "Each seeded product has one representative variant (schema supports many); list filtering and the displayed/sorted effective offer use the same cheapest available variant satisfying all requested price/preparation/rush conditions through a filtered LATERAL selection.",
+      "reason": "Epic scope explicitly caps commerce-lifecycle modeling ('không xây dựng toàn bộ commerce lifecycle'); one variant per product is the minimal model that still satisfies 'sellable variant/offer đủ để phục vụ hai trang', while the schema itself is not artificially restricted to 1:1 for future extension."
+    },
+    {
+      "decision": "Bug fix: card-catalog's `buildMatchConditions` now takes an explicit `startIndex` parameter (0 for `computeAccessTierFacet`, 1 for `computeCatalogFacet`, which reserves `$1` for the catalog type) instead of a hardcoded `paramIndex = 1`.",
+      "reason": "Found via e2e testing: a search-only or filter-only request crashed with Postgres error 'could not determine data type of parameter $1' because the old code always started numbering placeholders at $2, but `computeAccessTierFacet`'s query has no leading reserved parameter — an off-by-one between the SQL text and the bound values array. product-catalog's repository already used this exact parameterized pattern correctly; card-catalog's was the one with the bug."
+    },
+    {
+      "decision": "Bug fix: `ListProductsUseCase` now falls back to the original (unexpanded) `categoryIds` when `resolveDescendantIds` returns an empty set for a nonexistent-but-syntactically-valid id, instead of passing an empty array through.",
+      "reason": "The repository treats an empty `categoryIds` array as 'no category filter requested' (so an unfiltered request isn't narrowed); without the fallback, filtering by a nonexistent category id silently matched every product instead of zero, violating Epic AC #12 ('slug hợp lệ về cú pháp nhưng không tồn tại không gây lỗi' — and, symmetrically, must not silently return everything either)."
+    },
+    {
+      "decision": "Backend page/pageSize query fields got an explicit `type: Number` added to their `@ApiPropertyOptional` decorator.",
+      "reason": "Found while regenerating the frontend's OpenAPI types: `page`/`pageSize` were silently missing from the exported OpenAPI spec (a pre-existing gap affecting the whole backend, e.g. the baseline `ListUserProfilesQueryDto` has the same issue) because `@nestjs/swagger` can't infer a type from a bare `page = 1` initializer without an explicit type hint. Fixed locally in the two new DTOs to keep this task's Swagger documentation complete; the pre-existing baseline instance elsewhere was left untouched (out of scope)."
+    },
+    {
+      "decision": "Formatting-only fix: collapsed `auth.controller.ts`'s (and the three new controllers') multi-line `@ApiResponse({...})` decorators to single-line.",
+      "reason": "The required `check_openapi_contract.py` deterministic checker's brace-boundary heuristic misidentifies a multi-line decorator's own closing `})` as the previous method's closing brace, truncating the captured decorator block and making it report every operation (including the pre-existing `/auth/register`, unrelated to this task) as missing Swagger responses. This is a zero-behavior-change formatting fix needed to make the required skill script pass at all; no request/response semantics changed."
+    },
+    {
+      "decision": "Frontend: array-valued query params are serialized as one comma-joined value (`ids=a,b,c`), never repeated keys, in `ApiClient.buildUrl`.",
+      "reason": "Matches every list DTO's `class-transformer` `@Transform` (`split(',')`) convention on the backend exactly — verified with a query-serialization test asserting the exact encoded URL."
+    },
+    {
+      "decision": "`ApiClientProvider`/`useApiClient()` context added in `apps/public-web/lib/api/` (app-local), not in `packages/api-client`.",
+      "reason": "`packages/api-client` has no React dependency at all (a deliberate framework-agnostic fetch wrapper) — adding a React context provider there would introduce a new dependency against the package's existing design intent. The app already owns the single `ApiClient` instance in `app/providers.tsx`; the context just exposes that same instance."
+    },
+    {
+      "decision": "URL is the single source of truth for filter/search/sort/page state (`useUrlFilterState`, backed by `next/navigation`'s `useSearchParams`/`useRouter`/`usePathname`), replacing the previous local-`useState`-only filter model; catalog-term selections are stored as stable `code`s in the URL, resolved to ids client-side once catalog-term metadata loads (an unresolvable code from a stale URL is silently dropped, never crashes).",
+      "reason": "Epic explicitly requires filter/search/sort/page to be shareable and restorable via reload/back/forward, and codes are the Epic's own 'stable/shareable' unit (vs. opaque ids that are still stable in practice but not human-legible in a URL)."
+    },
+    {
+      "decision": "Manual 'load more' cumulative-fetch pagination (from the MEMORIES-0003 mock UI) was replaced with real Prev/Next page-number pagination reflected in the URL, keeping the same button-based visual style.",
+      "reason": "The backend is genuinely page-based (not cursor/infinite), and the Epic requires the URL to reflect the current page and reset to page 1 on filter change — a cumulative 'load more' UI has no single well-defined 'page' to put in the URL. This is the minimal UI change necessary for correct data-integration behavior, not a redesign; layout/visual language (rounded outline button, same copy style) is preserved."
+    },
+    {
+      "decision": "`GiftProduct.image`/`.rating` are now `string | null` / `number | null` end-to-end (no fallback string substituted); `ProductCard`/`QuickViewDialog`/the homepage `GiftsTeaser` render an explicit 'Chưa có ảnh'/'Chưa có đánh giá' state instead.",
+      "reason": "The API contract permits both fields to be null, so the UI keeps explicit missing-image and missing-rating states instead of coercing nulls. The current seed supplies the prototype's `/gifts/sp-NN.png` assets and ratings, while the nullable rendering paths remain covered for future catalog records."
+    },
+    {
+      "decision": "`GiftProduct.colors`/`.sizes` are always `null`, `.requiresOptions` is always `false`; per-product color/size purchase options are not modeled.",
+      "reason": "Per-product color/size variant axes are not part of the Epic's domain model (out of scope, same category as the deferred collection/rule engine) — the mock data's colors/sizes were presentation-only fixtures with no corresponding backend field."
+    },
+    {
+      "decision": "`CardTemplate.motif` is a constant `'minimal'` for every template; `.background`/`.foreground` are derived from the template's real color-family catalog term's `swatchHex` (with a computed-luminance readable-foreground fallback) instead of the prototype's fabricated per-item unique motif/colors.",
+      "reason": "There is no per-item generated-art field in the real domain model (motif/background/foreground were mock-only); reusing the template's actual color-family term keeps the card art tied to real data instead of inventing a field, while `TemplateThumbnail`'s existing `'minimal'`-fallback rendering path needed zero changes."
+    },
+    {
+      "decision": "`ProductCard` badge ('Được yêu thích'/'Làm theo ảnh'/'Mới') and `prepLabel` text are derived in `mapProduct()` from real fields (isNew, ratingAverage/ratingCount thresholds, personalization-capability codes, variant prep window) instead of the prototype's hand-curated per-item badge arrays.",
+      "reason": "The backend has no curated-badges field; deriving from real thresholds keeps the badges meaningful and truthful rather than fabricated, and reuses the same `BADGE_VARIANT` map `ProductCard` already had."
+    },
+    {
+      "decision": "Review-cycle-4 bug fix: `ListProductsQueryDto.rush` now has `@Type(() => String)` added before its existing `@Transform`/`@IsBoolean`, instead of relying on the bare `boolean` design-type.",
+      "reason": "Root-caused via a live-Postgres e2e run: with the global `ValidationPipe`'s `transformOptions: { enableImplicitConversion: true }` (libs/platform/security/src/validation-pipe.factory.ts) and no explicit `@Type`, class-transformer's implicit primitive-conversion step re-derives the value from the *raw* query string via `Boolean(rawValue)` after the custom `@Transform` runs — so `rush=false` (a non-empty string) was silently coerced back to `true`, and `rush=true`/`rush=false` produced identical request behavior. Confirmed with a minimal `plainToInstance` repro before and after the fix. Pinning the implicit-conversion type to `String` (verified empirically) makes the custom `@Transform`'s boolean output the final value; no other boolean query param exists elsewhere in the codebase yet, so this is the first instance of the pattern, now proposed as a documented convention (see knowledge_updates)."
+    },
+    {
+      "decision": "Review-cycle-4: rewrote the pre-existing `filters rush=true ... facet counts add up to the unfiltered total` e2e assertion to explicitly account for genuine multi-variant overlap (a product matching both `rush=true` and `rush=false` via two different variants) instead of asserting a strict partition.",
+      "reason": "The old assertion (`trueCount + falseCount === total`) was a correct invariant only when no product could match both filter values — true before the multi-variant regression fixture existed, but no longer true by design once a product can have separate variants on each side of a boundary (the whole point of the Epic AC this fixture protects). The rewritten test computes the actual code-level overlap between the two filtered result sets and asserts the counts diverge from the total by exactly that overlap, so it stays a real regression guard rather than being weakened to a tautology."
+    },
+    {
+      "decision": "Review-cycle-4: `qua-ky-niem/page.tsx`'s hero image composition changed from `hidden ... lg:block` to always-rendered with `order-last` and viewport-scaled `min-h` (220px mobile / 300px tablet / 380px desktop), instead of building a second, simplified mobile-only asset.",
+      "reason": "The composition already uses `fill`/percentage-width `Image`s inside a `relative` container, so it scales cleanly at any container height without new assets; `order-last` keeps it after the title/CTAs/benefits in DOM and visual order on every breakpoint (a no-op on `lg` where it was already the second grid column), satisfying 'without displacing the primary title, CTAs and benefits' directly rather than through a redesign."
+    },
+    {
+      "decision": "Review-cycle-4: new GiftCatalog tests reuse the exact loading/retry/stale-response/pagination-reset patterns already established in `card-catalog.spec.tsx` (held-open promises via a custom `fetch` mock, `Fetch`-style stale-request races, page=2-then-filter resets) rather than inventing a new testing style.",
+      "reason": "Keeps the two catalog test suites structurally symmetric so the 'CardCatalog tests cannot prove these distinct GiftCatalog branches' finding is closed with equivalent, not merely similar, coverage; also adds product-specific coverage CardCatalog doesn't need (multi-facet AND/OR query serialization, per-derived-filter-family (price/prep/rush/rating) request serialization and zero-count disabled-state assertions, nullable image/rating rendering)."
+    },
+    {
+      "decision": "Review-cycle-4: UI-fidelity evidence is now produced by `worktrees/MEMORIES-0004/.ai/validation/ui-fidelity/capture-fidelity.mjs`, a Chrome-DevTools-Protocol script driven over Node's built-in `fetch`/`WebSocket` (no new dependency), replacing the previous plain `chrome --screenshot` shell script.",
+      "reason": "The prior script had no way to detect that it was capturing a browser error page (the API/frontend dev servers were not running when the review-cycle-3 evidence was generated) and had no mechanism to simulate loading/API-error/background-refresh/dialog states, since those require intercepting the real network call mid-flight — a shell script invoking Chrome's `--screenshot` CLI flag can't do either. The new script (a) fails loudly (nonzero exit) if a navigation lands on a Chrome error page or the expected route `<title>` marker is missing, verified against real running `apps/api`/`apps/public-web` dev servers; (b) captures the full scrollable page via `Page.captureScreenshot({captureBeyondViewport:true, clip:{height: document.documentElement.scrollHeight}})` instead of only the viewport rect — the previous CDP attempt within this same fix pass first revealed that a viewport-only capture made every mobile/tablet state byte-identical, since the hero section alone exceeds 375x812/768x1024; (c) uses `Fetch.enable` to hold/fail/observe each route's real list endpoint (`/api/v1/card-templates` for /mau-thiep, `/api/v1/products` for /qua-ky-niem — intentionally *not* the same endpoint for both routes) for the four new risk states."
+    },
+    {
+      "decision": "Validation-fix attempt 2: `packages/config/src/env.ts`'s `processEnvSnapshot` (and the `source` parameter of `getAppEnv`) are now typed as a local `PublicEnvSource` (`Partial<Record<'NEXT_PUBLIC_ENV' | ... | 'NEXT_PUBLIC_ANALYTICS_ENABLED', string | undefined>>`) instead of `NodeJS.ProcessEnv`, and the trailing `as NodeJS.ProcessEnv` cast on the snapshot object literal was removed.",
+      "reason": "`npm run typecheck`/`npm run build` failed for both apps/admin-web and apps/public-web with TS2352 (\"Conversion of type '{...6 NEXT_PUBLIC_* keys...}' to type 'ProcessEnv' may be a mistake... Property 'NODE_ENV' is missing\") because the snapshot object literal only ever had the 6 public env keys, never the rest of Node's real `ProcessEnv` shape (`NODE_ENV`, `PATH`, etc.), so asserting it as the full `NodeJS.ProcessEnv` type was structurally unsound and TypeScript correctly rejected the cast. `getAppEnv` only ever reads the 6 named `NEXT_PUBLIC_*` properties from `source` (both at the real call sites and in `packages/config/test/env.spec.ts`, which already calls it with bare partial object literals like `{}` and `{ NEXT_PUBLIC_ANALYTICS_ENABLED: 'true' }`), so narrowing the parameter/snapshot type to exactly that shape is both correct and requires no cast at all."
+    }
+  ],
+  "assumptions": [
+    "Vietnamese-to-English catalog `code` slugs (e.g. 'birthday', 'velvet-wire-flowers', 'photo-based') are an editorial choice made for this implementation; no prior stable slug list existed to reconcile against.",
+    "The 'Quà khắc tên' personalization concept from the prototype maps to the seeded `name-engraving` personalization-capability term; a few prototype personalization labels with no corresponding Epic-taxonomy term (e.g. 'Gắn mã QR kỷ niệm') were intentionally omitted from seed data rather than invented as new catalog terms.",
+    "Card-template 'features' badges shown on `TemplateCard` are derived from the template's real pagesCount + card_format terms (e.g. '2 trang', 'Thiệp động') rather than the prototype's separate hand-authored features list, since the backend has no dedicated features field.",
+    "UI fidelity was refreshed with the task-owned headless-Chrome capture script against the current worktree and real local API at 375x812, 768x1024 and 1440x900. The matrix now covers populated, selected-filter and empty states; route/shared-primitive tests provide keyboard and dialog focus evidence.",
+    "Review-cycle-4: both repos' dev servers (apps/api on :3000, apps/public-web on :3100) and the required Postgres/Redis/MinIO containers (memories-test-* / memories-backend-postgres-1 etc.) were already running or started fresh in this environment; all fix verification (e2e tests, manual API calls, and the UI-fidelity recapture) ran against these real local servers, never mocked."
+  ],
+  "validation_commands": [
+    {
+      "repo": "backend",
+      "command": "npm run lint",
+      "result": "pass"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run typecheck",
+      "result": "pass"
+    },
+    {
+      "repo": "backend",
+      "command": "npm test",
+      "result": "pass (277 tests / 61 suites)"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run test:architecture",
+      "result": "pass (441 modules / 1572 deps, 0 violations)"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run test:e2e",
+      "result": "pass (77 tests / 10 suites — up from 72/9; the delta is apps/api/test/catalog-hierarchy-guard.e2e-spec.ts, review-cycle-5/6 regression coverage for the AddCatalogTermsHierarchyGuard DB trigger), including the multi-variant regression and the rewritten rush-overlap assertion in apps/api/test/products.e2e-spec.ts. Reconfirmed in review cycle 7 against a fully isolated, freshly-created empty database — see the dedicated isolated-migration-cycle row below."
+    },
+    {
+      "repo": "backend",
+      "command": "npm run build",
+      "result": "pass"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run export:openapi",
+      "result": "pass (openapi.json includes /api/v1/catalogs, /api/v1/card-templates, /api/v1/products; unchanged surface — the rush fix is decorator-order-only)"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run migration:run",
+      "result": "pass (already applied against the live memories-test-postgres instance in this environment; \"No migrations are pending\")"
+    },
+    {
+      "repo": "backend",
+      "command": "Review-cycle-7 fix (finding #1): isolated empty-database migration cycle — a brand-new, previously-untouched Postgres 16 container/database (no reused state) had `npm run migration:run` (all 4 catalog migrations: CreateCatalogSchema, CreateCardCatalogSchema, CreateProductCatalogSchema, AddCatalogTermsHierarchyGuard, on top of the 5 pre-existing baseline migrations), `npm run db:seed` (run twice to reconfirm idempotency: 70 catalog_terms / 16 card_templates / 16 products both times), `npm run test:e2e`, then `npm run migration:revert` x4 (reverting all four catalog migrations back to the pre-existing baseline, verified via `migration:show`) and `npm run migration:run` again (reapplying all four), then re-seeded and re-ran the full e2e suite a second time.",
+      "result": "pass at every step: 4/4 migrations applied cleanly; seed idempotent (identical row counts on repeat run); e2e 77/77 tests across 10/10 suites both before and after the revert+reapply cycle; all 4 catalog migrations reverted cleanly (DROP TABLE/DROP SCHEMA/trigger+function drop, each migration's down() verified individually) and reapplied cleanly with no manual intervention."
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/verify-openapi-contract/scripts/check_openapi_contract.py <worktree>",
+      "result": "pass (4 operations)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_port_bindings.py <worktree>",
+      "result": "pass (32 injected Symbol tokens)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_module_wiring.py <worktree>",
+      "result": "pass (37 use-case/controller classes)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/implement-auth-security-change/scripts/check_auth_invariants.py <worktree>",
+      "result": "pass"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py ai/tasks/MEMORIES-0004/execution-plan.json",
+      "result": "pass (4 slices)"
+    },
+    {
+      "repo": "backend",
+      "command": "Manual repro: node/ts-node plainToInstance(ListProductsQueryDto-shaped class, {rush:'false'}, {enableImplicitConversion:true}) before/after the @Type(() => String) fix",
+      "result": "before: rush:'false' and rush:'true' both produced boolean true (bug reproduced); after: rush:'false' -> false, rush:'true' -> true"
+    },
+    {
+      "repo": "frontend",
+      "command": "npm run lint --workspace=@memories/public-web",
+      "result": "pass"
+    },
+    {
+      "repo": "frontend",
+      "command": "npm run typecheck",
+      "result": "pass (all workspaces)"
+    },
+    {
+      "repo": "frontend",
+      "command": "npm run test --workspace=@memories/public-web",
+      "result": "pass (54 tests / 9 files, including 22 GiftCatalog tests, up from 7)"
+    },
+    {
+      "repo": "frontend",
+      "command": "npm run test --workspace=@memories/api-client",
+      "result": "pass (13 tests / 4 files, unchanged)"
+    },
+    {
+      "repo": "frontend",
+      "command": "npm run build --workspace=@memories/public-web",
+      "result": "pass (/mau-thiep and /qua-ky-niem compiled and prerendered)"
+    },
+    {
+      "repo": "frontend",
+      "command": "python3 ai/skills/implement-nextjs-vertical-slice/scripts/check_frontend_security.py <worktree>",
+      "result": "pass"
+    },
+    {
+      "repo": "frontend",
+      "command": "python3 ai/skills/migrate-prototype-nextjs-page/scripts/check_prototype_migration.py <worktree>",
+      "result": "pass"
+    },
+    {
+      "repo": "manual",
+      "command": "curl -s http://localhost:3000/api/v1/products?rush=false against the live backend dev server (nest start api --watch)",
+      "result": "pass — every returned item's variant.supportsRush is false, confirming the DTO fix end-to-end (not just at the unit-repro level)"
+    },
+    {
+      "repo": "manual",
+      "command": "Review-cycle-7 fix (finding #2): node worktrees/MEMORIES-0004/.ai/validation/ui-fidelity/capture-fidelity.mjs (FRONTEND_URL=http://localhost:3100 API_URL=http://localhost:3010) against real, freshly-started apps/api and apps/public-web dev servers on the correctly-seeded DB",
+      "result": "pass — 34/34 captures (18 core + 16 risk-state) recaptured. Root cause of the prior finding: the review-cycle-4 evidence for the 4 gift background-refresh/dialog entries was captured against a stale/mis-pointed backend, so every gift product silently rendered the null-image \"Chưa có ảnh\" placeholder despite `SeedProductsUseCase` seeding a real `/gifts/sp-NN.png` for every product; the matrix still marked those 4 captures \"passed\" with no image-state check. The capture script now has an `assertRepresentativeProductSeed()` precondition (added since review-cycle-5) that fails loudly unless a live `GET /api/v1/products` returns >= 16 items and every item has a non-null `imageUrl`; this run passed that precondition, and the recaptured qua-ky-niem-375x812/1440x900-background-refresh and qua-ky-niem-375x812/1440x900-dialog screenshots (visually re-verified) now show each product's real seeded illustration image instead of the placeholder. matrix.json's evidence text for these 4 entries was corrected accordingly, including removing the previously false claim that \"the clicked product has no seeded image URL\". SHA-256 spot-check across all 34 actual/*.png confirmed no duplicate/identical captures.",
+      "artifact": "worktrees/MEMORIES-0004/.ai/validation/ui-fidelity/matrix.json"
+    },
+    {
+      "repo": "manual",
+      "command": "python3 ai/skills/review-frontend-ui-fidelity/scripts/check_fidelity_matrix.py worktrees/MEMORIES-0004/.ai/validation/ui-fidelity/matrix.json",
+      "result": "pass (34 entries; shape-only check — content honesty is established by the capture script's own fail-loud verification and by SHA-256 spot-checking that no two states of the same route/viewport are byte-identical)"
+    },
+    {
+      "repo": "frontend",
+      "command": "npm run typecheck --workspaces --if-present",
+      "result": "pass (all workspaces, including admin-web and public-web; fixes TS2352 in packages/config/src/env.ts)"
+    },
+    {
+      "repo": "frontend",
+      "command": "npm run build --workspaces --if-present",
+      "result": "pass (admin-web and public-web both compile and prerender; previously failing on the same TS2352 error)"
+    },
+    {
+      "repo": "frontend",
+      "command": "npm run lint --workspaces --if-present",
+      "result": "pass (all workspaces)"
+    },
+    {
+      "repo": "frontend",
+      "command": "npm run test --workspaces --if-present",
+      "result": "pass (all workspaces, including packages/config/test/env.spec.ts 3/3)"
+    },
+    {
+      "repo": "frontend",
+      "command": "python3 ai/skills/implement-nextjs-vertical-slice/scripts/check_frontend_security.py <worktree>",
+      "result": "pass"
+    },
+    {
+      "repo": "frontend",
+      "command": "python3 ai/skills/migrate-prototype-nextjs-page/scripts/check_prototype_migration.py <worktree>",
+      "result": "pass"
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "criterion": "slice:domain-model-schema-v-seed-data",
+      "status": "passed",
+      "evidence": "libs/modules/catalog (new), libs/modules/card-catalog and libs/modules/product-catalog (filled skeletons) with domain/application/infrastructure/presentation layers; 4 migrations (CreateCatalogSchema, CreateCardCatalogSchema, CreateProductCatalogSchema, and review-cycle-5/6's AddCatalogTermsHierarchyGuard — a DB-level trigger rejecting cross-catalog-type or non-PRODUCT_CATEGORY parent_id and multi-node parent cycles on catalog.catalog_terms, since the plain self-FK only caught a direct self-parent) applied and reverted cleanly against a live Postgres instance. Review cycle 7: reconfirmed with a full isolated empty-database cycle (fresh, never-before-used database) — apply all 4 migrations, seed, run the full e2e suite, revert all 4 (verified via migration:show back to the 5-migration baseline), reapply all 4, reseed, rerun the full e2e suite a second time; every step passed identically both times (77/77 tests, 10/10 suites). Idempotent seed (SeedCatalogTermsUseCase/SeedCardTemplatesUseCase/SeedProductsUseCase, wired into apps/cli's seed command) verified by running twice with unchanged row counts (70 catalog_terms / 16 card_templates / 16 products); product_category hierarchy and the hierarchy-guard trigger verified via direct SQL and apps/api/test/catalog-hierarchy-guard.e2e-spec.ts; domain unit tests for CatalogTerm/CardTemplate/Product/ProductVariant invariants (catalog-term.spec.ts, card-template.spec.ts, product.spec.ts, product-variant.spec.ts) all pass."
+    },
+    {
+      "criterion": "slice:public-read-api-v-facet-semantics",
+      "status": "passed",
+      "evidence": "GET /api/v1/catalogs, /api/v1/card-templates, /api/v1/products implemented, public (no JwtAuthGuard), fully Swagger-documented (200/400/429 for all three, verified by openapi-contract.e2e-spec.ts against the real generated document and by check_openapi_contract.py). 32 e2e tests across catalog.e2e-spec.ts (4), card-templates.e2e-spec.ts (8), products.e2e-spec.ts (15) and (review-cycle-5/6) catalog-hierarchy-guard.e2e-spec.ts (5) against a live migrated+seeded Postgres cover: shared occasion across card/product, no-token access, pagination metadata, no duplicate items from M2M joins, OR-within/AND-across facet semantics, category descendant-inclusive filtering and facet counts, exact derived price/preparation/rating facet counts checked against equivalent filtered queries, half-open [min,max) price ranges, equal/inverted range rejection, cross-catalog-type UUID isolation, contradictory filters, nonexistent IDs returning an empty page, invalid query rejection, and (review-cycle-4 fix for finding #1) a dedicated multi-variant fixture (cheap/slow variant vs. expensive/rush variant on the same product) proving price/preparation/rush facet counts and the displayed offer are derived from whichever variant actually matches the active filter — not always the cheapest — for both the list response and the corresponding facet counts, plus a rewritten rush-partition assertion that explicitly verifies the genuine cross-boundary overlap instead of asserting a now-incorrect strict partition. This surfaced and fixed a real bug: `ListProductsQueryDto.rush=false` was silently read as `true` (class-transformer's implicit-conversion re-derived the value from the raw query string under the global `enableImplicitConversion` setting, overriding the correct custom `@Transform` output) — fixed with `@Type(() => String)`. Review cycle 6 added catalog-hierarchy-guard.e2e-spec.ts (5 tests) covering the AddCatalogTermsHierarchyGuard DB trigger. The full real-Postgres e2e suite passes 77 tests across 10 suites — reconfirmed in review cycle 7 via an isolated empty-database migrate/seed/test/rollback/reapply/test cycle (see validation_commands)."
+    },
+    {
+      "criterion": "slice:frontend-api-integration",
+      "status": "passed",
+      "evidence": "packages/api-client: generated schema.d.ts regenerated from the real backend openapi.json (includes page/pageSize after a backend Swagger-metadata fix); buildUrl extended for comma-joined array params (tested); createCatalogApi/createCardTemplateApi/createProductApi wrappers derive types from operations[...] per the established media-client pattern (tested, including AbortSignal forwarding). apps/public-web: useCatalogTerms/useCardTemplates/useProducts TanStack Query hooks (stable sorted query keys, keepPreviousData, signal forwarded so TanStack Query's built-in per-key lifecycle cancels stale requests on filter change); useUrlFilterState makes the URL the source of truth for search/filter/sort/page, invalid/unresolvable values silently ignored; CardCatalog and GiftCatalog use the real API with loading, retryable error, empty, background-refetch and pagination states. Review-cycle-4 fix for finding #3: qua-ky-niem's hero image composition (previously `hidden lg:block`, entirely absent at 375x812/768x1024, a wrong-asset-hierarchy regression vs. the prototype reference) is now always rendered with responsive `min-h` and `order-last`, verified visually at all three required viewports. Review-cycle-4 fix for finding #4: gift-catalog.spec.tsx grew from 7 to 22 tests, adding loading skeleton, retryable-error+recovery, background-refresh-keeps-prior-results, stale-response-cancellation (a held-open category-only request must not overwrite a narrower category+recipient result that resolved after it), pagination-reset-to-page-1, multi-facet AND-across/OR-within-facet request serialization, per-derived-filter-family (preparation/rating/rush) request serialization, zero-count-vs-nonzero-count disabled-state assertions across price/preparation/rating, and nullable-image/nullable-rating rendering (\"Chưa có ảnh\"/\"Chưa có đánh giá\"). The complete public-web suite passes 54 tests across 9 files (up from 42); api-client unchanged at 13/4. UI-fidelity evidence (review-cycle-4 fix for finding #2) was fully recaptured against real running dev servers with a script that fails loudly on a browser error page or missing route marker — see worktrees/MEMORIES-0004/.ai/validation/ui-fidelity/matrix.json for all 34 entries (18 populated/selected-filter/empty across 3 viewports + 16 loading/api-error/background-refresh/dialog risk-state captures across 2 viewports), all independently SHA-256-verified as non-duplicate, real content. Validation-fix attempt 2: fixed a TS2352 typecheck/build failure in packages/config/src/env.ts (unsound `as NodeJS.ProcessEnv` cast on a 6-key partial snapshot) by introducing a narrower `PublicEnvSource` type; npm run typecheck/build/lint/test --workspaces --if-present now all pass for both admin-web and public-web. Review-cycle-7 fix for finding #2: the 4 qua-ky-niem background-refresh/dialog risk-state captures (375x812 and 1440x900) were re-verified as stale — captured against an under-seeded/mis-pointed database, every product silently rendering the null-image \"Chưa có ảnh\" placeholder despite `SeedProductsUseCase` seeding a real `/gifts/sp-NN.png` per product, and matrix.json's own evidence text falsely claimed \"the clicked product has no seeded image URL\". Root-caused to the capture script's `apiUrl` default (:3000) no longer matching the frontend's actual configured backend port (:3010, per apps/public-web/.env.local's NEXT_PUBLIC_API_BASE_URL) — the capture script's own `assertRepresentativeProductSeed()` precondition (checking >= 16 seeded products all with non-null imageUrl) had never actually been exercised against the real target. Recaptured all 34 entries with FRONTEND_URL/API_URL pointed at the real live dev servers on the correctly seeded DB; the precondition passed, the 4 affected captures now show each product's real seeded illustration image, and matrix.json's evidence text was corrected to remove the false claim and document the fix."
+    },
+    {
+      "criterion": "slice:test-contract-v-documentation",
+      "status": "passed",
+      "evidence": "Backend: unit tests for domain invariants and list use cases (including facet-exclusion and category-descendant-expansion behavior via mocked repositories/readers), integration/e2e tests against a real migrated Postgres per above, including the new multi-variant regression fixture. Frontend: API-wrapper/query-serialization tests (packages/api-client) and component-integration tests for URL state, multi-filter, pagination reset-to-page-1, loading/error/empty/background-refresh/stale-response, and facet counts (apps/public-web), now covering both CardCatalog and GiftCatalog to equivalent depth. All configured validation commands for both repos pass (see validation_commands); openapi-contracts.json manifest covers all 4 public operations with a real generated-document contract test; durable schema/API/facet-semantics decisions, plus the review-cycle-4 boolean-query-param convention, proposed via knowledge_updates below (not applied directly, per the boundary rule against editing ai/repos directly)."
+    }
+  ],
+  "knowledge_updates": [
+    {
+      "target": "ai/repos/backend/source-map.md",
+      "type": "update",
+      "summary": "Add rows for the new `catalog`, `card-catalog` and `product-catalog` modules (controller/use-case/entity/migration paths), mirroring the existing `media`/`identity-access` row pattern, so the source map stays a reliable index of implemented (not skeleton) modules."
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "update",
+      "summary": "Document the 'one shared reference-taxonomy table discriminated by type' pattern (libs/modules/catalog) as an established alternative to per-concept tables when several catalogs share an identical shape, and record the facet-count semantics convention (self-exclusion per facet, descendant-inclusive counts via recursive CTE for hierarchical types, plus response-derived price/preparation/rating option groups) as a reusable pattern for future faceted-search modules."
+    },
+    {
+      "target": "ai/repos/backend/database-rules.md",
+      "type": "update",
+      "summary": "Document two variant-selection SQL conventions from libs/modules/product-catalog/src/infrastructure/persistence/typeorm-product.repository.ts: (1) the LATERAL-join 'cheapest matching variant' pattern used for the list response, sort and the rating facet (`effectiveVariantLateralSql`); and (2) the 'every matching variant, not just the cheapest' pattern (`fetchMatchingVariantsByProduct`) required for the price/preparation/rush facets specifically, since a single representative variant under-counts a product that has separate variants on each side of a bucket boundary (review-cycle-4 finding: this exact bug was fixed by switching those three facets from (1) to (2)). Also document the recursive WITH RECURSIVE closure-CTE pattern for parent/child facet aggregation, and the DB-level BEFORE INSERT/UPDATE trigger pattern (libs/platform/database/src/migrations/1722590000000-AddCatalogTermsHierarchyGuard.ts) for enforcing 'only this catalog_type may have a parent' plus cycle-detection invariants that a plain self-referencing FK cannot express."
+    },
+    {
+      "target": "ai/repos/backend/conventions.md",
+      "type": "update",
+      "summary": "Document a real bug/fix as a required convention: with the global ValidationPipe's `transformOptions: { enableImplicitConversion: true }`, a DTO boolean query-param field decorated only with a custom `@Transform` (to map the query string 'true'/'false' to a real boolean) gets silently overridden back to `Boolean(rawValue)` by class-transformer's implicit primitive-conversion step, which reads the *original* value, not the Transform's output — so `?flag=false` becomes `true`. Any future boolean query param must add `@Type(() => String)` before the custom `@Transform` to pin the implicit-conversion type away from `Boolean`. See libs/modules/product-catalog/src/presentation/http/list-products.dto.ts `rush` field for the reference implementation and a minimal repro."
+    },
+    {
+      "target": "ai/repos/frontend/architecture.md",
+      "type": "update",
+      "summary": "The 'chưa có page nào thật sự gọi useQuery/useMutation' statement is now outdated — /mau-thiep and /qua-ky-niem are the first real consumers. Document the ApiClientProvider (apps/public-web/lib/api/api-client-context.tsx) pattern for exposing the single ApiClient instance to hooks, and the useUrlFilterState URL-as-source-of-truth pattern, as the reference for future data-driven pages."
+    },
+    {
+      "target": "ai/repos/frontend/source-map.md",
+      "type": "update",
+      "summary": "`public-web/components/` is no longer empty; add lib/queries, lib/api, lib/hooks, lib/utils to the State/store and API-client rows, and note packages/api-client now has three additional resource wrappers beyond media-client following the same operations[...]-derived-types pattern."
+    },
+    {
+      "target": "ai/repos/frontend/api-client-rules.md",
+      "type": "update",
+      "summary": "Document the array-query-param convention (comma-joined single value, matching backend class-transformer @Transform split-on-comma DTOs) added to ApiClient.buildUrl, since prior guidance only covered flat scalar params."
+    },
+    {
+      "target": "ai/repos/frontend/testing.md",
+      "type": "update",
+      "summary": "Document three pitfalls found while rebuilding the UI-fidelity capture tooling: (1, review cycle 4) always verify frontend/API dev-server liveness with a real content check (an HTTP status code alone is not enough — a stale Next.js dev server can return 200 with a broken webpack runtime) before trusting any headless-browser capture as 'passed' evidence; (2, review cycle 4) CDP's `Page.captureScreenshot` without `captureBeyondViewport`+`clip` only grabs the current viewport rect, so mobile/tablet full-page states must explicitly request the full `document.documentElement.scrollHeight` or every state silently clips to an identical above-the-fold screenshot; (3, review cycle 7) a hardcoded default target URL (e.g. `apiUrl = 'http://localhost:3000'`) silently drifts stale once the app's real configured port changes (here, the frontend's `NEXT_PUBLIC_API_BASE_URL` moved to :3010 to avoid colliding with an unrelated process squatting :3000) — even a script with a content-based capture precondition (`assertRepresentativeProductSeed`) never actually exercises it if the default points at the wrong server, so pass `FRONTEND_URL`/`API_URL` explicitly (or derive them from the app's own env config) rather than trusting a capture script's baked-in default port."
+    }
+  ],
+  "applied_skills": [
+    {
+      "name": "decompose-implementation-task",
+      "sha256": "0d8e89a94111bd5679c8c5ef6c8f5ce250621909f51704bf676af966f2fd4673",
+      "checks_completed": [
+        "python3 ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py ai/tasks/MEMORIES-0004/execution-plan.json -> PASSED (4 slices)"
+      ]
+    },
+    {
+      "name": "implement-nestjs-vertical-slice",
+      "sha256": "46320b8e5f671d095152f339031d0470207a8caa7de73e0e219b45b683321335",
+      "checks_completed": [
+        "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_port_bindings.py <backend worktree> -> PASSED (32 injected Symbol tokens)",
+        "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_module_wiring.py <backend worktree> -> PASSED (37 use-case/controller classes)"
+      ]
+    },
+    {
+      "name": "implement-auth-security-change",
+      "sha256": "8de0236f5e04b9c74a738f6ffc71224070c4ddd230cbccbe88fe8e1144627332",
+      "checks_completed": [
+        "python3 ai/skills/implement-auth-security-change/scripts/check_auth_invariants.py <backend worktree> -> PASSED"
+      ]
+    },
+    {
+      "name": "verify-openapi-contract",
+      "sha256": "c55f03a12edf369434e1588f7eb141eb3a9816286d813bbde4522b5e9bf7b9ba",
+      "checks_completed": [
+        "python3 ai/skills/verify-openapi-contract/scripts/check_openapi_contract.py <backend worktree> -> PASSED (4 operations)",
+        "apps/api/test/openapi-contract.e2e-spec.ts asserts the real generated OpenAPI document for /api/v1/catalogs, /api/v1/card-templates, /api/v1/products and /api/v1/auth/register -> PASSED"
+      ]
+    },
+    {
+      "name": "implement-nextjs-vertical-slice",
+      "sha256": "25827b18cf8482619030897189630b1dc404eacf1d974be8a42d14d2b7a70d9b",
+      "checks_completed": [
+        "python3 ai/skills/implement-nextjs-vertical-slice/scripts/check_frontend_security.py <frontend worktree> -> PASSED"
+      ]
+    },
+    {
+      "name": "migrate-prototype-nextjs-page",
+      "sha256": "14ee774dd48eb592b3f9d346cf8821db441b754381b00362e0c461cc9653422e",
+      "checks_completed": [
+        "python3 ai/skills/migrate-prototype-nextjs-page/scripts/check_prototype_migration.py <frontend worktree> -> PASSED"
+      ]
+    }
+  ]
 }

@@ -232,7 +232,6 @@ def token_budget() -> dict[str, int]:
     import os
 
     defaults = {
-        "max_turns": 60,
         "warn_context_tokens": 60000,
         "max_context_tokens": 80000,
     }
