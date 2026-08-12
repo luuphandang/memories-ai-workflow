@@ -142,6 +142,31 @@ def main() -> None:
 
     skill_check_dir = runtime / "validation" / "skills"
     skill_check_dir.mkdir(parents=True, exist_ok=True)
+    if "verify-implementation-handoff" in required_implementation_skills:
+        checker = AI_ROOT / "skills" / "verify-implementation-handoff" / "scripts" / "check_handoff.py"
+        check = run([sys.executable, str(checker), str(td)], cwd=ROOT, timeout=120)
+        (skill_check_dir / "implementation-handoff.log").write_text(check.stdout, encoding="utf-8")
+        if check.returncode != 0:
+            raise SystemExit("Pre-review implementation-handoff gate failed:\n" + check.stdout)
+    if "validate-evidence-provenance" in required_implementation_skills:
+        checker = AI_ROOT / "skills" / "validate-evidence-provenance" / "scripts" / "check_provenance.py"
+        manifests = sorted((runtime / "validation").glob("**/provenance.json"))
+        if not manifests:
+            raise SystemExit("Pre-review evidence-provenance gate failed: no provenance.json manifest found")
+        for index, manifest in enumerate(manifests):
+            check = run([sys.executable, str(checker), str(manifest)], cwd=ROOT, timeout=120)
+            (skill_check_dir / f"evidence-provenance-{index}.log").write_text(check.stdout, encoding="utf-8")
+            if check.returncode != 0:
+                raise SystemExit("Pre-review evidence-provenance gate failed:\n" + check.stdout)
+    if "design-database-invariants" in required_implementation_skills:
+        checker = AI_ROOT / "skills" / "design-database-invariants" / "scripts" / "check_invariant_matrix.py"
+        matrix = runtime / "validation" / "database-invariants.json"
+        if not matrix.is_file():
+            raise SystemExit("Pre-review database-invariant gate failed: missing database-invariants.json")
+        check = run([sys.executable, str(checker), str(matrix)], cwd=ROOT, timeout=120)
+        (skill_check_dir / "database-invariants.log").write_text(check.stdout, encoding="utf-8")
+        if check.returncode != 0:
+            raise SystemExit("Pre-review database-invariant gate failed:\n" + check.stdout)
     if "implement-nestjs-vertical-slice" in required_implementation_skills:
         checker = AI_ROOT / "skills" / "implement-nestjs-vertical-slice" / "scripts" / "check_port_bindings.py"
         failures = []

@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 import subprocess
 import sys
+import tempfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,6 +25,8 @@ def main() -> None:
     design = ROOT / "skills" / "establish-frontend-design-system" / "scripts" / "check_design_system_usage.py"
     migration = ROOT / "skills" / "migrate-prototype-nextjs-page" / "scripts" / "check_prototype_migration.py"
     fidelity = ROOT / "skills" / "review-frontend-ui-fidelity" / "scripts" / "check_fidelity_matrix.py"
+    provenance = ROOT / "skills" / "validate-evidence-provenance" / "scripts" / "check_provenance.py"
+    invariants = ROOT / "skills" / "design-database-invariants" / "scripts" / "check_invariant_matrix.py"
     check(nest / "check_port_bindings.py", "missing-provider", 1)
     check(nest / "check_module_wiring.py", "missing-provider", 1)
     check(auth, "weak-auth-uniqueness", 1)
@@ -35,7 +39,44 @@ def main() -> None:
     check(migration, "frontend-migration-pass", 0)
     check(fidelity, "fidelity-fail/matrix.json", 1)
     check(fidelity, "fidelity-pass/matrix.json", 0)
+    check(provenance, "provenance-fail/provenance.json", 1)
+    check(provenance, "provenance-pass/provenance.json", 0)
+    check(invariants, "invariant-fail.json", 1)
+    check(invariants, "invariant-pass.json", 0)
+    check_handoff_fixture()
     print("Skill gate fixtures PASSED")
+
+
+def check_handoff_fixture() -> None:
+    checker = ROOT / "skills" / "verify-implementation-handoff" / "scripts" / "check_handoff.py"
+    with tempfile.TemporaryDirectory(prefix="handoff-skill-") as temporary:
+        root = Path(temporary)
+        repo = root / "worktrees" / "TEST-1" / "backend"
+        repo.mkdir(parents=True)
+        subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+        subprocess.run(["git", "config", "user.email", "fixture@example.invalid"], cwd=repo, check=True)
+        subprocess.run(["git", "config", "user.name", "Fixture"], cwd=repo, check=True)
+        (repo / "tracked.txt").write_text("base\n", encoding="utf-8")
+        subprocess.run(["git", "add", "tracked.txt"], cwd=repo, check=True)
+        subprocess.run(["git", "commit", "-qm", "base"], cwd=repo, check=True)
+        (repo / "tracked.txt").write_text("changed\n", encoding="utf-8")
+        (repo / "new.txt").write_text("new\n", encoding="utf-8")
+        task_dir = root / "ai" / "tasks" / "TEST-1"
+        task_dir.mkdir(parents=True)
+        (task_dir / "task.yaml").write_text(
+            "worktrees:\n  - repo: backend\n    path: worktrees/TEST-1/backend\n",
+            encoding="utf-8",
+        )
+        handoff = {"repositories": [{"name": "backend", "changed_files": ["tracked.txt", "new.txt"]}]}
+        (task_dir / "implementation.json").write_text(json.dumps(handoff), encoding="utf-8")
+        result = subprocess.run([sys.executable, str(checker), str(task_dir)], check=False)
+        if result.returncode != 0:
+            raise AssertionError("handoff checker rejected exact paths")
+        handoff["repositories"][0]["changed_files"][1] = "new.txt (annotated)"
+        (task_dir / "implementation.json").write_text(json.dumps(handoff), encoding="utf-8")
+        result = subprocess.run([sys.executable, str(checker), str(task_dir)], check=False)
+        if result.returncode != 1:
+            raise AssertionError("handoff checker accepted an annotated path")
 
 
 if __name__ == "__main__":

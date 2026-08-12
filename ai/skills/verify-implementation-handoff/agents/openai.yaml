@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify Implementation Handoff"
+  short_description: "Reconcile handoff evidence with exact worktree changes"
+  default_prompt: "Use $verify-implementation-handoff to reconcile this task handoff with its worktrees."

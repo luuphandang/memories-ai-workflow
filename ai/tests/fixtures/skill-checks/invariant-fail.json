@@ -1,0 +1,1 @@
+{"invariants":[{"invariant":"Parent type is valid","enforcement":"database trigger","cases":[{"operation":"insert wrong parent type","expected":"rejected"}]}]}

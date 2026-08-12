@@ -1,0 +1,4 @@
+interface:
+  display_name: "Validate Evidence Provenance"
+  short_description: "Reject stale evidence from earlier source or data states"
+  default_prompt: "Use $validate-evidence-provenance to verify that this task evidence belongs to the current implementation."

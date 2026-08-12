@@ -11,6 +11,8 @@ from lib.ai_common import ensure_task, read_yaml, write_yaml
 
 RULES = {
     "implement-nestjs-vertical-slice": ("backend", {"nestjs", "controller", "repository", "typeorm", "migration", "api"}),
+    "create-backend-migration": ("backend", {"migration", "database schema", "schema change", "typeorm entity"}),
+    "design-database-invariants": ("backend", {"migration", "database schema", "constraint", "hierarchy", "transaction", "facet", "seed"}),
     "implement-auth-security-change": (None, {"auth", "jwt", "password", "permission", "login", "session", "account", "identity"}),
     "verify-openapi-contract": ("backend", {"openapi", "swagger", "api contract", "generated client"}),
     "implement-nextjs-vertical-slice": ("frontend", {"frontend", "next.js", "nextjs", "page", "ui", "react", "website"}),
@@ -32,8 +34,12 @@ def main() -> None:
     task = read_yaml(td / "task.yaml")
     text = ((td / "task.md").read_text(encoding="utf-8") + "\n" + task.get("title", "")).lower()
     repos = {item.get("repo") for item in task.get("worktrees", [])} | set(task.get("validation", {}))
-    suggestions = ["decompose-implementation-task"]
-    reasons = {"decompose-implementation-task": "required execution planning"}
+    suggestions = ["decompose-implementation-task", "verify-implementation-handoff", "validate-evidence-provenance"]
+    reasons = {
+        "decompose-implementation-task": "required execution planning",
+        "verify-implementation-handoff": "required exact worktree handoff",
+        "validate-evidence-provenance": "required current-source validation evidence",
+    }
     for skill, (repo, keywords) in RULES.items():
         matched = sorted(word for word in keywords if word in text)
         if (repo is None or repo in repos) and matched:

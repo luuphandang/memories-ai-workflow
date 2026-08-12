@@ -1,0 +1,4 @@
+interface:
+  display_name: "Design Database Invariants"
+  short_description: "Cover every database invariant and mutation path"
+  default_prompt: "Use $design-database-invariants to design and test the invariants for this persistence change."

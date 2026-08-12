@@ -1,0 +1,1 @@
+{"invariants":[{"invariant":"Parent and child are product categories","enforcement":"database trigger","cases":[{"operation":"insert wrong parent type","expected":"rejected","test":"catalog-hierarchy.e2e"},{"operation":"update referenced parent type","expected":"rejected","test":"catalog-hierarchy.e2e"}]}]}

@@ -483,6 +483,29 @@ Use these exact slice evidence keys for completed execution-plan slices:
                 check_log.write_text(check.stdout, encoding="utf-8")
                 if check.returncode != 0:
                     checker_failures.append(f"{item['repo']}: {check.stdout.strip()}")
+        if "verify-implementation-handoff" in required_skills and handoff_path.is_file():
+            checker = AI_ROOT / "skills" / "verify-implementation-handoff" / "scripts" / "check_handoff.py"
+            check = run([sys.executable, str(checker), str(td)], cwd=ROOT, timeout=120)
+            if check.returncode != 0:
+                checker_failures.append(check.stdout.strip())
+        if "validate-evidence-provenance" in required_skills:
+            checker = AI_ROOT / "skills" / "validate-evidence-provenance" / "scripts" / "check_provenance.py"
+            manifests = sorted((runtime / "validation").glob("**/provenance.json"))
+            if not manifests:
+                checker_failures.append("validate-evidence-provenance: no provenance.json manifest found")
+            for manifest in manifests:
+                check = run([sys.executable, str(checker), str(manifest)], cwd=ROOT, timeout=120)
+                if check.returncode != 0:
+                    checker_failures.append(f"{manifest}: {check.stdout.strip()}")
+        if "design-database-invariants" in required_skills:
+            checker = AI_ROOT / "skills" / "design-database-invariants" / "scripts" / "check_invariant_matrix.py"
+            matrix = runtime / "validation" / "database-invariants.json"
+            if not matrix.is_file():
+                checker_failures.append("design-database-invariants: missing database-invariants.json")
+            else:
+                check = run([sys.executable, str(checker), str(matrix)], cwd=ROOT, timeout=120)
+                if check.returncode != 0:
+                    checker_failures.append(check.stdout.strip())
         plan_complete = True
         if task.get("scope", {}).get("execution_plan_required", False):
             current_plan = read_json(td / "execution-plan.json")

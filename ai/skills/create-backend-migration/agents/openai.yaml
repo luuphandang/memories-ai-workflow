@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Backend Migration"
+  short_description: "Create TypeORM migrations through backend npm scripts"
+  default_prompt: "Use $create-backend-migration to create this backend database migration safely."
