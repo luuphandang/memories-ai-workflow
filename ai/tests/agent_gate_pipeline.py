@@ -50,9 +50,11 @@ def main() -> None:
         dry_run = command(root, [str(ai), "task", "run", "TEST-1002", "--dry-run"], env)
         assert "never runs accept" in dry_run.stdout and (task_dir / "state.yaml").read_text(encoding="utf-8") == before_dry_run
 
-        command(root, [str(ai), "task", "implement", "TEST-1002"], {**env, "FAKE_CLAUDE_MODE": "quota"}, expected=1)
+        interrupted = command(root, [str(ai), "task", "implement", "TEST-1002"], {**env, "FAKE_CLAUDE_MODE": "quota"}, expected=1)
         state = yaml.safe_load((task_dir / "state.yaml").read_text())
-        assert state["status"] == "interrupted" and state["claude_session_id"] == "fake-claude-session"
+        assert state["status"] == "interrupted" and state.get("claude_session_id") == "fake-claude-session", (
+            f"state={state!r}\nimplement output:\n{interrupted.stdout}"
+        )
         command(root, [str(ai), "task", "run", "TEST-1002", "--resume-interrupted", "--max-attempts", "3"], {**env, "FAKE_CLAUDE_MODE": "success", "FAKE_CODEX_CHANGES_ONCE": "1"})
         prompt = (root / "worktrees" / "TEST-1002" / ".ai" / "input" / "claude-prompt.md").read_text()
         assert "fix-request-review-001.md" in prompt

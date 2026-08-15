@@ -18,7 +18,7 @@ worktrees:
   base_ref: origin/master
   writable: true
 agents:
-  implementer: codex
+  implementer: claude
   reviewer: codex
 skills:
   implement:

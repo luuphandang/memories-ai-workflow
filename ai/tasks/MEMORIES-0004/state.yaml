@@ -18,7 +18,7 @@ timestamps:
   awaiting_user_acceptance_at: '2026-08-15T15:43:27+07:00'
   completed_at: '2026-08-15T15:44:19+07:00'
 agents:
-  implementation: codex
+  implementation: claude
   review: codex
 repositories:
   backend:

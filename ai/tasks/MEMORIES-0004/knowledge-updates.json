@@ -3,84 +3,84 @@
   "updates": [
     {
       "target": "ai/repos/backend/source-map.md",
-      "type": "update",
+      "type": "proposal",
       "summary": "Add rows for the new `catalog`, `card-catalog` and `product-catalog` modules (controller/use-case/entity/migration paths), mirroring the existing `media`/`identity-access` row pattern, so the source map stays a reliable index of implemented (not skeleton) modules.",
       "content": "",
       "approved": true
     },
     {
       "target": "ai/repos/backend/architecture.md",
-      "type": "update",
+      "type": "proposal",
       "summary": "Document the 'one shared reference-taxonomy table discriminated by type' pattern (libs/modules/catalog) as an established alternative to per-concept tables when several catalogs share an identical shape, and record the facet-count semantics convention (self-exclusion per facet, descendant-inclusive counts via recursive CTE for hierarchical types, plus response-derived price/preparation/rating option groups) as a reusable pattern for future faceted-search modules.",
       "content": "",
       "approved": true
     },
     {
       "target": "ai/repos/backend/database-rules.md",
-      "type": "update",
+      "type": "proposal",
       "summary": "Document two variant-selection SQL conventions from typeorm-product.repository.ts: (1) the LATERAL-join 'cheapest matching variant' pattern (`effectiveVariantLateralSql`) for list/sort and the rating facet's product-existence guard; (2) the bounded-aggregate 'value-bucketed' pattern (`computeBucketFacet`, and `computeRatingFacet` following the same shape) required for price/preparation/rush/rating facets — each computed as a single `COUNT(DISTINCT CASE WHEN <bucket condition> THEN p.id END)` query per bucket, entirely in Postgres, never materializing per-variant or per-product rows in application memory (a single representative/cheapest variant under-counts a product with variants on each side of a bucket boundary, so (1) alone is insufficient for these facets; review-cycle-4 introduced this pattern for price/preparation/rush, review-cycle-13 extended it to rating). Also document the recursive closure-CTE pattern for parent/child facet aggregation, and the DB-level BEFORE INSERT/UPDATE trigger pattern (AddCatalogTermsHierarchyGuard) for cycle-detection invariants a plain self-FK can't express.",
       "content": "",
       "approved": true
     },
     {
       "target": "ai/repos/backend/conventions.md",
-      "type": "update",
+      "type": "proposal",
       "summary": "Document a real bug/fix as a required convention: with the global ValidationPipe's `enableImplicitConversion: true`, a DTO boolean/numeric query-param field decorated only with a custom `@Transform` gets silently overridden by class-transformer's implicit primitive-conversion step (e.g. `?flag=false` becomes `true`; a blank numeric string becomes `0`, not `NaN`, silently passing `@Min(0)`) — `@Type(() => Number)`'s conversion runs before any co-located `@Transform` regardless of decorator order. Fix: add `@Type(() => String)` before the custom `@Transform` to pin the implicit-conversion type away from the real target type, so the `@Transform` output is final (see `rush` in list-products.dto.ts; `toTrimmedNumber` for priceMin/priceMax/prepWithinDays/ratingMin). Companion CSV-array rule: `toIdArray`-style helpers must NOT `.filter(Boolean)` after splitting/trimming — a blank/inner-empty segment must survive as an empty string so `@IsUUID`/`@IsIn { each: true }` rejects it instead of being silently dropped.",
       "content": "",
       "approved": true
     },
     {
       "target": "ai/repos/backend/conventions.md",
-      "type": "update",
+      "type": "proposal",
       "summary": "Document the seed-convergence convention: an idempotent find-by-code-or-create seed use case must reconcile (update) an already-existing row's mutable fields onto the canonical seed definition, not just skip it, or a rerun only guarantees row *presence*, not row *content* — a manually-altered or stale-from-an-earlier-code-change row is never repaired. See `CatalogTerm.reconcile()` (libs/modules/catalog/src/domain/catalog-term/catalog-term.ts) + `SeedCatalogTermsUseCase.findOrCreate`'s existing-row branch for the reference implementation: re-validate the same invariants `create()` checks (duplicated, not extracted into a shared validator, matching the existing `UserProfile.update`/`Account.activate` convention), never reconcile the row's stable lookup identity fields (here: `code`/`catalogType`).",
       "content": "",
       "approved": true
     },
     {
       "target": "ai/repos/backend/database-rules.md",
-      "type": "update",
+      "type": "proposal",
       "summary": "Document the transaction-boundary convention for multi-statement aggregate-replace methods (e.g. 'save aggregate, then delete+reinsert child rows', seen in `TypeOrmProductRepository.saveWithVariantsAndCatalogLinks`/`TypeOrmCardTemplateRepository.saveWithCatalogLinks`): the repository never opens the transaction itself — it only checks `TypeOrmQueryRunnerContext.get()` via `repositoryFor()`-style accessors. The CALLING use case wraps the whole call in `UnitOfWork.withTransaction(...)` (see `SeedProductsUseCase.seedOne`, matching `CreateAccountUseCase`). Any such delete+reinsert method called without that wrapper is not atomic — verify with an e2e test forcing a mid-sequence unique-constraint violation (two rows sharing a unique key in one insert batch is a reliable, self-contained way to do this) and asserting the aggregate row was not committed.",
       "content": "",
       "approved": true
     },
     {
       "target": "ai/repos/frontend/architecture.md",
-      "type": "update",
+      "type": "proposal",
       "summary": "The 'chưa có page nào thật sự gọi useQuery/useMutation' statement is now outdated — /mau-thiep and /qua-ky-niem are the first real consumers. Document the ApiClientProvider (apps/public-web/lib/api/api-client-context.tsx) pattern for exposing the single ApiClient instance to hooks, and the useUrlFilterState URL-as-source-of-truth pattern, as the reference for future data-driven pages.",
       "content": "",
       "approved": true
     },
     {
       "target": "ai/repos/frontend/source-map.md",
-      "type": "update",
+      "type": "proposal",
       "summary": "`public-web/components/` is no longer empty; add lib/queries, lib/api, lib/hooks, lib/utils to the State/store and API-client rows, and note packages/api-client now has three additional resource wrappers beyond media-client following the same operations[...]-derived-types pattern.",
       "content": "",
       "approved": true
     },
     {
       "target": "ai/repos/frontend/api-client-rules.md",
-      "type": "update",
+      "type": "proposal",
       "summary": "Document the array-query-param convention (comma-joined single value, matching backend class-transformer @Transform split-on-comma DTOs) added to ApiClient.buildUrl, since prior guidance only covered flat scalar params.",
       "content": "",
       "approved": true
     },
     {
       "target": "ai/repos/frontend/testing.md",
-      "type": "update",
+      "type": "proposal",
       "summary": "Document three pitfalls found while rebuilding the UI-fidelity capture tooling: (1) always verify dev-server liveness with a real content check, not just an HTTP status code (a stale Next.js dev server can return 200 with a broken webpack runtime); (2) CDP's `Page.captureScreenshot` without `captureBeyondViewport`+`clip` only grabs the viewport rect, so full-page mobile/tablet states must request the full `scrollHeight` or every state clips identically; (3) a hardcoded default target URL silently drifts stale once the app's real configured port changes — even a content-based capture precondition never exercises the real target if the default points elsewhere, so pass `FRONTEND_URL`/`API_URL` explicitly.",
       "content": "",
       "approved": true
     },
     {
       "target": "ai/repos/backend/conventions.md",
-      "type": "update",
+      "type": "proposal",
       "summary": "Document the CORP/CORS distinction: Helmet's default `Cross-Origin-Resource-Policy: same-origin` only blocks no-cors cross-origin embeds (e.g. <img>/<script>), never fetch()'s default cors-mode requests — never relax it globally to let a cross-origin SPA consume the API; CORS config already governs that. Scope any real crossOriginResourcePolicy override to the specific route, not globally in configureApp.",
       "content": "",
       "approved": true
     },
     {
       "target": "ai/repos/backend/conventions.md",
-      "type": "update",
+      "type": "proposal",
       "summary": "Document that every `@ApiResponse({...})` decorator on a handler must stay on one line (put `description` text in a `//` comment above instead) — `check_openapi_contract.py`'s boundary heuristic truncates the captured block at any multi-line decorator's closing `})` right before the handler, and a useful `description` almost always exceeds printWidth 100, so the two mandatory gates conflict unless description text is kept out of the decorator.",
       "content": "",
       "approved": true

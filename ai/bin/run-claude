@@ -74,6 +74,7 @@ def classify_termination(output: str) -> tuple[str, str]:
     """
     result_event: dict | None = None
     rate_limited = False
+    structured_error_lines: list[str] = []
     unstructured_lines: list[str] = []
     for line in output.splitlines():
         try:
@@ -90,6 +91,10 @@ def classify_termination(output: str) -> tuple[str, str]:
                 rate_limited = True
         elif event.get("type") == "result":
             result_event = event
+        elif event.get("type") == "error":
+            # Error events are trusted control-plane output, unlike assistant
+            # message text, which may legitimately discuss rate limits.
+            structured_error_lines.append(str(event.get("message") or event.get("error") or ""))
 
     if rate_limited:
         return "usage_limit", "rate_limit_info.status != allowed"
@@ -98,6 +103,10 @@ def classify_termination(output: str) -> tuple[str, str]:
         if subtype in CAP_SUBTYPES:
             return "turn_or_budget_cap", subtype
         return "ok", subtype or "unknown"
+
+    structured_errors = "\n".join(structured_error_lines).lower()
+    if any(marker in structured_errors for marker in INTERRUPTION_MARKERS):
+        return "usage_limit", "structured error event marker match"
 
     unstructured = "\n".join(unstructured_lines).lower()
     if any(marker in unstructured for marker in INTERRUPTION_MARKERS):

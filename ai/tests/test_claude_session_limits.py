@@ -52,6 +52,16 @@ class ClaudeSessionLimitTests(unittest.TestCase):
         self.assertEqual(classify_termination("You have hit your session limit.")[0], "usage_limit")
         self.assertEqual(classify_termination("some random crash trace")[0], "unstructured")
 
+    def test_structured_error_event_detects_session_limit(self) -> None:
+        module = runpy.run_path(str(ROOT / "ai/bin/run-claude"))
+        classify_termination = module["classify_termination"]
+        output = '{"type":"error","session_id":"test-session","message":"You have hit your session limit"}'
+
+        self.assertEqual(
+            classify_termination(output),
+            ("usage_limit", "structured error event marker match"),
+        )
+
     def test_allowed_warning_rate_limit_status_is_not_a_block(self) -> None:
         module = runpy.run_path(str(ROOT / "ai/bin/run-claude"))
         classify_termination = module["classify_termination"]
