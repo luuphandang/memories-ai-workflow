@@ -128,6 +128,10 @@ def main() -> None:
         runtime_dir(args.task_id) / "exchange",
         cycle_dir / "baseline" / "exchange",
     )
+    archive_if_exists(
+        td / "memory",
+        cycle_dir / "baseline" / "memory",
+    )
 
     values = {
         "TASK_ID": args.task_id,

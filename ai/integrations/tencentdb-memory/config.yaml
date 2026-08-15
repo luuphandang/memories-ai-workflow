@@ -1,0 +1,19 @@
+version: 1
+
+provider: tencentdb
+
+# Hard-disabled by default; AI_MEMORY_ENABLED=false (the .env.ai.example default)
+# overrides this to false regardless of what this file or task.yaml say.
+enabled: false
+required: false
+
+timeout_seconds: 10
+
+recall:
+  max_items: 8
+  # min_score intentionally omitted: whether TencentDB's recall/search response
+  # carries a numeric similarity/score field is unverified against a real running
+  # instance (see upstream-notes.md). Do not add a threshold until confirmed.
+
+fallback:
+  use_static_context: true

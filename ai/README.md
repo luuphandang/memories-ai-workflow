@@ -55,6 +55,28 @@ khám phá thông thường. Dùng `required` ở môi trường muốn chặn p
 không sẵn sàng, hoặc `off` để tắt. Trước khi khóa context, index hiện có được sync và
 health-check; trạng thái được lưu tại `context.lock.json.codegraph`.
 
+## Memory (TencentDB) trong agent workflow
+
+`services/tencentdb-agent-memory/` đã được clone sẵn (không clone lại). Đây là lớp
+persistent memory/retrieval **tùy chọn**, không thay thế `ai/shared/`, `ai/repos/`,
+`ai/domains/` — các file đó luôn thắng khi xung đột. Chi tiết kiến trúc và contract:
+`ai/integrations/README.md`, `ai/integrations/memory/provider-contract.md`.
+
+`AI_MEMORY_ENABLED=false` là mặc định — mọi lệnh `ai task ...` hiện có hoạt động y
+hệt như trước khi tích hợp này tồn tại. Bật memory (đã chạy service cục bộ):
+
+```bash
+export AI_MEMORY_ENABLED="true"
+./ai/bin/ai memory health
+./ai/bin/ai task prepare-context PROJ-1000
+```
+
+`prepare-context` gọi recall và ghi `ai/tasks/<ID>/memory/{recall.json,recall.md}`,
+đồng thời khóa `context.lock.json.memory` (pointer + hash, giống cách `codegraph`
+được khóa). Claude/Codex chỉ đọc snapshot này, không bao giờ gọi provider trực tiếp.
+Sau khi task `completed` và được nghiệm thu, chạy `./ai/bin/ai memory publish <ID>`
+để đẩy các entry đã approved trong `knowledge-updates.json` vào persistent memory.
+
 ## Kiểm thử control plane
 
 `./ai/bin/ai self-check --smoke` chạy pipeline mô phỏng trong workspace tạm, không gọi agent và không sửa task/worktree thật.

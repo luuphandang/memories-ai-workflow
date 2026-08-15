@@ -40,6 +40,19 @@
           },
           "approved": {
             "type": "boolean"
+          },
+          "category": {
+            "description": "Optional durable-knowledge category, used by ai/bin/memory-publish when publishing this entry to long-term memory. Older entries without this field fall back to a filename heuristic (see ai/integrations/tencentdb-memory/publish-policy.yaml).",
+            "enum": [
+              "architecture_decision",
+              "business_rule",
+              "repository_convention",
+              "known_issue",
+              "implementation_pattern",
+              "review_pattern",
+              "api_contract",
+              "source_map_knowledge"
+            ]
           }
         },
         "additionalProperties": false

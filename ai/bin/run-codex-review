@@ -34,6 +34,7 @@ from lib.ai_common import (
     task_risk_level,
 )
 from lib.codegraph import codex_mcp_overrides, prompt_guidance
+from lib.memory import prompt_guidance as memory_prompt_guidance
 
 
 def timeout_output(exc: subprocess.TimeoutExpired) -> str:
@@ -110,6 +111,7 @@ def main() -> None:
     validation = read_json(validation_path)
     context_lock = read_json(td / "context.lock.json")
     codegraph_guidance = prompt_guidance(ROOT, context_lock)
+    memory_guidance = memory_prompt_guidance(context_lock)
     current_implementation_cycle = int(state.get("implementation_cycle", 1))
     current_change_cycle = int(state.get("change_cycle", 0))
     if implementation.get("implementation_cycle") != current_implementation_cycle or implementation.get("change_cycle") != current_change_cycle:
@@ -234,6 +236,9 @@ def main() -> None:
 Code intelligence:
 {codegraph_guidance}
 
+Persistent memory:
+{memory_guidance}
+
 Current implementation cycle: {current_implementation_cycle}
 Current change cycle: {current_change_cycle}
 Configured blocking severities (review.fail_on): {fail_on_text}
@@ -246,6 +251,7 @@ Read in precedence order:
 - ai/tasks/{args.task_id}/context.lock.json
 - ai/tasks/{args.task_id}/implementation.json
 - worktrees/{args.task_id}/.ai/validation/summary.json
+- ai/tasks/{args.task_id}/memory/recall.md (if persistent memory is ready)
 
 Inspect the complete Git diff in every declared worktree:
 {worktree_lines}

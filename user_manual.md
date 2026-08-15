@@ -126,9 +126,161 @@ Các lỗi thường gặp:
 | Graph bị xóa sau khi khóa context | Khởi tạo lại index và chạy lại `prepare-context` |
 | Chưa muốn dùng CodeGraph | Đặt `AI_CODEGRAPH_MODE=off` |
 
-Thông tin chi tiết còn được nhắc lại tại mục **4.1 Cài CodeGraph CLI**, mục **5 Khởi tạo
-một lần**, mục **11 Chuẩn bị CodeGraph, plan, skill và context**, và mục **21 Lệnh thường
-dùng**.
+Thông tin chi tiết còn được nhắc lại tại mục **4.2 Cài CodeGraph CLI**, mục **5 Khởi tạo
+một lần**, mục **11 Chuẩn bị CodeGraph, plan, skill và context**, và mục **21 Tham chiếu
+đầy đủ toàn bộ lệnh**.
+
+## Cài đặt và sử dụng Memory (TencentDB) — hướng dẫn nhanh
+
+Memory là lớp persistent memory/retrieval **tùy chọn**, giúp Claude/Codex không phải
+đọc lại kiến thức đã có từ các task trước. Service `services/tencentdb-agent-memory/`
+**đã được clone sẵn** — không clone lại. Memory **không** thay thế `ai/shared/`,
+`ai/repos/`, `ai/domains/`; các file đó luôn thắng khi có xung đột.
+
+### Bước 1 — Chạy service TencentDB cục bộ
+
+Các lệnh dưới đây được thiết kế để chạy từ **root của workspace**
+(`/Users/cmc/Documents/Memories`), không cần `cd` vào thư mục deploy.
+
+Khởi tạo file cấu hình trong lần đầu tiên (không ghi đè `.env` đã tồn tại):
+
+```bash
+test -f services/tencentdb-agent-memory/deploy/global-images/.env || \
+  cp services/tencentdb-agent-memory/deploy/global-images/.env.example \
+     services/tencentdb-agent-memory/deploy/global-images/.env
+$EDITOR services/tencentdb-agent-memory/deploy/global-images/.env
+```
+
+Trước khi start, cấu hình các giá trị LLM thật trong file trên; không để
+`MEMORY_LLM_API_KEY` hoặc `PROXY_UPSTREAM_API_KEY` là `REPLACE_ME`. Giá trị
+`AI_MEMORY_API_KEY` trong `.env.ai` phải giống `MEMORY_CORE_GATEWAY_API_KEY` trong
+file `.env` của TencentDB.
+
+Start toàn bộ service từ workspace root:
+
+```bash
+./services/tencentdb-agent-memory/deploy/global-images/start-all.sh
+```
+
+Restart thông thường:
+
+```bash
+./services/tencentdb-agent-memory/deploy/global-images/stop-all.sh
+./services/tencentdb-agent-memory/deploy/global-images/start-all.sh
+```
+
+Với flow Claude implement → Codex review không đi qua MemoryProxy, start MemoryCore
+trước, sau đó start MemoryHub (Panel + MemoryKnowledge):
+
+```bash
+./services/tencentdb-agent-memory/deploy/global-images/start-memory-core.sh
+./services/tencentdb-agent-memory/deploy/global-images/start-memory-hub.sh
+```
+
+Hai lệnh này đều chạy trực tiếp từ workspace root và không yêu cầu cấu hình
+nhóm `PROXY_UPSTREAM_*`.
+
+Kiểm tra container và health của MemoryCore/MemoryKnowledge:
+
+```bash
+docker ps
+curl http://127.0.0.1:8420/health
+curl http://127.0.0.1:8424/health
+```
+
+Xem `services/tencentdb-agent-memory/INSTALL.md` để biết chi tiết (port, các service
+con MemoryCore/MemoryKnowledge/MemoryPanel/MemoryProxy).
+
+Không dùng `stop-all.sh --purge` cho restart thông thường: tùy chọn `--purge` có thể
+xóa dữ liệu/volume của service.
+
+### Bước 2 — Cấu hình `.env.ai`
+
+```bash
+export AI_MEMORY_ENABLED="true"        # off theo mặc định — đây là kill switch toàn cục
+export AI_MEMORY_PROVIDER="tencentdb"
+export AI_MEMORY_BASE_URL="http://127.0.0.1:8420"
+export AI_MEMORY_KNOWLEDGE_BASE_URL="http://127.0.0.1:8424"
+export AI_MEMORY_TIMEOUT_SECONDS="10"
+export AI_MEMORY_API_KEY="<cùng giá trị MEMORY_CORE_GATEWAY_API_KEY>"
+export AI_MEMORY_SERVICE_ID="default"
+export AI_MEMORY_TEAM_ID="default"
+export AI_MEMORY_AGENT_ID="claude"
+export AI_MEMORY_USER_ID="workspace"
+```
+
+`AI_MEMORY_ENABLED=false` (mặc định) khiến mọi lệnh `ai task ...` hoạt động y hệt như
+trước khi tích hợp memory tồn tại — không có gì thay đổi hành vi khi tắt.
+
+### Bước 3 — Kiểm tra health
+
+```bash
+source .env.ai
+./ai/bin/ai memory health
+```
+
+In ra `provider`, `enabled`, `service_available`, `wiki_supported`, `code_graph_supported`,
+v.v. (không bao giờ in API key thật). Exit code `0` nghĩa là dùng được, `1` nghĩa là
+không sẵn sàng.
+
+### Bước 4 — Recall tự động khi chuẩn bị context
+
+```bash
+./ai/bin/ai task prepare-context <TASK-ID>
+```
+
+Khi memory bật, bước này tự gọi recall và ghi `ai/tasks/<TASK-ID>/memory/recall.json`
+(máy đọc) và `recall.md` (người đọc), đồng thời khóa `context.lock.json.memory` (pointer
++ hash). Claude/Codex chỉ đọc hai file này, không bao giờ gọi service trực tiếp. Muốn
+làm mới memory giữa chừng, chạy lại `prepare-context`.
+
+Nếu service không sẵn sàng và task không đặt `memory.required: true`, `prepare-context`
+vẫn chạy tiếp bằng static context (cảnh báo `MEMORY_UNAVAILABLE`, `fallback:
+static_context`). Nếu `required: true`, `prepare-context` dừng lại và task chuyển
+`blocked` — giống hệt cách thiếu context file/worktree khiến task bị chặn.
+
+### Bước 5 — Publish sau khi nghiệm thu
+
+Chỉ chạy được khi `state.status == completed` **và** `acceptance.status == accepted`:
+
+```bash
+./ai/bin/ai memory publish <TASK-ID>
+```
+
+Đẩy các entry đã `approved: true` trong `knowledge-updates.json` (chạy sau
+`update-knowledge`, không thay thế nó) thành persistent memory. Không publish trước
+nghiệm thu, và không publish cho một correction cycle bị reject.
+
+### Bước 6 — Sync CodeGraph cho một repository ổn định
+
+```bash
+./ai/bin/ai memory sync <REPO>
+```
+
+Chỉ đồng bộ `apps/<REPO>` (repo ổn định, đã merge) — không bao giờ đồng bộ
+`worktrees/<TICKET_ID>/<REPO>` (delta chưa merge). Upstream TencentDB CodeGraph hiện
+chỉ index được repo có remote `origin` công khai dạng `https://`; nếu `apps/<REPO>`
+không có remote như vậy, lệnh báo `supports_code_graph: false` thay vì giả lập thành
+công. Không tự chạy khi `task accept` — người dùng chủ động chạy sau khi code đã merge
+vào `apps/<REPO>`.
+
+### Correction / requirement change
+
+Một correction cycle (`request-change`) lưu `ai/tasks/<TASK-ID>/memory/` vào
+`changes/cycle-NNN/baseline/memory/` rồi tạo lại từ đầu — recall mới sẽ được sinh ở lần
+`prepare-context` tiếp theo. Không có publish nào xảy ra cho cycle bị reject. Một
+requirement change sau khi đã completed tạo recall mới và, khi publish lại cùng
+target, tự động đánh dấu entry cũ của cùng task là `superseded` trong
+`ai/integrations/tencentdb-memory/local-index/superseded-assets.json`.
+
+### Tắt hoàn toàn
+
+```bash
+export AI_MEMORY_ENABLED="false"
+```
+
+Đây cũng là giá trị mặc định trong `.env.ai.example` — không cần làm gì thêm nếu chưa
+muốn dùng memory.
 
 ## 2. Thuật ngữ quan trọng
 
@@ -165,6 +317,37 @@ Không thay marker bằng giả định chưa được kiểm chứng.
   cục bộ, cung cấp knowledge graph cho Claude/Codex qua MCP và không yêu cầu API key.
 - Toolchain của từng repository: Node.js `>=20.0.0` + npm (workspaces) cho cả `apps/backend` và `apps/frontend`; backend cần thêm PostgreSQL, Redis và 1 S3-compatible storage (MinIO ở local/dev) chạy qua `apps/backend/docker/docker-compose.yml`.
 
+### 4.1 Cài Claude Code và Codex CLI
+
+macOS/Linux/WSL, cài Claude Code bằng native installer chính thức:
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+claude --version
+claude doctor
+claude
+```
+
+Lần chạy `claude` đầu tiên, hoàn tất đăng nhập trong trình duyệt. Có thể dùng Homebrew
+`brew install --cask claude-code`, nhưng bản Homebrew phải được cập nhật thủ công bằng
+`brew upgrade claude-code`. Tham khảo tài liệu chính thức:
+<https://code.claude.com/docs/en/setup>.
+
+macOS/Linux, cài Codex CLI bằng standalone installer chính thức:
+
+```bash
+curl -fsSL https://chatgpt.com/codex/install.sh | sh
+codex --version
+codex
+```
+
+Lần chạy `codex` đầu tiên, chọn **Sign in with ChatGPT** hoặc phương thức đăng nhập phù
+hợp. Tham khảo tài liệu chính thức: <https://learn.chatgpt.com/docs/codex/cli>.
+
+Không đặt API key vào repository. Workflow gọi hai executable qua `CLAUDE_COMMAND` và
+`CODEX_COMMAND`; nếu executable không nằm trên `PATH`, dùng đường dẫn tuyệt đối trong
+`.env.ai`.
+
 Kiểm tra:
 
 ```bash
@@ -175,7 +358,7 @@ codex --version
 codegraph --version
 ```
 
-### 4.1 Cài CodeGraph CLI
+### 4.2 Cài CodeGraph CLI
 
 Chọn **một** trong hai cách sau.
 
@@ -213,6 +396,15 @@ pip install -r ai/requirements.txt
 cp .env.ai.example .env.ai
 ```
 
+Không chạy `sudo pip`. Mỗi terminal vận hành workflow phải activate `.venv` và source
+`.env.ai`; nếu mở terminal mới, chạy lại:
+
+```bash
+cd /duong-dan-tuyet-doi/toi/project
+source .venv/bin/activate
+source .env.ai
+```
+
 Cập nhật `.env.ai`:
 
 ```bash
@@ -235,7 +427,16 @@ Nạp biến và cấu hình:
 ```bash
 source .env.ai
 ./ai/bin/bootstrap
+./ai/bin/ai self-check
+./ai/bin/ai self-check --smoke
 ```
+
+`bootstrap` tạo symlink cấu hình và skill của dự án vào
+`~/.project-ai/{claude,codex}`, đồng thời cấp executable bit cho các script trong
+`ai/bin/`. Lệnh này có thể chạy lại sau khi thêm skill/cấu hình mới. Nó thay thế các
+symlink do chính workspace quản lý, nhưng từ chối ghi đè một thư mục skill thật đã tồn
+tại. `self-check` kiểm tra cấu hình/schema/skill/policy; `--smoke` chạy pipeline giả lập
+trong thư mục tạm, không gọi Claude/Codex thật.
 
 Không lưu token, secret hoặc credential trong workspace. `CLAUDE_TIMEOUT_SECONDS` và `CODEX_TIMEOUT_SECONDS` phải là số nguyên dương. Khi Claude implement bị timeout, quota hoặc session limit, task chuyển sang `interrupted`; mỗi attempt có log riêng và lần `implement` sau resume session nếu có, hoặc phục hồi từ `implementation-progress.json` cùng Git diff. Timeout của các bước khác vẫn được xử lý theo script tương ứng.
 
@@ -907,62 +1108,118 @@ worktrees/<ID>/.ai/
 └── metrics/                        # Token, turn, cost và attempt metrics
 ```
 
-## 21. Lệnh thường dùng
+## 21. Tham chiếu đầy đủ toàn bộ lệnh
+
+Luôn gọi qua `./ai/bin/ai`; các file executable khác trong `ai/bin/` là implementation
+detail. Xem danh sách ngắn bằng `./ai/bin/ai --help`. Bảng dưới đây là nguồn tham chiếu
+đầy đủ hơn vì dispatcher hiện chỉ in usage tổng quát khi truyền `--help` cho subcommand.
+
+### 21.1 Workspace và chẩn đoán
+
+| Lệnh | Chức năng và tùy chọn |
+|---|---|
+| `ai bootstrap` | Cài symlink config/skill cục bộ vào `~/.project-ai/`; chạy lại sau khi đổi config hoặc thêm skill. |
+| `ai self-check` | Kiểm tra JSON/schema, skill, quyền Claude, Codex trust, path, biến CodeGraph/Memory và dấu hiệu secret. |
+| `ai self-check --smoke` | Thêm pipeline giả lập end-to-end trong temp; không gọi agent thật. |
+| `ai self-check --memory-integration` | Thêm probe Memory backend thật; tách biệt với `--smoke`. |
+| `ai indexes rebuild` | Sinh lại năm index `backlog`, `in-progress`, `review`, `completed`, `failed` từ mọi `state.yaml`. |
+| `ai metrics <ID>` | Tổng hợp attempt, thời gian, token, turn và cost từ runtime metrics của task. |
+
+### 21.2 Tạo task và chuẩn bị context
+
+| Lệnh | Chức năng và tùy chọn |
+|---|---|
+| `ai task create <ID> --type epic|story|task --title <TITLE>` | Tạo hồ sơ task. Tùy chọn: `--parent`, `--epic`, `--priority lowest|low|medium|high|highest|critical` (mặc định `medium`), `--repos backend,frontend`. ID chỉ gồm chữ hoa, số và dấu gạch theo schema của workspace. |
+| `ai task register-worktree <ID> --repo <NAME> --path <PATH>` | Đăng ký worktree do developer đã tạo, ghi branch/base SHA và tự thêm knowledge repo vào context. `--base-ref` mặc định `origin/develop`; `--read-only` đặt `writable: false`; `--allow-missing` chỉ dùng để khai báo trước path chưa tồn tại và sẽ khiến các gate sau chưa thể chạy. |
+| `ai task classify-skills <ID>` | Chỉ in các skill được đề xuất từ scope. `--apply` ghi đề xuất vào `task.yaml`; phải review trước khi apply. |
+| `ai task prepare-plan <ID>` | Sinh `execution-plan.json`; từ chối ghi đè plan hiện có trừ khi dùng `--force`. Sau mỗi thay đổi requirement/skill phải tạo lại plan. |
+| `ai task codegraph <ID>` | Sync incremental và in status JSON cho mọi worktree. `--init` tạo index còn thiếu; `--no-sync` chỉ kiểm tra. |
+| `ai task prepare-context <ID>` | Kiểm tra requirement, knowledge, worktree/branch, skill, plan, Memory và CodeGraph rồi khóa `context.lock.json`. `--allow-placeholders` chỉ dành cho template/demo; không dùng cho task thật vì cho phép marker chưa được điền. |
+
+### 21.3 Implement, validation, review và report
+
+| Lệnh | Chức năng và tùy chọn |
+|---|---|
+| `ai task run <ID>` | Pipeline tự động implement → quick/full validation → review/fix → final full review → report. `--dry-run` không tạo bằng chứng đủ điều kiện nghiệm thu; `--max-attempts N` giới hạn attempt trong lần chạy; `--resume-interrupted` cho phép retry phiên Claude bị gián đoạn; `--max-interrupted-retries N` mặc định `1`. |
+| `ai task implement <ID>` | Chạy một Claude implement session/slice. `--dry-run` không gọi CLI; `--print-command` in command đã dựng để chẩn đoán. Nếu có session/checkpoint hợp lệ, lần gọi sau có thể resume. |
+| `ai task validate-code <ID>` | Chạy command trong `ai/repos/<repo>/commands.yaml`. `--tier quick|full` (mặc định `full`); `--dry-run` chỉ lập kế hoạch; `--include-optional` chạy cả command `required: false`; `--command <NAME>` chỉ chạy tên được chọn và có thể lặp option. Chỉ full validation thật mới đủ gate review/accept. |
+| `ai task review <ID>` | Chạy Codex read-only review. `--mode auto|full|delta` (mặc định `auto`); `--dry-run` không tạo verdict dùng được; `--print-command` in command để debug. Delta bị từ chối với scope nhạy cảm và trước report vẫn cần final full review. |
+| `ai task request-fixes <ID>` | Chuyển findings chặn trong `review.json` thành fix request có giới hạn, tăng review cycle hoặc block khi đạt `review.max_cycles`. |
+| `ai task report <ID>` | Kiểm gate rồi sinh `final-report.md` và chuyển sang `awaiting_user_acceptance`. `--report-only` chỉ render lại báo cáo, thường được `accept` gọi nội bộ; `--force` bỏ qua một số guard validation và chỉ dành cho phục hồi có kiểm soát, không dùng để nghiệm thu kết quả chưa pass. |
+
+### 21.4 Nghiệm thu, thay đổi yêu cầu và knowledge
+
+| Lệnh | Chức năng và tùy chọn |
+|---|---|
+| `ai task accept <ID>` | Chỉ accept khi validation thật + Codex pass + quality gate hợp lệ. `--accepted-by <NAME>` mặc định `user`; `--note <TEXT>` lưu ghi chú nghiệm thu. |
+| `ai task request-change <ID> --title <TITLE>` | Tạo cycle mới và snapshot baseline. `--kind auto|correction|requirement_change`; `auto` suy ra theo trạng thái. `--from-file <FILE>` chép nội dung phản hồi có sẵn vào `user-request.md`. Không tự tạo/checkout worktree. |
+| `ai task consolidate-requirements <ID>` | Với task completed, dùng Claude tạo draft gộp addendum nhưng chưa sửa `task.md`. `--dry-run` hoặc `--print-command` để kiểm tra trước. |
+| `ai task apply-requirements-consolidation <ID> --approved-by <NAME>` | Kiểm hash/cycle/manifest rồi áp dụng draft đã được người duyệt xác nhận; backup lịch sử để audit. |
+| `ai task update-knowledge <ID>` | Hiển thị kế hoạch cập nhật knowledge đã approved. `--apply` mới ghi vào `ai/shared`, `ai/repos`, `ai/domains`; `--force` là escape hatch có kiểm soát khi cần vượt guard trạng thái. |
+
+### 21.5 Memory
+
+| Lệnh | Chức năng và tùy chọn |
+|---|---|
+| `ai memory health` | Probe provider, MemoryCore và MemoryKnowledge; không in API key. Exit `0` khi sẵn sàng, `1` khi không sẵn sàng. |
+| `ai memory recall <ID>` | Recall thủ công và ghi `memory/recall.json`, `recall.md`. Bình thường `prepare-context` tự gọi. |
+| `ai memory publish <ID>` | Publish các knowledge entry `approved: true`; chỉ sau `completed` + accepted. `--supersedes <ASSET_ID>` là escape hatch để chỉ rõ asset của task khác bị thay thế. |
+| `ai memory sync <REPO>` | Sync repository ổn định `apps/<REPO>` lên TencentDB CodeGraph; không nhận worktree. Hiện cần remote `origin` public HTTPS, nếu không trả exit `1` và `supports_code_graph: false`. |
+
+Ví dụ vận hành hằng ngày:
 
 ```bash
-# Tạo task
-./ai/bin/ai task create PROJ-1002 --type task --parent PROJ-1001 --epic PROJ-1000 --title "Example"
-
-# Đăng ký worktree
-./ai/bin/ai task register-worktree PROJ-1002 --repo backend --path worktrees/PROJ-1002/backend
-
-# Chuẩn bị
-./ai/bin/ai task classify-skills PROJ-1002 --apply
-./ai/bin/ai task prepare-plan PROJ-1002 --force
-./ai/bin/ai task codegraph PROJ-1002 --init
-./ai/bin/ai task prepare-context PROJ-1002
-
-# CodeGraph: sync/status hoặc chỉ status
+source .venv/bin/activate
+source .env.ai
+./ai/bin/ai self-check
 ./ai/bin/ai task codegraph PROJ-1002
-./ai/bin/ai task codegraph PROJ-1002 --no-sync
-
-# Pipeline tự động (khuyến nghị)
-./ai/bin/ai task run PROJ-1002 --dry-run
 ./ai/bin/ai task run PROJ-1002
-
-# Resume sau khi đã xử lý nguyên nhân gián đoạn
-./ai/bin/ai task run PROJ-1002 --resume-interrupted --max-interrupted-retries 1
-
-# Pipeline thủ công
-./ai/bin/ai task implement PROJ-1002
-./ai/bin/ai task validate-code PROJ-1002 --tier quick
-./ai/bin/ai task validate-code PROJ-1002 --tier full
-./ai/bin/ai task review PROJ-1002 --mode auto
-./ai/bin/ai task report PROJ-1002
-
-# Metrics
 ./ai/bin/ai metrics PROJ-1002
-
-# Nghiệm thu
-./ai/bin/ai task accept PROJ-1002 --accepted-by "User"
-
-# Correction trước accept
-./ai/bin/ai task request-change PROJ-1002 --kind correction --title "Fix acceptance issue"
-
-# Requirement change sau completed, dùng worktree cũ
-./ai/bin/ai task request-change PROJ-1002 --kind requirement_change --title "New requirement"
-
-# Knowledge
-./ai/bin/ai task update-knowledge PROJ-1002 --apply
-
-# Indexes
-./ai/bin/ai indexes rebuild
-
-# Tự kiểm tra control plane
-./ai/bin/ai self-check --smoke
 ```
 
-## 22. Tự kiểm tra workspace
+## 22. Xử lý sự cố thường gặp
+
+Trước tiên luôn thu thập trạng thái, không sửa artifact máy đọc bằng tay:
+
+```bash
+source .venv/bin/activate
+source .env.ai
+./ai/bin/ai self-check
+sed -n '1,240p' ai/tasks/<ID>/state.yaml
+find worktrees/<ID>/.ai -maxdepth 3 -type f | sort
+```
+
+| Hiện tượng | Kiểm tra và cách xử lý |
+|---|---|
+| `ModuleNotFoundError: yaml` hoặc `jsonschema` | Activate đúng `.venv`, rồi chạy `python -m pip install -r ai/requirements.txt`. Xác minh bằng `python -c 'import yaml, jsonschema'`. |
+| `claude/codex/codegraph: command not found` | Chạy `command -v <cmd>` và `<cmd> --version`; mở terminal mới hoặc đặt đường dẫn tuyệt đối vào `CLAUDE_COMMAND`, `CODEX_COMMAND`, `CODEGRAPH_COMMAND`, rồi `source .env.ai`. |
+| Claude Code không đăng nhập/chạy bất thường | Chạy `claude doctor`, sau đó `claude` để đăng nhập lại. Kiểm tra `CLAUDE_CONFIG_DIR` sau khi source `.env.ai`. |
+| Codex chưa đăng nhập | Chạy `codex` tương tác và hoàn tất **Sign in with ChatGPT**, sau đó `codex --version`. Kiểm tra `CODEX_HOME` đúng `~/.project-ai/codex`. |
+| `self-check` báo Codex không trust workspace | Cập nhật path tuyệt đối hiện tại trong `ai/config/codex/config.toml`, chạy lại `bootstrap`, rồi `self-check`. Đặc biệt cần làm sau khi di chuyển workspace. |
+| `self-check` báo path không khớp | Sửa `AI_WORKSPACE_ROOT` trong `.env.ai` và path project trong Codex config; `source .env.ai`, `bootstrap`, `self-check`. |
+| Worktree path không tồn tại/không phải Git worktree | `git -C apps/<repo> worktree list`; khôi phục worktree đúng branch, rồi đăng ký lại có chủ đích. Không dùng `--allow-missing` để vượt gate chạy thật. |
+| Branch hiện tại khác branch đã đăng ký | `git -C worktrees/<ID>/<repo> branch --show-current`; quay lại branch đúng theo Git policy hoặc đăng ký lại sau khi xác nhận. Script không tự checkout. |
+| `prepare-context` báo context/skill/plan stale | Chạy lại `classify-skills --apply` khi cần, `prepare-plan --force`, `codegraph --init` và cuối cùng `prepare-context`. Luôn khóa context sau thay đổi cuối. |
+| Placeholder chưa xử lý | Tìm bằng `rg 'BỔ SUNG THEO' ai/tasks/<ID> ai/domains/<domain>` và điền dữ liệu thật. Không dùng `--allow-placeholders` cho production task. |
+| CodeGraph thiếu index/stale | `ai task codegraph <ID> --init`; kiểm tra JSON `available/indexed/ready`. Nếu vẫn lỗi, chạy `codegraph status <worktree-path>` và kiểm tra `CODEGRAPH_COMMAND`. Tạm fallback bằng `AI_CODEGRAPH_MODE=optional` hoặc tắt bằng `off`. |
+| Memory health exit `1` | Kiểm `docker ps`, `curl http://127.0.0.1:8420/health`, `curl http://127.0.0.1:8424/health`; đối chiếu API key hai file env. Nếu không bắt buộc, đặt `AI_MEMORY_ENABLED=false`; nếu task có `memory.required: true` thì phải khôi phục service. |
+| Validation fail | Đọc `worktrees/<ID>/.ai/validation/summary.json` và file `<repo>.json`; chạy riêng command lỗi bằng `ai task validate-code <ID> --command <NAME> --tier full`. Sửa source/config rồi chạy lại full validation. |
+| Dry-run pass nhưng review/report bị chặn | Đây là hành vi đúng: chạy validation thật `--tier full`, rồi review thật. Dry-run không phải evidence. |
+| Task ở `interrupted` | Đọc log mới nhất trong `worktrees/<ID>/.ai/exchange/`, xử lý quota/network/timeout, rồi chạy `ai task run <ID> --resume-interrupted --max-interrupted-retries 1`. Không resume liên tục khi nguyên nhân chưa hết. |
+| Claude timeout | Tăng `CLAUDE_TIMEOUT_SECONDS` bằng số nguyên dương nếu slice hợp lý nhưng cần lâu hơn; nếu slice quá lớn, sửa execution plan và `prepare-context` lại. |
+| Codex timeout | Tăng `CODEX_TIMEOUT_SECONDS`, source env và chạy lại review; kiểm tra log exchange trước. |
+| Review yêu cầu sửa | Dùng `task request-fixes`, implement, full validate, review lại; hoặc dùng `task run`. Khi đạt `review.max_cycles`, task block và cần quyết định của người dùng. |
+| Delta review bị từ chối | Chạy `ai task review <ID> --mode full`; đây là bắt buộc với auth/security/API/database/migration/transaction/concurrency. |
+| Report/accept bị chặn | Kiểm `state.yaml`, cycle trong implementation/review/validation, verdict, `review.fail_on`, và full-validation không phải dry-run. Không dùng `--force` chỉ để vượt nghiệm thu. |
+| Requirement consolidation báo hash/cycle mismatch | Không sửa manifest. Tạo lại draft bằng `consolidate-requirements`, review lại rồi apply với người duyệt. |
+| Index trạng thái sai | Chạy `ai indexes rebuild`; index là dữ liệu sinh, `state.yaml` mới là nguồn thật. |
+| Memory publish bị từ chối | Chỉ publish sau `task accept`; đảm bảo `knowledge-updates.json` có entry `approved: true` và memory health pass. |
+
+Log/artifact cần gửi khi nhờ hỗ trợ: command đầy đủ đã chạy, exit code, `state.yaml`,
+`context.lock.json`, validation `summary.json`, và log exchange liên quan. Xóa/redact secret
+trước khi chia sẻ; không gửi `.env.ai` hoặc file `.env` của TencentDB.
+
+## 23. Tự kiểm tra workspace
 
 Chạy kiểm tra tĩnh:
 
@@ -978,7 +1235,7 @@ Chạy smoke test end-to-end trong thư mục tạm, không gọi dịch vụ Cl
 
 Smoke test tạo repository và worktree dùng một lần, dùng fake Claude/Codex CLI để kiểm tra skill fixtures, resume/checkpoint, vòng tự động implement–validate–review–request-fixes, `review.fail_on`, correction, reopening, report và user acceptance.
 
-## 23. Dữ liệu ví dụ
+## 24. Dữ liệu ví dụ
 
 Xem:
 
@@ -991,7 +1248,7 @@ ai/examples/tasks/PROJ-1002/
 
 Toàn bộ nội dung ví dụ là trung lập và không dùng dữ liệu dự án thật.
 
-## 24. Checklist vận hành
+## 25. Checklist vận hành
 
 ### Trước Claude
 

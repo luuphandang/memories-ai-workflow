@@ -1,0 +1,21 @@
+version: 1
+
+# Machine-readable mirror of ../memory/policies/recall-policy.md. Enforcement is
+# structural (recall_for_task only ever writes MemoryItem dataclass fields), this
+# file documents intent for auditing, not a runtime filter of its own.
+allowed_asset_types:
+  - wiki
+  - code_graph
+  - skill
+  - chat_memory
+
+forbidden_content:
+  - failed_or_unaccepted_implementation_output
+  - unaccepted_requirement_drafts
+  - raw_agent_reasoning
+  - secrets_or_credentials
+  - raw_terminal_logs
+  - superseded_items
+
+filter_superseded: true
+superseded_index: local-index/superseded-assets.json

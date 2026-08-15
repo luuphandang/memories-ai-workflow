@@ -33,6 +33,7 @@ from lib.ai_common import (
     token_budget,
 )
 from lib.codegraph import claude_mcp_config, prompt_guidance
+from lib.memory import prompt_guidance as memory_prompt_guidance
 
 
 INTERRUPTION_MARKERS = (
@@ -160,6 +161,7 @@ def main() -> None:
     requirements = requirement_documents(args.task_id, include_user_request=True)
     context_lock = read_json(td / "context.lock.json")
     codegraph_guidance = prompt_guidance(ROOT, context_lock)
+    memory_guidance = memory_prompt_guidance(context_lock)
     budget = token_budget()
     active_slice = active_execution_slice(args.task_id)
     slice_id = active_slice.get("id") if active_slice else None
@@ -313,6 +315,9 @@ def main() -> None:
 Code intelligence:
 {codegraph_guidance}
 
+Persistent memory:
+{memory_guidance}
+
 Current implementation cycle: {state.get('implementation_cycle', 1)}
 Current change cycle: {state.get('change_cycle', 0)}
 
@@ -324,6 +329,7 @@ Read common rules and requirement documents in this order:
 - ai/tasks/{args.task_id}/task.yaml
 - ai/tasks/{args.task_id}/context.yaml
 - ai/tasks/{args.task_id}/context.lock.json
+- ai/tasks/{args.task_id}/memory/recall.md (if persistent memory is ready)
 
 Worktrees:
 {worktree_lines}

@@ -18,7 +18,7 @@ worktrees:
   base_ref: origin/master
   writable: true
 agents:
-  implementer: claude
+  implementer: codex
   reviewer: codex
 skills:
   implement:
@@ -34,7 +34,7 @@ skills:
 scope:
   execution_plan_required: true
 review:
-  max_cycles: 20
+  max_cycles: 30
   fail_on:
   - blocker
   - major

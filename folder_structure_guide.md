@@ -24,6 +24,7 @@ Tài liệu này mô tả toàn bộ cấu trúc được đóng gói. Các đư
 | `ai/domains/` | Knowledge nghiệp vụ theo tính năng/domain. |
 | `ai/examples/` | Dữ liệu minh họa trung lập. |
 | `ai/indexes/` | Chỉ mục trạng thái tự động sinh từ state.yaml. |
+| `ai/integrations/` | Adapter cho hệ thống ngoài (hiện tại: TencentDB Agent Memory); không phải source of truth. |
 | `ai/repos/` | Knowledge template theo từng repository. |
 | `ai/runtime/` | Dữ liệu runtime cục bộ không phải source of truth. |
 | `ai/schemas/` | JSON Schema xác thực structured output và metadata. |
@@ -31,6 +32,12 @@ Tài liệu này mô tả toàn bộ cấu trúc được đóng gói. Các đư
 | `ai/tasks/` | Hồ sơ task thực tế theo Jira ID; đường dẫn task không thay đổi theo trạng thái. |
 | `ai/templates/` | Mẫu dùng khi tạo task, report đa ngôn ngữ, acceptance và change cycle. |
 | `ai/bin/lib/` | Thư viện Python dùng chung cho script. |
+| `ai/bin/lib/memory/` | Package `MemoryProvider` trung lập vendor và adapter TencentDB. |
+| `ai/integrations/memory/` | Contract vendor-neutral và policy recall/publish cho Claude/Codex. |
+| `ai/integrations/memory/policies/` | Danh sách allow/forbid cho recall và publish. |
+| `ai/integrations/tencentdb-memory/` | Cấu hình, upstream notes và prompt fragment cho adapter TencentDB. |
+| `ai/integrations/tencentdb-memory/local-index/` | Sổ supersession cục bộ (upstream không có API deprecate asset). |
+| `ai/integrations/tencentdb-memory/prompts/` | Đoạn hướng dẫn ngắn chèn vào prompt khi memory sẵn sàng. |
 | `ai/config/claude/` | Cấu hình Claude Code. |
 | `ai/config/codex/` | Cấu hình Codex và profile review read-only. |
 | `ai/domains/example/` | Domain mẫu trung lập duy nhất để sao chép cho tính năng thật. |
@@ -82,7 +89,16 @@ Tài liệu này mô tả toàn bộ cấu trúc được đóng gói. Các đư
 | `ai/bin/finalize-task` | Sinh report; technical pass chỉ chuyển sang awaiting_user_acceptance. |
 | `ai/bin/lib/__init__.py` | Đánh dấu thư mục lib là Python package. |
 | `ai/bin/lib/ai_common.py` | Hàm dùng chung: I/O, path safety, Git, schema, cycle và archive. |
-| `ai/bin/prepare-context` | Xác minh requirement/knowledge/worktree và khóa context. |
+| `ai/bin/lib/memory/__init__.py` | Orchestration: config precedence, recall/publish/sync cho task, sổ supersession. |
+| `ai/bin/lib/memory/models.py` | Dataclass `MemoryQuery`/`MemoryItem`/`MemorySnapshot`/`MemoryPublishEntry`/`MemoryHealth`. |
+| `ai/bin/lib/memory/provider.py` | ABC `MemoryProvider` và factory `get_provider()` theo `AI_MEMORY_PROVIDER`. |
+| `ai/bin/lib/memory/tencentdb.py` | Adapter HTTP (urllib) cho TencentDB MemoryCore/MemoryKnowledge. |
+| `ai/bin/lib/memory/fake.py` | Provider giả offline dùng cho `self-check --smoke` và unit test. |
+| `ai/bin/memory-health` | In trạng thái provider/service/capability; exit 1 nếu không sẵn sàng. |
+| `ai/bin/memory-recall` | Chạy recall cho một task, ghi `memory/recall.json` và `recall.md`. |
+| `ai/bin/memory-publish` | Publish knowledge-updates.json đã approved thành persistent memory (yêu cầu completed+accepted). |
+| `ai/bin/memory-sync` | Đồng bộ CodeGraph cho `apps/<repo>` (không bao giờ nhận worktree path). |
+| `ai/bin/prepare-context` | Xác minh requirement/knowledge/worktree, chạy memory recall và khóa context. |
 | `ai/bin/rebuild-indexes` | Sinh lại các file index theo state.yaml. |
 | `ai/bin/register-worktree` | Đăng ký worktree do developer tạo và lưu branch ban đầu. |
 | `ai/bin/request-change` | Lưu baseline và tạo correction/requirement-change cycle trên worktree cũ. |
@@ -159,6 +175,20 @@ Tài liệu này mô tả toàn bộ cấu trúc được đóng gói. Các đư
 | `ai/indexes/failed.md` | Danh sách task needs_input/blocked/failed. |
 | `ai/indexes/in-progress.md` | Danh sách task đang triển khai hoặc reopened. |
 | `ai/indexes/review.md` | Danh sách task đang review/chờ acceptance. |
+| `ai/integrations/README.md` | Giới thiệu adapter layer và design invariant (Claude/Codex → orchestrator → MemoryProvider → adapter). |
+| `ai/integrations/memory/README.md` | Tổng quan memory vendor-neutral, thứ tự ưu tiên canonical vs memory. |
+| `ai/integrations/memory/provider-contract.md` | Contract `MemoryProvider`, data model, precedence enabled/required. |
+| `ai/integrations/memory/policies/recall-policy.md` | Danh sách nội dung Claude/Codex được/không được nhận từ recall. |
+| `ai/integrations/memory/policies/publish-policy.md` | Nguồn nội dung được publish, category, canonical luôn thắng. |
+| `ai/integrations/tencentdb-memory/README.md` | Cách chạy service cục bộ và cấu hình adapter. |
+| `ai/integrations/tencentdb-memory/upstream-notes.md` | Ghi nhận API/SDK/giới hạn thực tế đọc từ source TencentDB. |
+| `ai/integrations/tencentdb-memory/config.yaml` | Provider mặc định: enabled/required/timeout/recall size/fallback. |
+| `ai/integrations/tencentdb-memory/asset-mapping.yaml` | Mapping path cục bộ → asset_type TencentDB. |
+| `ai/integrations/tencentdb-memory/recall-policy.yaml` | Bản máy đọc của recall-policy.md. |
+| `ai/integrations/tencentdb-memory/publish-policy.yaml` | Bảng fallback category theo tên file cho entry cũ chưa có `category`. |
+| `ai/integrations/tencentdb-memory/local-index/superseded-assets.json` | Sổ supersession cục bộ theo task/target. |
+| `ai/integrations/tencentdb-memory/prompts/recall.md` | Đoạn hướng dẫn recall chèn vào prompt agent. |
+| `ai/integrations/tencentdb-memory/prompts/publish.md` | Tóm tắt publish cho operator (không phải prompt agent). |
 | `ai/repos/backend/INDEX.md` | Chỉ mục knowledge của repository. |
 | `ai/repos/backend/api-rules.md` | Quy tắc API của backend. |
 | `ai/repos/backend/architecture.md` | Kiến trúc, module boundary và data flow. |
@@ -219,6 +249,8 @@ Tài liệu này mô tả toàn bộ cấu trúc được đóng gói. Các đư
 | `ai/templates/final-report.md` | Mẫu báo cáo tiếng Việt với section bật/tắt theo `report.*`. |
 | `ai/templates/final-report.en.md` | Mẫu báo cáo tiếng Anh. |
 | `ai/tests/smoke_pipeline.py` | Smoke test end-to-end trong workspace tạm, không gọi Claude/Codex. |
+| `ai/tests/test_memory.py` | Unit test cho recall/publish/sync, mirror `test_codegraph.py`. |
+| `ai/tests/memory_smoke_pipeline.py` | Smoke test memory end-to-end với `AI_MEMORY_PROVIDER=fake`, chạy trong `self-check --smoke`. |
 | `ai/templates/implementation.json` | Mẫu handoff Claude. |
 | `ai/templates/knowledge-updates.json` | Mẫu danh sách knowledge proposal. |
 | `ai/templates/review.json` | Mẫu output Codex. |
@@ -244,6 +276,9 @@ ai/tasks/<TASK-ID>/
 ├── review.json
 ├── knowledge-updates.json
 ├── final-report.md
+├── memory/                      (chỉ có khi AI_MEMORY_ENABLED=true; ghi bởi prepare-context)
+│   ├── recall.json
+│   └── recall.md
 └── changes/
     └── cycle-NNN/
         ├── metadata.yaml
@@ -251,6 +286,7 @@ ai/tasks/<TASK-ID>/
         ├── requirement-addendum.md
         ├── attachments/README.md
         └── baseline/
+            └── memory/          (snapshot của cycle trước, lưu bởi request-change)
 ```
 
 Xem quy trình thao tác và câu lệnh trong `user_manual.md`.

@@ -176,6 +176,38 @@
       },
       "additionalProperties": false
     },
+    "memory": {
+      "type": "object",
+      "description": "Optional per-task override of the vendor-neutral memory layer. AI_MEMORY_ENABLED=false (the global default) is a hard kill switch that this block cannot override upward; see ai/integrations/memory/provider-contract.md. No vendor-specific keys belong here -- those stay in ai/integrations/tencentdb-memory/config.yaml.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "recall": {
+          "type": "object",
+          "properties": {
+            "max_items": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "publish": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "report": {
       "type": "object",
       "required": [

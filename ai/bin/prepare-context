@@ -24,6 +24,7 @@ from lib.ai_common import (
     validate_json,
 )
 from lib.codegraph import inspect_task_repositories
+from lib.memory import recall_for_task
 
 
 def iter_context_items(context: dict):
@@ -161,6 +162,9 @@ def main() -> None:
 
     codegraph_repositories = inspect_task_repositories(ROOT, task, sync=True)
 
+    memory_block, memory_missing = recall_for_task(args.task_id)
+    missing.extend(memory_missing)
+
     if missing:
         raise SystemExit(
             "Missing/unresolved context or worktree:\n- " + "\n- ".join(missing)
@@ -196,6 +200,7 @@ def main() -> None:
             "mode": __import__("os").environ.get("AI_CODEGRAPH_MODE", "optional"),
             "repositories": codegraph_repositories,
         },
+        "memory": memory_block,
         "skills": {"required": required_skills, "locked": locked_skills},
         "execution_plan": f"ai/tasks/{args.task_id}/execution-plan.json" if execution_plan.is_file() else None,
         "scope_assessment": {
