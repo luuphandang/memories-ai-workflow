@@ -174,6 +174,7 @@ def main() -> None:
             location += f":{finding.get('line')}"
         evidence = str(finding.get("evidence", ""))
         expected_fix = str(finding.get("expected_fix", ""))
+        guidance = finding.get("implementation_guidance") or {}
         lines.extend(
             [
                 f"## {index}. [{finding.get('severity')}] {finding.get('title')}",
@@ -181,8 +182,15 @@ def main() -> None:
                 f"- Location: `{location}`",
                 f"- Evidence: {evidence[:800]}",
                 f"- Expected fix: {expected_fix[:500]}",
+                f"- Suggested approach: {str(guidance.get('approach', ''))[:800]}",
             ]
         )
+        if guidance.get("code_locations"):
+            lines.append("- Code locations: " + ", ".join(f"`{item}`" for item in guidance["code_locations"]))
+        if guidance.get("tests"):
+            lines.append("- Tests to add/change: " + "; ".join(guidance["tests"]))
+        if guidance.get("done_when"):
+            lines.append("- Done when: " + "; ".join(guidance["done_when"]))
         if len(evidence) > 800 or len(expected_fix) > 500:
             lines.append(f"- Full finding: `{review_path.relative_to(ROOT)}` (finding #{index})")
         lines.append("")

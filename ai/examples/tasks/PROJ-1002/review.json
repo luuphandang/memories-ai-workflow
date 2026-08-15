@@ -1,4 +1,4 @@
-{"review_coverage":{"review_passes":[],"changed_files":[],"risk_areas":[],"prior_findings":[],"completion_statement":false},
+{"review_coverage":{"review_passes":[],"changed_files":[],"risk_areas":[],"prior_findings":[],"completion_statement":false},"test_matrix":[],
   "task_id": "PROJ-1002",
   "verdict": "pass",
   "reviewed_repositories": [],

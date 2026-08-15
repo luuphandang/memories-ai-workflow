@@ -270,6 +270,16 @@ Evaluate only current-cycle validation. {review_pass_instruction}
 In delta mode, inventory every file affected by the latest correction and its direct dependencies;
 in full mode inventory every tracked and untracked implementation file.
 Do not issue a partial defect list: aggregate findings only after coverage is complete.
+Before assessing existing tests, build test_matrix from both effective requirements and
+the complete diff/impact analysis. Include positive, negative, boundary, regression, and
+applicable security/concurrency/transaction/compatibility cases. Each case must identify
+its sources (use explicit labels such as "requirement: AC..." and "diff-impact: path/symbol"),
+target, level, scenario, expected result, status, and concrete evidence. Mark absent tests
+as missing. A full review must contain cases from both requirement and diff-impact sources;
+a delta review must contain diff-impact cases and corrected behavior/regression cases.
+For every finding whose severity is in review.fail_on, include implementation_guidance
+with an actionable approach, affected code locations, tests to add/change, and objective
+done_when checks. Keep expected_fix as the concise outcome.
 Do not modify files. Return only JSON matching ai/schemas/review.schema.json. Include
 applied_skills with the locked hash and completed checks for every required review
 skill, plus review_coverage with concrete evidence. Return blocked if any review pass,
@@ -378,6 +388,21 @@ missing. A pass means technically ready for user acceptance, not completed.
             incomplete_coverage.append("one or more acceptance criteria were not verified")
         if coverage.get("completion_statement") is not True:
             incomplete_coverage.append("completion_statement is not true")
+        test_matrix = review.get("test_matrix", [])
+        if not test_matrix:
+            incomplete_coverage.append("test matrix is empty")
+        else:
+            matrix_sources = "\n".join(
+                source.lower()
+                for case in test_matrix
+                for source in case.get("sources", [])
+            )
+            if review_mode == "full" and not any(token in matrix_sources for token in ("requirement", "acceptance", " ac")):
+                incomplete_coverage.append("test matrix has no requirement/acceptance-derived case")
+            if not any(token in matrix_sources for token in ("diff", "changed", "impact", "blast")):
+                incomplete_coverage.append("test matrix has no diff/impact-derived case")
+            if any(case.get("status") == "missing" for case in test_matrix) and review.get("validation_assessment", {}).get("passed") is True:
+                incomplete_coverage.append("test matrix contains missing cases but validation_assessment.passed is true")
         applied_review_skills = {item.get("name"): item for item in review.get("applied_skills", [])}
         missing_review_skills = [name for name in required_review_skills if name not in applied_review_skills]
         stale_review_skills = [name for name in required_review_skills if name in applied_review_skills and applied_review_skills[name].get("sha256") != locked_skills.get(name, {}).get("sha256")]
@@ -388,6 +413,8 @@ missing. A pass means technically ready for user acceptance, not completed.
             effective_returncode = 3
         verdict = review["verdict"]
         blocking = [item for item in review.get("findings", []) if item.get("severity") in fail_on]
+        if any(not item.get("implementation_guidance") for item in blocking):
+            incomplete_coverage.append("one or more blocking findings lack implementation guidance")
         if skill_output_invalid:
             pass
         elif incomplete_coverage and verdict != "blocked":

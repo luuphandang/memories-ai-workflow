@@ -32,11 +32,15 @@
 - [ ] Command bắt buộc đã chạy.
 - [ ] Test mới/chỉnh sửa phản ánh yêu cầu mới.
 - [ ] Không dùng baseline cũ để kết luận pass.
+- [ ] `test_matrix` được sinh từ cả requirement và diff/blast radius, không chỉ từ handoff.
+- [ ] Ma trận có positive, negative, boundary, regression và risk case áp dụng được.
+- [ ] Mỗi test case có expected result, trạng thái và evidence; test thiếu được ghi `missing`.
 
 ## Handoff
 
 - [ ] `implementation.json` khớp diff.
 - [ ] Finding có bằng chứng và mức severity đúng.
+- [ ] Mỗi finding chặn có phương án sửa, code locations, test cần làm và `done_when` cụ thể.
 - [ ] Codex pass chỉ chuyển tới user acceptance, không tự completed.
 - [ ] Chỉ tổng hợp kết quả sau khi hoàn tất mọi pass; không phát hành finding theo từng đợt nhỏ.
 - [ ] `review_coverage` không còn `not_reviewed`/`not_verified` trước khi yêu cầu Claude sửa.

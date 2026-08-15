@@ -39,7 +39,7 @@ def main() -> None:
     )
     finding_file = os.environ.get("FAKE_CODEX_FINDING_FILE", "README.md")
     finding_title = os.environ.get("FAKE_CODEX_FINDING_TITLE", "Synthetic first-cycle finding")
-    findings = [{"severity": "major", "repo": task.get("worktrees", [{}])[0].get("repo", "unknown"), "file": finding_file, "line": 1, "title": finding_title, "evidence": "fake-agent-e2e", "expected_fix": "Run the automated fix cycle"}] if changes_requested else []
+    findings = [{"severity": "major", "repo": task.get("worktrees", [{}])[0].get("repo", "unknown"), "file": finding_file, "line": 1, "title": finding_title, "evidence": "fake-agent-e2e", "expected_fix": "Run the automated fix cycle", "implementation_guidance": {"approach": "Apply the synthetic correction", "code_locations": [finding_file], "tests": ["Rerun fake-agent-e2e"], "done_when": ["The synthetic regression passes"]}}] if changes_requested else []
 
     if final_full_mode == "blocked":
         artifact = {
@@ -54,6 +54,7 @@ def main() -> None:
                 "completion_statement": False,
             },
             "findings": [], "validation_assessment": {"passed": True, "missing": []},
+            "test_matrix": [],
             "acceptance_criteria": [], "knowledge_updates": [],
             "summary": "Simulated blocked final full review: could not complete coverage.",
             "implementation_cycle": int(state.get("implementation_cycle", 1)), "change_cycle": int(state.get("change_cycle", 0)),
@@ -88,6 +89,7 @@ def main() -> None:
             "completion_statement": True,
         },
         "findings": findings, "validation_assessment": {"passed": True, "missing": []},
+        "test_matrix": [{"id": "TM-1", "sources": ["requirement: synthetic acceptance", "diff-impact: README.md"], "target": "README.md", "test_level": "static", "scenario": "Synthetic pipeline review", "expected_result": "Pipeline fixture is valid", "status": "passed", "evidence": "fake-agent-e2e"}],
         "acceptance_criteria": [], "knowledge_updates": [], "summary": "Fake Codex review passed.",
         "implementation_cycle": int(state.get("implementation_cycle", 1)), "change_cycle": int(state.get("change_cycle", 0)),
     }

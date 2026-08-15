@@ -38,6 +38,13 @@ Thực hiện đủ bảy lượt độc lập trước khi kết luận:
 6. `security`: authorization, input, secret/PII, injection, session và privilege boundary khi liên quan.
 7. `regression`: retest finding cũ và các hành vi lân cận có thể bị thay đổi.
 
+Trước khi đọc kết quả test như bằng chứng pass, phải tự lập `test_matrix` từ hai nguồn độc
+lập: (a) yêu cầu/acceptance criteria hiệu lực và (b) blast radius của toàn bộ diff. Ma trận
+phải bao phủ happy path, error path, boundary và regression; thêm authorization, concurrency,
+transaction/idempotency, compatibility khi diff chạm các risk surface tương ứng. Mỗi dòng
+phải nêu target, cấp test, scenario, expected result, trạng thái và evidence thực tế. Test
+đang thiếu phải ghi `missing`, không được suy diễn là pass từ test lân cận.
+
 Phải kiểm kê (inventory) toàn bộ file implementation đã thay đổi, không riêng phần liên quan
 tới finding gần nhất. Full review là điều kiện bắt buộc trước khi có final report hoặc user
 acceptance — `pass` của full review là `pass` duy nhất mà `finalize-task`/`accept-task` chấp
@@ -64,6 +71,10 @@ hoàn tất một lượt, trả `blocked`, không trả `pass` hoặc `changes_
 
 - Chỉ ghi finding có bằng chứng cụ thể.
 - Mỗi finding gồm severity, repo, file, line (nếu có), title, evidence và expected fix.
+- Với mỗi finding thuộc severity cấu hình chặn, thêm `implementation_guidance`: nguyên nhân/
+  phương án sửa cụ thể, các code location cần xem xét, test phải thêm hoặc sửa, và danh sách
+  điều kiện `done_when`. Đây là chỉ dẫn theo outcome; không ép implementer dùng một thiết kế
+  duy nhất khi có nhiều phương án đúng.
 - `pass` chỉ khi không còn `blocker` hoặc `major` và acceptance criteria cốt lõi đạt.
 - Không sửa source code, task, addendum hoặc knowledge base.
 - `pass` dẫn tới `awaiting_user_acceptance` chỉ khi đây là full review; không trực tiếp dẫn

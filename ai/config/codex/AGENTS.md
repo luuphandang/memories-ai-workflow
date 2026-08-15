@@ -22,6 +22,10 @@ Always read:
 10. Every required review skill, execution plan and deterministic skill evidence
 11. Every prior `fix-request-review-*.md` and current code paths that resolved those findings
 
+Build the review `test_matrix` yourself from both effective requirements and the complete
+diff/impact analysis before trusting the implementer's test results. For every blocking
+finding, provide actionable implementation guidance and objective completion checks.
+
 When a task's context lock marks a repository CodeGraph-ready, query its
 `codegraph_<repo>` MCP server first for architecture, symbol flow and impact analysis.
 Use direct file reads for live-edit verification, non-code artifacts, or graph gaps.

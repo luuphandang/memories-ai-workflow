@@ -121,6 +121,16 @@ def implementation(task_id: str, implementation_cycle: int, change_cycle: int) -
 
 
 def review(task_id: str, implementation_cycle: int, change_cycle: int, verdict: str = "pass", findings: list | None = None) -> dict:
+    normalized_findings = []
+    for item in findings or []:
+        item = dict(item)
+        item.setdefault("implementation_guidance", {
+            "approach": "Resolve the synthetic fixture failure",
+            "code_locations": [item.get("file") or "README.md"],
+            "tests": ["Rerun the smoke pipeline"],
+            "done_when": ["The smoke assertion passes"],
+        })
+        normalized_findings.append(item)
     return {
         "task_id": task_id,
         "verdict": verdict,
@@ -133,7 +143,8 @@ def review(task_id: str, implementation_cycle: int, change_cycle: int, verdict: 
             "prior_findings": [],
             "completion_statement": True,
         },
-        "findings": findings or [],
+        "findings": normalized_findings,
+        "test_matrix": [{"id": "TM-1", "sources": ["requirement: Smoke pipeline completes", "diff-impact: README.md"], "target": "README.md", "test_level": "static", "scenario": "Smoke pipeline completes", "expected_result": "All orchestration gates complete", "status": "passed", "evidence": "deterministic fixture"}],
         "validation_assessment": {"passed": True, "missing": []},
         "acceptance_criteria": [{"criterion": "Smoke pipeline completes", "status": "passed"}],
         "knowledge_updates": [],
