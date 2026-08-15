@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Code Change"
+  short_description: "Review diffs with risk-driven test coverage"
+  default_prompt: "Use $review-code-change to review this implementation and produce an evidence-backed verdict."

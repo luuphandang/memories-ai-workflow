@@ -27,6 +27,7 @@ def main() -> None:
     fidelity = ROOT / "skills" / "review-frontend-ui-fidelity" / "scripts" / "check_fidelity_matrix.py"
     provenance = ROOT / "skills" / "validate-evidence-provenance" / "scripts" / "check_provenance.py"
     invariants = ROOT / "skills" / "design-database-invariants" / "scripts" / "check_invariant_matrix.py"
+    review = ROOT / "skills" / "review-code-change" / "scripts" / "validate_review.py"
     check(nest / "check_port_bindings.py", "missing-provider", 1)
     check(nest / "check_module_wiring.py", "missing-provider", 1)
     check(auth, "weak-auth-uniqueness", 1)
@@ -43,8 +44,42 @@ def main() -> None:
     check(provenance, "provenance-pass/provenance.json", 0)
     check(invariants, "invariant-fail.json", 1)
     check(invariants, "invariant-pass.json", 0)
+    check_review_fixture(review)
     check_handoff_fixture()
     print("Skill gate fixtures PASSED")
+
+
+def check_review_fixture(checker: Path) -> None:
+    artifact = {
+        "verdict": "pass",
+        "review_coverage": {
+            "review_passes": ["requirements", "diff", "architecture", "behavior", "tests", "security", "regression"],
+            "changed_files": [{"file": "src/example.ts", "status": "reviewed"}],
+            "risk_areas": [{"area": "authorization", "status": "not_applicable"}],
+            "prior_findings": [],
+            "completion_statement": True,
+        },
+        "test_matrix": [{
+            "id": "TM-1",
+            "sources": ["requirement: AC1", "diff-impact: src/example.ts#run"],
+            "status": "passed",
+            "evidence": "unit test passed",
+        }],
+        "validation_assessment": {"passed": True, "missing": []},
+        "findings": [],
+    }
+    with tempfile.TemporaryDirectory(prefix="review-skill-") as temporary:
+        path = Path(temporary) / "review.json"
+        path.write_text(json.dumps(artifact), encoding="utf-8")
+        result = subprocess.run([sys.executable, str(checker), str(path), "--mode", "full"], check=False)
+        if result.returncode != 0:
+            raise AssertionError("review checker rejected a complete artifact")
+        artifact["test_matrix"][0]["status"] = "missing"
+        artifact["test_matrix"][0]["evidence"] = ""
+        path.write_text(json.dumps(artifact), encoding="utf-8")
+        result = subprocess.run([sys.executable, str(checker), str(path), "--mode", "full"], check=False)
+        if result.returncode != 1:
+            raise AssertionError("review checker accepted a pass with missing coverage")
 
 
 def check_handoff_fixture() -> None:

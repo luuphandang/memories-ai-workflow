@@ -48,7 +48,7 @@ def main() -> None:
     print("Suggested implementation skills:")
     for skill in suggestions:
         print(f"- {skill} ({reasons[skill]})")
-    review_suggestions = ["review-vertical-slice-completeness"]
+    review_suggestions = ["review-code-change", "review-vertical-slice-completeness"]
     for skill, (repo, keywords) in REVIEW_RULES.items():
         if repo in repos and any(word in text for word in keywords):
             review_suggestions.append(skill)

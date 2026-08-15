@@ -14,7 +14,7 @@ agents:
   reviewer: codex
 skills:
   implement: [decompose-implementation-task]
-  review: [review-vertical-slice-completeness]
+  review: [review-code-change, review-vertical-slice-completeness]
 scope:
   execution_plan_required: true
 review:
