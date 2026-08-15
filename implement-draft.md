@@ -219,10 +219,15 @@ Không dùng validation cũ, baseline của cycle trước hoặc report cũ đ�
 ### Kiểm tra và bootstrap workspace
 
 ```bash
+source .venv/bin/activate
 source .env.ai
+./ai/bin/ai --help
 ./ai/bin/ai bootstrap
 ./ai/bin/ai self-check
 ./ai/bin/ai self-check --smoke
+
+# Chỉ chạy khi cần kiểm tra kết nối Memory backend thật
+./ai/bin/ai self-check --memory-integration
 ```
 
 ### Chuẩn bị task
@@ -264,14 +269,19 @@ source .env.ai
 ```bash
 ./ai/bin/ai task implement <TASK-ID> --dry-run
 ./ai/bin/ai task implement <TASK-ID>
+./ai/bin/ai task implement <TASK-ID> --print-command
 
 ./ai/bin/ai task validate-code <TASK-ID> --dry-run
 ./ai/bin/ai task validate-code <TASK-ID> --tier quick
 ./ai/bin/ai task validate-code <TASK-ID> --tier full
+# Chạy thêm command optional hoặc chỉ định một command trong commands.yaml
+./ai/bin/ai task validate-code <TASK-ID> --tier full --include-optional
+./ai/bin/ai task validate-code <TASK-ID> --tier full --command <COMMAND-NAME>
 
 ./ai/bin/ai task review <TASK-ID> --dry-run
 ./ai/bin/ai task review <TASK-ID> --mode auto
 ./ai/bin/ai task review <TASK-ID> --mode full
+./ai/bin/ai task review <TASK-ID> --print-command
 
 ./ai/bin/ai task request-fixes <TASK-ID>
 ./ai/bin/ai task report <TASK-ID>
@@ -293,6 +303,12 @@ rủi ro và luôn yêu cầu final full review trước report.
   --kind correction \
   --title "Mô tả vấn đề nghiệm thu"
 
+# Có thể nhập phản hồi đã viết sẵn từ file
+./ai/bin/ai task request-change <TASK-ID> \
+  --kind correction \
+  --title "Mô tả vấn đề nghiệm thu" \
+  --from-file <FEEDBACK-FILE>
+
 ./ai/bin/ai task request-change <TASK-ID> \
   --kind requirement_change \
   --title "Mô tả yêu cầu mới"
@@ -312,6 +328,27 @@ rủi ro và luôn yêu cầu final full review trước report.
 
 ./ai/bin/ai indexes rebuild
 ```
+
+### Memory tùy chọn
+
+```bash
+# Kiểm tra service trước khi chuẩn bị context
+./ai/bin/ai memory health
+
+# Recall thường được prepare-context gọi tự động; dùng lệnh này khi cần chạy thủ công
+./ai/bin/ai memory recall <TASK-ID>
+
+# Chỉ publish sau khi task đã completed và được người dùng accept
+./ai/bin/ai memory publish <TASK-ID>
+
+# Chỉ sync repository ổn định sau khi code đã merge, không sync worktree
+./ai/bin/ai memory sync <REPO>
+```
+
+Khi Memory được bật, `task prepare-context` tự recall và khóa kết quả vào context.
+`memory publish` không thay thế `task update-knowledge`; chạy publish sau khi proposal
+knowledge đã được review, apply và task đã nghiệm thu. `memory sync` chỉ nhận repository
+trong `apps/<REPO>`.
 
 ### Git read-only để kiểm tra nhanh
 
