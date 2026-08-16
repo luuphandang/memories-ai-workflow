@@ -4,4 +4,6 @@ Media asset được tạo ở trạng thái `pending`, client upload trực ti�
 
 Source chính nằm tại `libs/modules/media`: domain entity và repository port trong `src/domain/media-asset`, use case trong `src/application/use-cases`, TypeORM adapter trong `src/infrastructure/persistence`, HTTP API trong `src/presentation/http`.
 
+Dữ liệu persistence của bounded context nằm trong schema PostgreSQL `media`; bảng asset là `media.assets`. Migration và `MediaAssetOrmEntity` phải cùng khai báo schema/table này, không fallback về `public`.
+
 Trạng thái là invariant nghiệp vụ, không chỉ là progress display. Mọi writer đồng thời phải tuân thủ transition hợp lệ và attempt ownership.

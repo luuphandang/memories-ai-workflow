@@ -3,6 +3,7 @@
 ## Publication and delivery
 
 - Business modules publish qua port `BackgroundJobPublisher`; không phụ thuộc trực tiếp BullMQ. Khi một use case vừa đổi domain state vừa tạo job, ghi domain state và outbox row trong cùng `UnitOfWork.withTransaction()`, sau đó để `OutboxRelay` publish.
+- Transactional outbox được lưu tại `background_jobs.outbox_messages` (không dùng schema `public`); migration và `OutboxMessageOrmEntity` phải luôn khai báo thống nhất schema `background_jobs`.
 - BullMQ có semantics at-least-once: redelivery và hai execution chồng nhau là tình huống hợp lệ. Mọi terminal transition phải dùng CAS nguyên tử ở repository, với cả expected status và attempt identity (`jobId`/version) khi nhiều attempt dùng chung trạng thái trung gian.
 - Job ID chỉ unique trong một queue. ID phục vụ deduplication nên deterministic; lần reprocess hợp lệ phải dùng ID theo attempt. Không dùng `:` làm delimiter cho custom ID.
 - Non-retryable error được chuyển thành `UnrecoverableError`; final-failure detection phải bao phủ cả trường hợp này, không chỉ so `attemptsMade` với `attempts`.
