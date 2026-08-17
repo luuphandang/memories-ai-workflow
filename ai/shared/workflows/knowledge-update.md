@@ -24,6 +24,6 @@ Nội dung liên quan ticket phải được xác minh và thay marker `[BỔ SU
 
 Plan-only hiển thị mọi entry cùng trạng thái approval để người duyệt không phải sửa JSON trước khi thấy kế hoạch. Khi áp dụng, mỗi entry `proposal` được ghi ra một file riêng có số thứ tự; nhiều proposal cùng target không được ghi đè lẫn nhau. Entry đã sẵn sàng cập nhật knowledge chính thức phải dùng `append`, `replace` hoặc `create` và chỉ đặt `approved: true` sau khi nội dung đã được biên tập. `append` bỏ qua nội dung đã tồn tại nguyên vẹn để rerun không nhân đôi section.
 
-Đặt `category` (một trong 8 loại durable-knowledge, xem `ai/schemas/knowledge-update.schema.json`) cho mỗi entry đã approved khi có thể — `ai/bin/memory-publish` dùng field này để gắn nhãn khi đẩy vào persistent memory (TencentDB), chỉ fallback sang suy luận theo tên file khi entry cũ chưa có `category`.
-
-`ai/bin/update-knowledge` (canonical: `ai/shared/`, `ai/repos/`, `ai/domains/`) và `ai/bin/memory-publish` (persistent memory) là hai bước tách biệt, chạy tuần tự sau khi task `completed` và được nghiệm thu — memory publish không bao giờ thay thế cập nhật canonical, và nếu một memory item mâu thuẫn với file canonical thì file canonical luôn thắng. Xem `ai/integrations/memory/policies/publish-policy.md`.
+`ai/bin/update-knowledge` áp dụng các entry đã được duyệt vào nguồn kiến thức canonical
+trong `ai/shared/`, `ai/repos/` và `ai/domains/` sau khi task `completed` và được nghiệm
+thu. Không có bước publish sang kho nhớ ngoài.

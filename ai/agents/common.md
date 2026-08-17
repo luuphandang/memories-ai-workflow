@@ -23,7 +23,9 @@ luôn dùng đúng danh sách requirement đã khóa trong `context.lock.json`.
 - Đọc và áp dụng toàn bộ skill bắt buộc đã khóa trong `context.lock.json`; không dùng bản skill có hash khác.
 - Khi tạo migration backend, bắt buộc dùng skill `create-backend-migration` và npm script do backend định nghĩa; không tự tạo file migration hoặc gọi TypeORM CLI trực tiếp.
 - Trước khi handoff, bắt buộc đối chiếu exact changed-file inventory bằng `verify-implementation-handoff`; không ghi chú vào chuỗi path.
-- Không tái sử dụng evidence sau khi source, migration, seed, fixture hoặc capture script thay đổi; tạo và kiểm tra provenance manifest theo `validate-evidence-provenance`.
+- Không tái sử dụng evidence sau khi source, migration, seed, fixture hoặc capture script thay đổi;
+  tạo manifest chuẩn trong task evidence, rồi dùng bước sync của `validate-evidence-provenance`
+  để kiểm tra và publish atomically sang runtime. Không sửa đồng thời hai bản manifest.
 - Theo `execution-plan.json`, chỉ xử lý một vertical slice tại một thời điểm và cập nhật checkpoint.
 - Chỉ đọc tài liệu được liệt kê/khóa trong context, sau đó mở rộng on-demand khi thực sự liên quan.
 - Khi `context.lock.json.codegraph.repositories.<repo>.ready` là `true`, dùng MCP

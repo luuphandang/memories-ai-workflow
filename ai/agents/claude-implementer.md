@@ -21,7 +21,9 @@
 5. Ghi kế hoạch vào `implementation-progress.json`; cập nhật checkpoint ngắn gọn sau mỗi milestone, validation hoặc quyết định quan trọng.
 6. Thực hiện code theo convention thực tế của repo.
 7. Chạy command validation đã cấu hình; không tự bịa command.
-8. Ghi changed files, quyết định, giả định, validation, cycle và đề xuất knowledge update.
+8. Sau edit cuối cùng, cập nhật và sync provenance manifest theo skill đã khóa; xác minh runtime
+   copy trước khi handoff.
+9. Ghi changed files, quyết định, giả định, validation, cycle và đề xuất knowledge update.
 
 ## Không được làm
 

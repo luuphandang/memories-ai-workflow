@@ -111,8 +111,9 @@
           "file",
           "line",
           "title",
-          "evidence",
-          "expected_fix"
+      "evidence",
+      "expected_fix",
+      "implementation_guidance"
         ],
         "properties": {
           "severity": {
@@ -144,8 +145,8 @@
           "expected_fix": {
             "type": "string"
           },
-          "implementation_guidance": {
-            "type": "object",
+      "implementation_guidance": {
+        "type": ["object", "null"],
             "required": ["approach", "code_locations", "tests", "done_when"],
             "properties": {
               "approach": {"type": "string", "minLength": 1},

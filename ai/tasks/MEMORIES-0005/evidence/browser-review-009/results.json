@@ -1,0 +1,53 @@
+{
+  "desktop_login_close_within_panel": true,
+  "desktop_login_dialog_box": {
+    "x": 384,
+    "y": 164,
+    "width": 512,
+    "height": 472
+  },
+  "desktop_login_close_box": {
+    "x": 846,
+    "y": 180,
+    "width": 34,
+    "height": 34
+  },
+  "desktop_register_close_within_panel": true,
+  "mobile_login_close_within_panel": true,
+  "mobile_login_dialog_box": {
+    "x": 16,
+    "y": 186,
+    "width": 358,
+    "height": 472
+  },
+  "mobile_login_close_box": {
+    "x": 324,
+    "y": 202,
+    "width": 34,
+    "height": 34
+  },
+  "mobile_register_submit_reachable": true,
+  "register_status": 201,
+  "desktop_popover_trigger_box": {
+    "x": 1065.34375,
+    "y": 52,
+    "width": 44,
+    "height": 44
+  },
+  "desktop_popover_logout_box": {
+    "x": 936.34375,
+    "y": 111,
+    "width": 166,
+    "height": 36
+  },
+  "desktop_popover_anchored_near_trigger": true,
+  "desktop_popover_within_viewport": true,
+  "mobile_popover_within_viewport": true,
+  "mobile_popover_logout_box": {
+    "x": 209.171875,
+    "y": 732.5,
+    "width": 166,
+    "height": 36
+  },
+  "mobile_logout_returns_to_signed_out": true
+}

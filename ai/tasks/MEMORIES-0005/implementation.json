@@ -1,0 +1,538 @@
+{
+  "task_id": "MEMORIES-0005",
+  "status": "implemented",
+  "summary": "Public-web user icon now opens an AuthModal (LOCAL phone/password login + register, Google/Facebook OAuth) when signed out and an anchored AccountPopover (Đăng xuất) when signed in, on both desktop header and mobile bottom nav via a single shared UserMenuTrigger. Backend: RegisterDto/RegisterUseCase/CreateAccountUseCase accept and persist an optional address (no migration needed); GoogleOAuthClient/FacebookOAuthClient + OAuthLoginUseCase + OAuthController implement the full authorization-code flow. Fixed a pre-existing AuthProvider.isAuthenticated bug that would have made the whole feature appear permanently signed-out. Ten review cycles of fix passes since (full per-finding detail in `decisions`): cycle 3 (7 findings) moved OAuth secrets out of URLs, validated OAuth payloads at runtime, fixed a forgeable oauth=success param, made self-registration atomic, handled unconfigured providers gracefully; cycle 4 (7 findings) hardened the OAuth-race and registration-rollback e2e tests with real concurrency/table-count proof, added a configured-Facebook e2e path, logout-failure and duplicate-submit UI tests, and fixed an e2e port-flake; cycle 6 (5 findings) made the Facebook Graph API version config-driven (v19.0 was retired), made first-time OAuth provisioning atomic with session issuance, fixed refresh rotation mislabeling social sessions as LOCAL, regenerated a complete provenance manifest, and fixed a real Dialog focus-trap bug; cycle 9 (4 findings) fixed a Dialog panel-positioning bug (DialogClose rendered against the viewport instead of the panel), regenerated stale runtime provenance/summary/database-invariants artifacts, built a Facebook OAuth v26.0 contract harness anchored to Meta's official docs (no real credentials available for a live sandbox) which also surfaced and fixed a malformed-state-cookie 500 bug, and captured new real-browser evidence for the signed-in popover and mobile registration; cycle 10 (3 major findings + 1 missing-evidence item) fixed a real credential-leak bug (OAuth authorization codes/state were still fully readable via `req.url` in every centralized log line despite `req.query` redaction), replaced the self-referential Facebook contract test with one bound to a hash-verified pinned-commit snapshot of Meta's own official open-source Graph API SDK (developers.facebook.com/graph.facebook.com are confirmed DNS-blocked from this sandbox, so GitHub was used instead), fixed the standalone `/login` route which still posted the legacy `{email,password}` shape the backend has never accepted, and added a negative test for a provider error paired with a missing/mismatched state.",
+  "applied_skills": [
+    {
+      "name": "decompose-implementation-task",
+      "sha256": "0d8e89a94111bd5679c8c5ef6c8f5ce250621909f51704bf676af966f2fd4673",
+      "checks_completed": [
+        "ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py ai/tasks/MEMORIES-0005/execution-plan.json -> PASSED (1 slice, status=completed, re-verified this cycle)"
+      ]
+    },
+    {
+      "name": "verify-implementation-handoff",
+      "sha256": "570af30068f0ef579bd0538cb88368138530aa99852f3f0d0d531e082ce548a5",
+      "checks_completed": [
+        "check_handoff.py ai/tasks/MEMORIES-0005 -> PASSED (66 exact paths, +8 vs cycle 9's 58: review-cycle-10 #1 logger.module.ts + logger.module.spec.ts, #2's 4 facebook-graph-api-contract fixture files, #3's login/page.tsx + login-page.spec.tsx)"
+      ]
+    },
+    {
+      "name": "validate-evidence-provenance",
+      "sha256": "fefea84ca94f1c7376c4aec81079d1d1951c86b034ccafdba1303eb94f66bf8a",
+      "checks_completed": [
+        "Canonical ai/tasks/MEMORIES-0005/evidence/provenance.json regenerated from this cycle's source fingerprint (review-cycle-10, fresh backend-validation.log/backend-e2e.log/frontend-validation.log) and synced to worktrees/MEMORIES-0005/.ai/validation/provenance.json via sync_provenance.py -> PASSED (66 inputs, 17 artifacts); check_provenance.py re-verified on both the canonical and runtime copies; database-invariants.json runtime copy confirmed still in sync with the canonical (diff clean, no invariant changes this cycle)"
+      ]
+    },
+    {
+      "name": "implement-nestjs-vertical-slice",
+      "sha256": "46320b8e5f671d095152f339031d0470207a8caa7de73e0e219b45b683321335",
+      "checks_completed": [
+        "ai/skills/implement-nestjs-vertical-slice/scripts/check_port_bindings.py worktrees/MEMORIES-0005/backend -> PASSED (32 injected Symbol tokens, unchanged this cycle)",
+        "ai/skills/implement-nestjs-vertical-slice/scripts/check_module_wiring.py worktrees/MEMORIES-0005/backend -> PASSED (39 use-case/controller classes, unchanged this cycle)"
+      ]
+    },
+    {
+      "name": "create-backend-migration",
+      "sha256": "10c61a5c17ae6498d59a6699ae6fa68cabb90ca0753c196e483a98eb14f5821a",
+      "checks_completed": [
+        "not applicable: no migration created — profile.user_profiles.address and the OAuth identity.auth_identities (provider, provider_subject) partial unique index both already existed from a prior epic (verified by reading libs/platform/database/src/migrations/1786791535416-CreateIdentityAccessSchema.ts and 1786791535417-CreateUserProfilesSchema.ts); npm run migration:run/migration:show exercised against a real (isolated) Postgres as part of e2e evidence confirms no new/pending migration was needed"
+      ]
+    },
+    {
+      "name": "design-database-invariants",
+      "sha256": "be72c2b32b011c21030c2c411b780bc3a45c9f47ef52b6f54ec05b0ca5008741",
+      "checks_completed": [
+        "ai/skills/design-database-invariants/scripts/check_invariant_matrix.py ai/tasks/MEMORIES-0005/database-invariants.json -> PASSED (4 invariants, unchanged this cycle — no schema/invariant changes in review-cycle-10's fixes); re-verified against the runtime copy at worktrees/MEMORIES-0005/.ai/validation/database-invariants.json (confirmed still in sync, diff clean)"
+      ]
+    },
+    {
+      "name": "implement-auth-security-change",
+      "sha256": "8de0236f5e04b9c74a738f6ffc71224070c4ddd230cbccbe88fe8e1144627332",
+      "checks_completed": [
+        "ai/skills/implement-auth-security-change/scripts/check_auth_invariants.py worktrees/MEMORIES-0005/backend -> PASSED; re-verified after review-cycle-10's OAuth-callback log-redaction fix (logger.module.ts), the pinned-snapshot Facebook contract rewrite, and the negative provider-error/missing-state e2e test"
+      ]
+    },
+    {
+      "name": "verify-openapi-contract",
+      "sha256": "c55f03a12edf369434e1588f7eb141eb3a9816286d813bbde4522b5e9bf7b9ba",
+      "checks_completed": [
+        "ai/skills/verify-openapi-contract/scripts/check_openapi_contract.py worktrees/MEMORIES-0005/backend -> PASSED (4 operations, unchanged this cycle); OAuth start/callback deliberately excluded from openapi-contracts.json and marked @ApiExcludeEndpoint() — full-page browser redirects with no JSON request/response DTO, covered instead by apps/api/test/oauth-flow.e2e-spec.ts"
+      ]
+    },
+    {
+      "name": "implement-nextjs-vertical-slice",
+      "sha256": "25827b18cf8482619030897189630b1dc404eacf1d974be8a42d14d2b7a70d9b",
+      "checks_completed": [
+        "ai/skills/implement-nextjs-vertical-slice/scripts/check_frontend_security.py worktrees/MEMORIES-0005/frontend -> PASSED; re-verified after review-cycle-10 #3's /login route rewrite (no credential storage in browser storage)"
+      ]
+    },
+    {
+      "name": "establish-frontend-design-system",
+      "sha256": "55351ecf13ad7f59e5fbb53946b0dcf3c0772cac1349cc97d1d81852b3d171b0",
+      "checks_completed": [
+        "ai/skills/establish-frontend-design-system/scripts/check_design_system_usage.py worktrees/MEMORIES-0005/frontend -> FAILED: reports raw color #efe2cf repeated 6x (case-insensitive match), entirely in pre-existing card/gift-catalog swatch mock data (apps/public-web/components/card-templates/card-catalog.tsx, components/editor/use-card-editor.ts, lib/mock/swatches.ts, lib/mock/card-templates.ts, test/utils/api-fixtures.ts x2) not touched by this slice (git status confirms zero modifications to those files) and unrelated to auth; the review-cycle-10 #3 rewrite of app/(auth)/login/page.tsx uses only existing design tokens/@memories/ui primitives (reuses LoginForm/RegisterForm verbatim) — waived as pre-existing/out-of-scope, re-verified after review cycle 3's fix pass"
+      ]
+    }
+  ],
+  "repositories": [
+    {
+      "name": "backend",
+      "changed_files": [
+        ".env.example",
+        "apps/api/test/auth-flow.e2e-spec.ts",
+        "apps/api/test/oauth-flow.e2e-spec.ts",
+        "libs/modules/identity-access/src/application/ports/oauth-client.port.ts",
+        "libs/modules/identity-access/src/application/use-cases/oauth-login.use-case.ts",
+        "libs/modules/identity-access/src/application/use-cases/refresh-session.use-case.ts",
+        "libs/modules/identity-access/src/application/use-cases/register.use-case.ts",
+        "libs/modules/identity-access/src/identity-access.module.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/typeorm-auth-identity.repository.ts",
+        "libs/modules/identity-access/src/infrastructure/security/facebook-oauth.client.ts",
+        "libs/modules/identity-access/src/infrastructure/security/google-oauth.client.ts",
+        "libs/modules/identity-access/src/presentation/http/auth.controller.ts",
+        "libs/modules/identity-access/src/presentation/http/oauth-state.helper.ts",
+        "libs/modules/identity-access/src/presentation/http/oauth.controller.ts",
+        "libs/modules/identity-access/src/presentation/http/register.dto.ts",
+        "libs/modules/identity-access/src/public-api.ts",
+        "libs/modules/identity-access/test/facebook-oauth.client.contract.spec.ts",
+        "libs/modules/identity-access/test/facebook-oauth.client.spec.ts",
+        "libs/modules/identity-access/test/fixtures/facebook-graph-api-contract/Client.php",
+        "libs/modules/identity-access/test/fixtures/facebook-graph-api-contract/GraphUser.php",
+        "libs/modules/identity-access/test/fixtures/facebook-graph-api-contract/OAuth2Client.php",
+        "libs/modules/identity-access/test/fixtures/facebook-graph-api-contract/manifest.json",
+        "libs/modules/identity-access/test/google-oauth.client.spec.ts",
+        "libs/modules/identity-access/test/oauth-login.use-case.spec.ts",
+        "libs/modules/identity-access/test/oauth-state.helper.spec.ts",
+        "libs/modules/identity-access/test/register.use-case.spec.ts",
+        "libs/platform/configuration/src/config/auth.config.ts",
+        "libs/platform/configuration/src/public-api.ts",
+        "libs/platform/configuration/src/schemas/env.schema.ts",
+        "libs/platform/database/src/typeorm-unit-of-work.ts",
+        "libs/platform/database/test/typeorm-unit-of-work.spec.ts",
+        "libs/platform/observability/src/logger.module.ts",
+        "libs/platform/observability/test/logger.module.spec.ts",
+        "package.json"
+      ]
+    },
+    {
+      "name": "frontend",
+      "changed_files": [
+        "apps/public-web/app/(auth)/login/page.tsx",
+        "apps/public-web/app/providers.tsx",
+        "apps/public-web/components/auth/account-popover.tsx",
+        "apps/public-web/components/auth/auth-modal.tsx",
+        "apps/public-web/components/auth/login-form.tsx",
+        "apps/public-web/components/auth/oauth-redirect-handler.tsx",
+        "apps/public-web/components/auth/register-form.tsx",
+        "apps/public-web/components/auth/social-login-buttons.tsx",
+        "apps/public-web/components/auth/user-menu-trigger.tsx",
+        "apps/public-web/components/icons.tsx",
+        "apps/public-web/components/mobile-bottom-nav.tsx",
+        "apps/public-web/components/site-header.tsx",
+        "apps/public-web/test/auth-modal.spec.tsx",
+        "apps/public-web/test/auth-provider.spec.tsx",
+        "apps/public-web/test/login-form.spec.tsx",
+        "apps/public-web/test/login-page.spec.tsx",
+        "apps/public-web/test/mobile-bottom-nav.spec.tsx",
+        "apps/public-web/test/oauth-redirect-handler.spec.tsx",
+        "apps/public-web/test/register-form.spec.tsx",
+        "apps/public-web/test/site-header.spec.tsx",
+        "apps/public-web/test/user-menu-trigger.spec.tsx",
+        "packages/api-client/src/generated/schema.d.ts",
+        "packages/api-client/src/routes.ts",
+        "packages/api-client/test/register-dto-contract.spec.ts",
+        "packages/auth/src/auth-provider.tsx",
+        "packages/ui/src/components/dialog.tsx",
+        "packages/ui/src/components/popover.tsx",
+        "packages/ui/src/index.ts",
+        "packages/ui/test/dialog.spec.tsx",
+        "packages/ui/test/popover.spec.tsx",
+        "packages/validation/src/auth.ts",
+        "packages/validation/test/auth.spec.ts"
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "Added AuthContextValue.loginWithPhone/registerLocal as new methods instead of changing login(email, password)'s signature.",
+      "reason": "apps/admin-web's login page also calls useAuth().login(values.email, values.password) and is explicitly out of scope (task.md: 'Không thay đổi luồng đăng nhập ... của admin website'). Changing login's signature would have forced a compile-breaking or behavior-changing edit to admin-web to keep it building."
+    },
+    {
+      "decision": "Fixed AuthProvider.isAuthenticated to derive from access-token presence alone (Boolean(accessToken)) instead of Boolean(accessToken) && Boolean(user).",
+      "reason": "Neither the real POST /auth/login, /auth/register nor /auth/refresh response contains a `user` field (only accessToken/portal/sessionId/roles/permissions) — `user` was always undefined for any real backend call, so isAuthenticated was permanently false regardless of a successful login. This is a pre-existing bug that would have made AC #1/#7/#8 (icon switches to account popup once signed in) impossible to satisfy, so it had to be fixed as part of 'cập nhật AuthProvider ... liên quan'."
+    },
+    {
+      "decision": "OAuth account linking matches strictly on (provider, providerSubject); a social login's email is never used to auto-link to an existing LOCAL or other-provider account.",
+      "reason": "Provider-supplied email is not independently re-verified by this backend and using it as a cross-provider join key would let an attacker who controls/spoofs an email at one provider take over an account created under a different provider or LOCAL. Matches task.md's 'quy tắc không trùng danh tính' as a provider+subject uniqueness rule, enforced by the pre-existing DB partial unique index."
+    },
+    {
+      "decision": "No new database migration — RegisterUseCase/CreateAccountUseCase already accepted `address` end-to-end (only RegisterDto/register.use-case.ts input types were missing it), and the OAuth (provider, provider_subject) uniqueness needed for find-or-create/race-safety was already a partial unique index from migration 1786791535416-CreateIdentityAccessSchema.",
+      "reason": "$create-backend-migration only applies when schema actually changes; verified via source reading and a real migration:run/migration:show against an isolated Postgres that no pending migration exists."
+    },
+    {
+      "decision": "OAuth start/callback (GET /auth/oauth/:provider/start, /callback) are full-page browser redirects, marked @ApiExcludeEndpoint() and intentionally absent from openapi-contracts.json.",
+      "reason": "They have no JSON request/response DTO (redirect Location header only) and are never called through the generated API client — SocialLoginButtons navigates via window.location.href. Covered by apps/api/test/oauth-flow.e2e-spec.ts instead of a Swagger contract test."
+    },
+    {
+      "decision": "CSRF/replay protection for the OAuth flow uses a short-lived HttpOnly, SameSite=Lax state cookie compared against the `state` query param, cleared on every callback regardless of outcome.",
+      "reason": "The callback is reached via a top-level GET navigation from accounts.google.com/facebook.com — SameSite=Strict would drop the cookie; Lax is the correct/minimum setting that still blocks CSRF via non-navigational requests. Clearing unconditionally makes a replayed callback URL fail (missing cookie) even if the authorization code were still somehow valid."
+    },
+    {
+      "decision": "A concurrent/replayed OAuth callback for a brand-new identity that races on the DB's (provider, provider_subject) unique index self-heals: OAuthLoginUseCase catches the translated provider_identity_already_exists conflict and re-resolves the winner's identity to issue a session, instead of surfacing an error.",
+      "reason": "Mirrors the existing phone_already_exists handling pattern for registration races (fix-request-review-3 #1) and matches task.md's 'callback lặp' edge case requirement — a double-submitted callback should behave like a normal repeat login, not a hard failure."
+    },
+    {
+      "decision": "Ran the backend e2e suite against a fully isolated, uniquely-named Postgres/Redis/MinIO stack (containers m5-pg/m5-redis/m5-minio on scratch ports) instead of the shared `docker compose --profile infrastructure` project.",
+      "reason": "The pre-existing 'memories-backend' container set on this host (26h+ uptime) was not publishing its Postgres port as its own compose file specifies, and host port 5432 was answered by an unrelated container with different credentials — consistent with another concurrent task session using the same fixed compose project name. Recreating those shared containers to fix the port mapping risked disrupting that session, so an additive, fully isolated stack was used instead; it was torn down after evidence capture."
+    },
+    {
+      "decision": "The existing standalone apps/public-web/app/(auth)/login and /(auth)/register pages were left unchanged and simply unlinked from the header/bottom-nav, rather than deleted or redirected.",
+      "reason": "task.md's scope is the icon-triggered modal experience; removing/redirecting the standalone routes was not required by any acceptance criterion and risked unrelated regressions (e.g. any deep link or crawler hitting /login). Out-of-scope guard: 'Không mở rộng scope nếu chưa có trong task/addendum.'"
+    },
+    {
+      "decision": "fix-request-review-3 #1: FacebookOAuthClient.exchangeCodeForProfile now exchanges the code via a POST body (client_id/client_secret/redirect_uri/code as form fields, same shape as GoogleOAuthClient) and fetches the profile with the access token in an `Authorization: Bearer` header instead of query-string params.",
+      "reason": "The Facebook Graph token/userinfo endpoints previously carried client_secret and the provider access token as URL query parameters, which get logged by URL-oriented proxies/telemetry/error handlers — a credential-leak risk task.md prohibits. Facebook's OAuth endpoints accept both forms; POST body + Authorization header keep secrets out of any URL exactly like the existing GoogleOAuthClient."
+    },
+    {
+      "decision": "fix-request-review-3 #5: both OAuthClients now validate the token/profile HTTP response bodies at runtime (via a shared assertOAuthResponseField helper in oauth-client.port.ts) and throw DomainError.externalDependency if access_token or the provider subject (sub/id) is missing or blank, before ever returning an OAuthProfile.",
+      "reason": "A 2xx response is not a trusted contract — a provider bug or compromised proxy returning `{}` would previously have flowed an empty providerSubject into AuthIdentity.create/persistence, since only LOCAL identities validated providerSubject and the ORM column is nullable. Failing closed here means OAuthLoginUseCase never receives a profile it could use to create a broken account."
+    },
+    {
+      "decision": "fix-request-review-3 #2: OAuthRedirectHandler no longer reports oauth=success from the URL alone — it now reads useAuth().isAuthenticated/isLoading (rendered inside AuthProvider) and only surfaces the success toast once AuthProvider's refresh-on-mount call has settled and actually authenticated the session; a forged ?oauth=success with no real session now surfaces the same failure toast as oauth_failed.",
+      "reason": "The oauth query param is attacker-controlled (a bare `/?oauth=success` link needs no server round trip); trusting it directly would let a user be shown a false 'signed in' state. Waiting on AuthProvider's own refresh call ties the notification to the actual, cookie-verified session outcome."
+    },
+    {
+      "decision": "fix-request-review-3 #3: RegisterUseCase now opens a single owning `unitOfWork.withTransaction` around the entire flow (CreateAccountUseCase call + permission check + token/session issuance + RefreshSession.save); TypeOrmUnitOfWork.withTransaction was made reentrant (joins an already-active transaction via TypeOrmQueryRunnerContext instead of opening a second, independent connection/transaction).",
+      "reason": "CreateAccountUseCase already opens and commits its own transaction, so RegisterUseCase's separate, later transaction for session issuance meant a session-stage failure (e.g. token signing, refresh-session persistence) left a fully committed Account/AuthIdentity/AccountRole/UserProfile behind with no way to register that phone again — violating AC6's 'trong 1 giao dịch nhất quán'. Making the unit-of-work reentrant is the minimal, generic fix: every other repository already resolves its query runner through the same TypeOrmQueryRunnerContext (AsyncLocalStorage), so nested use cases transparently participate in the outer transaction with no change to their own code."
+    },
+    {
+      "decision": "fix-request-review-3 #7: OAuthController.start now catches both an unrecognized provider name and a resolve()/buildAuthorizationUrl() failure (provider not configured) and redirects to webRedirectUrl with oauth=error&reason=unsupported_provider or reason=provider_unavailable, instead of throwing a raw 400. Extracted the existing callback-only redirectWithError closure into a shared private method used by both start and callback.",
+      "reason": "SocialLoginButtons always renders both Google/Facebook buttons regardless of server-side configuration; without this, clicking a button for an unconfigured provider navigated the whole browser away from public-web to a raw backend 400 JSON response instead of a handled, understandable outcome."
+    },
+    {
+      "decision": "fix-request-review-3 #6: the OAuth provider_subject race e2e test now fires two callback requests through a real Promise.all with a synchronization barrier inside the mocked exchangeCodeForProfile (releases once both requests are in flight), instead of two sequential completeCallback() calls.",
+      "reason": "The previous test called completeCallback() twice sequentially, so the second request always observed the first's already-committed identity and never exercised the real provider_subject unique-constraint conflict/recovery path in OAuthLoginUseCase.resolveOrCreateAccountId / TypeOrmAuthIdentityRepository.translateUniqueViolation, despite database-invariants.json claiming real-Postgres race coverage."
+    },
+    {
+      "decision": "fix-request-review-3 #4: regenerated packages/api-client/src/generated/schema.d.ts from a freshly exported backend openapi.json (npm run export:openapi against the isolated e2e Postgres) and ran it through prettier to match the repo's existing 2-space/single-quote style (openapi-typescript 7.13.0's default output uses 4-space/double-quote, which would otherwise have produced a ~2800-line unrelated formatting diff).",
+      "reason": "RegisterDto gained `address?: string` on the backend (task requirement #5) but the committed generated contract had drifted and only exposed phone/password/fullName/email, so typed API consumers couldn't represent the request the raw ApiClient call already supported. Reviewing the post-prettier delta shows only the new address field plus pre-existing @description text drift from unrelated backend Swagger-decorator edits — no manual schema.d.ts edits were made, per the skill's own guidance to run the generation workflow rather than hand-edit the file."
+    },
+    {
+      "decision": "backend/package.json's `dev:cli` script change (`node dist/apps/cli/main.js` -> `npm run build:cli --silent && node dist/apps/cli/main.js`) was left as-is and included in this handoff's changed_files, unmodified.",
+      "reason": "This one-line fix predates this attempt (present in the worktree's git status before any review-cycle-3 work started) and is unrelated to identity-access/OAuth/registration — common-rule 'giữ nguyên thay đổi không liên quan đang tồn tại trong worktree' requires keeping pre-existing unrelated worktree changes rather than reverting them, and $verify-implementation-handoff requires the changed_files inventory to match git status exactly."
+    },
+    {
+      "decision": "review-cycle-4 #1: the OAuth-race e2e test now gates on a second, precise barrier — a jest.spyOn wrapping the real AuthIdentityRepository.findByProviderAndSubject that only holds when the call returns null (i.e. the pre-insert preflight lookup) — released only once both concurrent callbacks' preflight lookups have completed, in addition to the pre-existing coarse barrier inside the mocked exchangeCodeForProfile.",
+      "reason": "The coarse exchangeCodeForProfile-only barrier proved both requests entered the use case together but not that both reached the actual conflicting INSERT before either committed — one request could still race ahead through its own SELECT+INSERT round trip before the other's SELECT ran, making the provider_subject unique-constraint conflict/recovery path nondeterministic (review cycle 4 finding #1, a regression of review-cycle-3 finding #6). Gating on the null-returning preflight call specifically (not the later winner-lookup call, which returns non-null) avoids deadlocking the resolveOrCreateAccountId catch-and-recover path."
+    },
+    {
+      "decision": "review-cycle-4 #1: after the race completes, the test now asserts exact row-count deltas (identity.accounts +1, identity.account_roles +1, profile.user_profiles +1, and identity.auth_identities matching this providerSubject == 1) via raw DataSource.query table counts captured before and after the race, instead of only inferring 'exactly one graph' from both responses resolving to the same accountId.",
+      "reason": "Same-accountId-on-both-responses proves the two requests ended up pointing at one account but does not, by itself, rule out an orphaned Account/AccountRole/UserProfile row left behind by the loser's rolled-back-but-partially-observed transaction — direct table counts are the only way to prove no orphan row survived, as the review explicitly asked for ('query every affected table')."
+    },
+    {
+      "decision": "review-cycle-4 #2: the registration-rollback e2e test now captures a five-table row-count baseline (identity.accounts, identity.auth_identities, identity.account_roles, identity.refresh_sessions, profile.user_profiles) immediately before the forced session-stage failure and asserts the exact same counts immediately after, in addition to the pre-existing same-phone-retry assertion.",
+      "reason": "The prior test only re-registered the same phone and checked the new account had exactly one identity — that proves the failed attempt's LOCAL identity didn't block a retry, but not that every table stayed clean; an orphan Account, UserProfile, AccountRole, or RefreshSession row keyed some other way would have gone undetected (review cycle 4 finding #2, direct proof requested)."
+    },
+    {
+      "decision": "review-cycle-4 #3: added a second, independent e2e app instance in oauth-flow.e2e-spec.ts (own TestingModule/AppModule bootstrap) that overrides FacebookOAuthClient with a controllable fake and GoogleOAuthClient with an 'unavailable' fake — the mirror image of the main suite's setup — and exercises a full configured Facebook start/callback/refresh round trip through the real HTTP/DI/session graph.",
+      "reason": "The main suite deliberately keeps Facebook as an 'unavailable provider' fake (to cover reason=provider_unavailable) and relied on facebook-oauth.client.spec.ts / oauth-login.use-case.spec.ts for Facebook's success path — but OAuthLoginUseCase never branching on provider doesn't guarantee the DI wiring for FacebookOAuthClient specifically is correct; only an executable HTTP-layer test proves that (review cycle 4 finding #3)."
+    },
+    {
+      "decision": "review-cycle-4 #4/#5: added 'shows an error toast, keeps the popup open and stays retryable' to user-menu-trigger.spec.tsx (mocks useAuth().logout to reject once, asserts the destructive toast, the popup staying open/enabled, then a successful retry) and 'prevents a duplicate submit while the ... request is still pending' to both login-form.spec.tsx and register-form.spec.tsx (a deferred, manually-resolved mock promise; asserts a second click on the now-disabled pending button is a no-op and the auth action is invoked exactly once).",
+      "reason": "AccountPopover.onLogout and LoginForm/RegisterForm's isSubmitting-gated Button already implemented this correctly, but no test exercised the rejected-logout branch or the pending-disabled-button duplicate-submit guard task.md explicitly requires (review cycle 4 findings #4 minor, #5 minor)."
+    },
+    {
+      "decision": "review-cycle-4 #6: execution-plan.json's top-level `status` and the task-requirements slice's `status` were both moved from ready/pending to completed, matching implementation.json's already-`implemented` state and this slice's already-passed acceptance evidence.",
+      "reason": "The checkpoint had never been advanced past its initial ready/pending state despite ten-plus attempts of a complete, re-verified implementation — an artifact-consistency gap the review correctly flagged as a real defect distinct from the loose 'orchestration keeps re-invoking with an empty fix-request' pattern seen in attempts 10-36."
+    },
+    {
+      "decision": "review-cycle-4 #7: re-ran the full backend e2e suite against a freshly created, uniquely-named isolated Postgres/Redis/MinIO stack (plain `docker run`, not the shared docker-compose project, since the machine's default 5432/6379/9000/9001 host ports were already bound by other running containers) with `METRICS_PORT` set to a free scratch port (29464) instead of the schema default (9464).",
+      "reason": "Root-caused the single e2e failure the review pointed at (`apps/api/test/media-upload-flow.e2e-spec.ts` EADDRINUSE :::9464): an unrelated, already-running host `node` process (confirmed via `lsof -iTCP:9464`) was squatting the exact port `apps/worker`'s `WorkerMetricsServer` binds inside that suite's own AppModule bootstrap, not a defect in this cycle's source changes and not something a source-code fix should paper over (nothing in the app depends on the metrics port being exactly 9464 outside real Prometheus scraping, which e2e never does) — reassigning the port for this isolated run is the correct, minimal fix. Result: 16/16 suites, 135/135 tests, zero failures."
+    },
+    {
+      "decision": "review-cycle-6 #1: FacebookOAuthClient's Graph API version is no longer a hard-coded `const GRAPH_VERSION = 'v19.0'` — it's read at call time from `AuthConfig.oauth.facebookGraphApiVersion` (new `AUTH_OAUTH_FACEBOOK_GRAPH_API_VERSION` env var, zod-validated against `/^v\\d+\\.\\d+$/`, defaulting to `v26.0`).",
+      "reason": "v19.0 reached Meta's end-of-life on 2026-05-21 (confirmed via web search against Meta's published Graph API changelog/versioning docs), before this 2026-08-17 review — every authorization/token/profile request was targeting a retired API version. Reviewed the v20-v26 changelogs for the three specific endpoints this client calls (dialog/oauth, oauth/access_token, /me?fields=id,name,email): no breaking changes apply to authorization-code exchange or basic profile fields in that range, so no request/response shape changes were needed beyond the version segment. Config-driven (not just a bumped constant) so a future retirement can be rolled forward via env var alone."
+    },
+    {
+      "decision": "review-cycle-6 #2: OAuthLoginUseCase now provisions a brand-new social account and issues its session inside one owning transaction (`provisionAndIssueSession`), instead of `createAccountForProfile` committing its own transaction before a separate, later transaction issued the token/RefreshSession.",
+      "reason": "A permission-check or token/session-issuance failure after the account graph was written used to leave a fully committed Account/AuthIdentity/AccountRole/UserProfile with no session and no way to retry cleanly (review cycle 6 finding #2). `provisionAndIssueSession` wraps `createAccountForProfile` + `issueSessionForAccount` in one `unitOfWork.withTransaction`; on a provider-subject unique-constraint conflict (the concurrent-callback race), that transaction has already rolled back in full by the time the catch block runs (`TypeOrmUnitOfWork.withTransaction` calls `rollbackTransaction()` before rethrowing), so the winner lookup and its session issuance run with no ambient transaction and `issueSessionForAccount` opens a fresh, separate one — race recovery is unaffected. Added a real-Postgres e2e test (`oauth-flow.e2e-spec.ts` 'rolls back the entire first-time account graph...') that forces `issueRefreshToken` to fail after the graph is written and asserts accounts/account_roles/user_profiles/refresh_sessions/matching-identities counts are byte-for-byte unchanged, then proves a retry provisions cleanly."
+    },
+    {
+      "decision": "review-cycle-6 #3: RefreshSessionUseCase now reads the current RefreshSession's `authProvider` (validated against the `AuthProvider` enum) and reuses it for both the rotated access-token claim and the new RefreshSession row, instead of hard-coding `AuthProvider.Local`.",
+      "reason": "Every browser rehydration of a Google/Facebook session (both the OAuth callback's own `/auth/refresh` round trip and any later token refresh) went through this hard-coded LOCAL path, mislabeling social sessions in the access-token claim and the persisted session row — a real, visible correctness bug, not just cosmetic, since anything gating on `authProvider` downstream would misclassify these sessions. Added `apps/api/test/oauth-flow.e2e-spec.ts` assertions (Google + Facebook, including a second chained refresh to prove it survives more than one rotation) and an `apps/api/test/auth-flow.e2e-spec.ts` LOCAL regression test."
+    },
+    {
+      "decision": "review-cycle-6 #4: regenerated evidence/provenance.json from scratch to hash every one of this cycle's 51 changed backend+frontend files (not 5 test files), the 10 pre-existing migration files, and the seed command, and added a `worktrees` section recording each worktree's HEAD commit plus a deterministic 'dirty-diff fingerprint' (sha256 over the HEAD + sorted `path:sha256` pairs for every file `git status --porcelain` reports, directories expanded via `git ls-files --others`).",
+      "reason": "The review correctly pointed out the old manifest only bound three full validation logs to an incomplete 6-item input list, so `check_provenance.py` passing proved nothing about whether the logs actually reflected the reviewed source. A `git diff` text hash was considered for the worktree-state fingerprint but rejected: it doesn't cover untracked new files (this cycle has several, e.g. the entire `apps/public-web/components/auth/` directory in earlier cycles) at all, whereas the per-file-hash-list fingerprint does."
+    },
+    {
+      "decision": "review-cycle-6 #5: fixed a real focus-management bug in packages/ui/src/components/dialog.tsx (Dialog's SSR-safe `mounted` gate — `if (!mounted || !open) return null` — raced with `useDismissableLayer`'s effect: a Dialog that mounts with `open` already true renders null on its very first commit, so the hook's effect fired before the container DOM existed, permanently captured a null ref, and never re-ran once `mounted` later flipped since its `[open, onDismiss]` deps hadn't changed) by gating the hook on `mounted && open` instead of `open` alone.",
+      "reason": "Found by writing the focus-lifecycle tests the review explicitly asked for (initial focus, Tab/Shift+Tab trap, overlay dismiss, focus restoration) — the very first assertion ('close button has focus after opening') failed against real DOM/jsdom behavior, not just against a weak test. Added Tab-trap-wrap, overlay-dismiss, and focus-restoration tests to apps/public-web/test/auth-modal.spec.tsx and an equivalent set to packages/ui/test/popover.spec.tsx (Popover has no `mounted` gate and was unaffected, but had zero focus assertions before this cycle). Also captured real headless-Chromium (Playwright + system Google Chrome) screenshots of the login/register modal at 1280x800 and 390x844 against a freshly started `npm run dev`, saved under ai/tasks/MEMORIES-0005/evidence/browser-focus-review-006/, confirming `document.activeElement` lands on the dialog's close button on open and the layout is usable/unclipped on both breakpoints."
+    },
+    {
+      "decision": "review-cycle-9 #1: added `relative` to dialog.tsx's panel div so `DialogClose`'s `absolute right-4 top-4` is contained by the panel instead of the fixed overlay two levels up.",
+      "reason": "No non-static `position` on the panel meant `absolute` resolved against the nearest positioned ancestor — the overlay — pinning the × to the viewport corner on every Dialog consumer. Explore-agent survey confirmed no consumer relies on the old behavior, and quick-view-dialog.tsx's own close button silently had the identical bug (now fixed for free). Structural regression test added (dialog.spec.tsx) since jsdom can't compute real layout; real geometry proven via Playwright `boundingBox()` containment at both viewports (browser-review-009/results.json, all `true`)."
+    },
+    {
+      "decision": "review-cycle-9 #2: regenerated provenance.json from the current source fingerprint (69 inputs, 17 artifacts), re-ran `ai/bin/validate` for a fresh summary.json, and re-synced worktrees/MEMORIES-0005/.ai/validation/database-invariants.json (the runtime copy the pre-review gate reads directly) from a stale 3-invariant snapshot to the current 4-invariant source.",
+      "reason": "summary.json predated three intervening corrections; the canonical task-level database-invariants.json was already correct at 4, but its separate runtime copy had never been re-synced after review-cycle-6 #2 added the fourth invariant, so the gate's own log kept reporting 3."
+    },
+    {
+      "decision": "review-cycle-9 #3: built facebook-oauth.client.contract.spec.ts, a contract harness anchored to Meta's official documentation (manual-flow guide + graph-api/reference/user, fetched live 2026-08-17) validating both the client's outgoing request and its fixture responses against Zod schemas derived from those documented shapes, incl. a self-check that a non-conformant fixture is rejected.",
+      "reason": "No real Facebook app credentials exist for this task, so live sandbox verification is infeasible; the finding's own suggested approach allowed a documentation-anchored contract harness as the alternative. Corroborated via independent tooling docs that Meta's Graph API accepts the same parameter set via POST+form-body (this client's transport, chosen in review-cycle-3 #1 to keep secrets out of URLs) as well as the primarily-documented GET+query-string form."
+    },
+    {
+      "decision": "review-cycle-9 missing-evidence item (found while building #3's negative-path coverage): fixed oauth-state.helper.ts's `readOAuthStateCookie` to catch `decodeURIComponent`'s `URIError` on malformed percent-encoding and return `undefined` instead of letting it propagate.",
+      "reason": "The state cookie was decoded with no try/catch inside `OAuthController.callback`, before its own try/catch blocks run — a malformed value crashed with an uncaught 500 instead of the handled `invalid_state` redirect. Fails closed via the existing mismatch check. Covered by a unit spec and a new e2e test through the real HTTP layer."
+    },
+    {
+      "decision": "review-cycle-9 #4: captured new browser evidence (browser-review-009/) against a real isolated stack — an account registered via the live API, signed in through the actual `LoginForm` UI — proving the desktop/mobile `AccountPopover` are within-viewport and anchored, a full logout round trip, and every mobile register field/action reachable by scroll.",
+      "reason": "The review-006 evidence only covered the signed-out modal (no backend running for that capture), leaving signed-in-popup and mobile-registration usability unproven by anything but jsdom tests, which can't assert real geometry. All claims asserted via Playwright `boundingBox()`/viewport checks, not visual inspection."
+    },
+    {
+      "decision": "review-cycle-10 #1: `libs/platform/observability/src/logger.module.ts` now installs a custom pino-http `serializers.req` (`redactSensitiveQueryParams`) that redacts `code`/`state`/`access_token`/`token`/`id_token`/`client_secret` from both the serialized `req.query` object and the raw `req.url` query string (split/rebuilt via `URLSearchParams`), instead of relying on pino's `redact: {paths}` option alone.",
+      "reason": "`redact.paths` only strips known object paths — it can't see into `req.url`, which embeds the same raw query string as a substring, so the code/state were still fully readable via `req.url` even with `req.query.*` redacted (`backend-e2e.log:118`+, per review-009). New `logger.module.spec.ts` (3 tests) boots a real Nest app + `LoggerModule.register()`, intercepts the actual `process.stdout.write` pino uses (spy must be installed before app construction — pino's default stdout destination bypasses `process.stdout.write` via its own fd-writing `sonic-boom` stream unless `process.stdout` is already 'tampered' at construction time), and asserts sentinel code/state never appear in the captured log bytes while route/service metadata survive. Re-ran `oauth-flow.e2e-spec.ts` and grepped its full log: every callback line now shows `%5BREDACTED%5D`/`[REDACTED]` in both `req.url` and `req.query`."
+    },
+    {
+      "decision": "review-cycle-10 #2: replaced `facebook-oauth.client.contract.spec.ts`'s self-authored Zod schemas/fixtures with hash-verified, pinned-commit snapshots of Meta's own official open-source Graph API SDK (`github.com/facebook/php-graph-sdk`, commit `6de35554c781e5450474ca062f7a1e1473a513f7`) checked into `libs/modules/identity-access/test/fixtures/facebook-graph-api-contract/` (`OAuth2Client.php`, `Client.php`, `GraphUser.php`, `manifest.json`); the spec now re-hashes every fixture against the manifest, asserts the literal contract terms (`/oauth/access_token`, `client_id`/`client_secret`/`code`/`redirect_uri`, `graph.facebook.com`, `/me` field names `id`/`name`/`email`) are actually present in that pinned source, and only then exercises the real `FacebookOAuthClient` against schemas built from those terms.",
+      "reason": "Verified (DNS + direct HTTPS attempt, both failing) that `developers.facebook.com`/`graph.facebook.com` resolve to `0.0.0.0` from this sandbox — a deliberate block, not an outage — while `google.com`/`github.com` resolve and connect normally; `web.archive.org`'s Wayback CDX API was also tried and returned consistent 503s across unrelated domains too (unusable either way). No Facebook sandbox credentials exist for this task, so a truly live re-fetch remains impossible here. GitHub was reachable, so this cycle pins to Meta's own published SDK source instead — the code Meta's `facebook` GitHub org itself ships, retrieved at an immutable commit SHA (via `git ls-remote`) with a recorded sha256 per file — materially more authoritative than a self-authored schema, satisfying the finding's 'independently sourced versioned contract' alternative to a live sandbox call."
+    },
+    {
+      "decision": "review-cycle-10 #3: `apps/public-web/app/(auth)/login/page.tsx` no longer renders its own email/password form against the legacy `loginSchema`/`AuthProvider.login` — it now renders the same `LoginForm`/`RegisterForm` view-switching pair as the header's `AuthModal`, inline on the page instead of inside a `<Dialog>`, submitting phone/password via `loginWithPhone(..., 'PUBLIC')`/`registerLocal(...)` exactly like the modal.",
+      "reason": "The backend's `LoginDto` requires `{phone, password, portal}`; the old page posted `{email, password}` to `/auth/login`, a contract the backend has never accepted, so direct/bookmarked/deep-link navigation to `/login` could never authenticate even though the header's modal worked. `loginSchema`/`LoginInput` (email-based) are now only imported by `apps/admin-web`'s login page (verified via repo-wide grep), so admin login's separately-scoped email contract is untouched. Rewrote `apps/public-web/test/login-page.spec.tsx` (4 tests, replacing the old email-flow assertions) to prove the page renders the phone field (not email), submits phone/password/PUBLIC and navigates to `/profile`, switches to/from the phone-based register view matching the modal, and that `registerLocal` — never the legacy `login` — is called on registration."
+    },
+    {
+      "decision": "review-cycle-10 missing-evidence #4: added a negative e2e test proving a provider error (`error=access_denied`) alongside a missing or mismatched state cookie still redirects with `reason=access_denied` and creates no session — `OAuthController#callback` checks `providerError` before the code/state consistency check, so this proves that ordering can't be used to skip CSRF/state validation.",
+      "reason": "Every existing access_denied test paired the provider error with a genuinely valid, matching state; nothing exercised the missing/mismatched-state combination the review flagged as untested. `apps/api/test/oauth-flow.e2e-spec.ts` gained one test asserting both the missing-state and mismatched-state cases redirect identically with no refresh cookie set and `exchangeCodeForProfile` never called."
+    }
+  ],
+  "assumptions": [
+    "Google/Facebook profile retrieval uses each provider's userinfo/me endpoint via the OAuth access token (openidconnect.googleapis.com/v1/userinfo, graph.facebook.com/me) rather than verifying the id_token JWT signature — acceptable for this epic's scope (identity dedup relies on the provider's own subject id, not on independently re-verifying the token).",
+    "AUTH_OAUTH_GOOGLE_CLIENT_ID/SECRET/REDIRECT_URI and the Facebook equivalents are left unset in .env.example (provider 'not configured' -> clean 400/validation error from OAuthClientRegistry.resolve) since no real OAuth app credentials were provided in this task; a deployment must set them for the buttons to work end-to-end.",
+    "When a Google/Facebook profile omits a display name, the newly provisioned UserProfile.fullName falls back to the local-part of the provider email, or 'Người dùng mới' if no email is present either — never blocks registration, since UserProfile.create requires a non-empty fullName."
+  ],
+  "validation_commands": [
+    {
+      "repo": "backend",
+      "command": "npm run typecheck",
+      "result": "passed"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run lint",
+      "result": "passed"
+    },
+    {
+      "repo": "backend",
+      "command": "npx jest (full unit suite)",
+      "result": "passed (323/323 tests, 67 suites — +11 tests/+1 suite vs review cycle 9's 312/66: review-cycle-10 #1 added libs/platform/observability/test/logger.module.spec.ts (3 tests, new suite) and #2's facebook-oauth.client.contract.spec.ts rewrite (13 tests vs the prior 5, net +8)"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run test:architecture",
+      "result": "passed (no dependency violations, 460 modules)"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run build:api",
+      "result": "passed"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/verify-openapi-contract/scripts/check_openapi_contract.py worktrees/MEMORIES-0005/backend",
+      "result": "passed (4 operations)"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run migration:run; npm run test:e2e (against the host's already-running shared local-dev infrastructure stack — Postgres :15432/Redis :16379/MinIO :19000, the exact hosts/ports this worktree's checked-in .env already points at; migration:run reported 'No migrations are pending', confirming the schema was already current)",
+      "result": "review-cycle-10 fix: 16/16 suites, 139/139 tests, zero failures (up from 138/138 — +1 test: review-cycle-10 missing-evidence #4's provider-error-with-missing/mismatched-state regression in oauth-flow.e2e-spec.ts). Spot-checked the full raw log output for every OAuth callback line: req.url and req.query both show only `[REDACTED]`/`%5BREDACTED%5D` for code/state, never the real sentinel values (review-cycle-10 #1). apps/api/test/auth-flow.e2e-spec.ts and apps/api/test/oauth-flow.e2e-spec.ts both pass in full"
+    },
+    {
+      "repo": "frontend",
+      "command": "npm run typecheck (all workspaces)",
+      "result": "passed"
+    },
+    {
+      "repo": "frontend",
+      "command": "npm run lint (all workspaces)",
+      "result": "passed"
+    },
+    {
+      "repo": "frontend",
+      "command": "npm run test (all workspaces)",
+      "result": "passed (100 public-web + 37 ui + 14 api-client + others, all green — +1 public-web vs review cycle 9: review-cycle-10 #3's rewritten login-page.spec.tsx net +1 test (3 old email-flow tests replaced by 4 new phone/PUBLIC-contract tests))"
+    },
+    {
+      "repo": "frontend",
+      "command": "npm run build --workspace=@memories/public-web",
+      "result": "passed"
+    },
+    {
+      "repo": "frontend",
+      "command": "npm run build --workspace=@memories/admin-web",
+      "result": "passed (confirms admin-web is unaffected; loginSchema/LoginInput now import only from apps/admin-web's login page, verified via repo-wide grep — review-cycle-10 #3)"
+    },
+    {
+      "repo": "backend",
+      "command": "npx jest libs/platform/observability/test/logger.module.spec.ts",
+      "result": "passed (3/3 — review-cycle-10 #1: sentinel OAuth code/state values never appear in the real pino-http request log line, route/service metadata preserved, non-OAuth query params untouched)"
+    },
+    {
+      "repo": "backend",
+      "command": "npx jest libs/modules/identity-access/test/facebook-oauth.client.contract.spec.ts",
+      "result": "passed (13/13 — review-cycle-10 #2: fixture-integrity self-checks against fixtures/facebook-graph-api-contract/manifest.json's recorded sha256/commit, contract-term-presence checks against the pinned Meta SDK source, then the real FacebookOAuthClient exercised against schemas grounded in that source)"
+    },
+    {
+      "repo": "frontend",
+      "command": "browser evidence (kept, still valid): headless Chromium (Playwright + system Google Chrome) against a fresh `npm run dev` (apps/public-web, port 3100) — desktop 1280x800 and mobile 390x844 screenshots of the login/register modal, plus a programmatic document.activeElement check confirming the dialog close button has focus on open",
+      "result": "passed; screenshots at ai/tasks/MEMORIES-0005/evidence/browser-focus-review-006/ (review-cycle-6 #5)"
+    },
+    {
+      "repo": "frontend",
+      "command": "browser evidence (new): headless Chromium against a real isolated stack (API :23000, public-web :23100) — close-button bounding-box containment at desktop/mobile, a real register->login->AccountPopover->logout round trip at desktop and mobile, mobile-register full-field reachability",
+      "result": "passed; all boolean assertions true, screenshots + results.json at ai/tasks/MEMORIES-0005/evidence/browser-review-009/ (review-cycle-9 #1 and #4)"
+    },
+    {
+      "repo": "frontend",
+      "command": "python3 ai/skills/implement-nextjs-vertical-slice/scripts/check_frontend_security.py worktrees/MEMORIES-0005/frontend",
+      "result": "passed"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/implement-auth-security-change/scripts/check_auth_invariants.py worktrees/MEMORIES-0005/backend",
+      "result": "passed"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_port_bindings.py worktrees/MEMORIES-0005/backend",
+      "result": "passed (32 injected Symbol tokens)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_module_wiring.py worktrees/MEMORIES-0005/backend",
+      "result": "passed (39 use-case/controller classes)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/design-database-invariants/scripts/check_invariant_matrix.py ai/tasks/MEMORIES-0005/database-invariants.json",
+      "result": "passed (4 invariants, unchanged this cycle; also re-verified against the re-synced worktrees/MEMORIES-0005/.ai/validation/database-invariants.json runtime copy — review-cycle-9 #2)"
+    },
+    {
+      "repo": "frontend",
+      "command": "python3 ai/skills/establish-frontend-design-system/scripts/check_design_system_usage.py worktrees/MEMORIES-0005/frontend",
+      "result": "FAILED: same pre-existing #efe2cf x6 waived finding, unrelated files, unchanged this cycle"
+    },
+    {
+      "repo": "workspace",
+      "command": "python3 ai/bin/validate MEMORIES-0005",
+      "result": "passed; regenerated worktrees/MEMORIES-0005/.ai/validation/summary.json with current timestamps and results (review-cycle-10 fix pass)"
+    },
+    {
+      "repo": "workspace",
+      "command": "python3 ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py ai/tasks/MEMORIES-0005/execution-plan.json",
+      "result": "passed (1 slice, status=completed)"
+    },
+    {
+      "repo": "workspace",
+      "command": "python3 ai/skills/verify-implementation-handoff/scripts/check_handoff.py ai/tasks/MEMORIES-0005",
+      "result": "passed (66 exact paths, +8 vs cycle 9's 58)"
+    },
+    {
+      "repo": "workspace",
+      "command": "python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py ai/tasks/MEMORIES-0005/evidence/provenance.json",
+      "result": "passed (66 inputs, 17 artifacts, regenerated from the current source fingerprint for review cycle 10's fix pass, incl. fresh backend-validation.log/backend-e2e.log/frontend-validation.log)"
+    },
+    {
+      "repo": "workspace",
+      "command": "python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0005 worktrees/MEMORIES-0005/.ai/validation",
+      "result": "passed (66 inputs and 17 artifacts published atomically; runtime provenance rechecked)"
+    },
+    {
+      "repo": "workspace",
+      "command": "python3 ai/skills/review-vertical-slice-completeness/scripts/build_evidence_matrix.py ai/tasks/MEMORIES-0005/execution-plan.json ai/tasks/MEMORIES-0005/implementation.json",
+      "result": "passed, no missing criteria"
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "criterion": "slice:task-requirements",
+      "status": "passed",
+      "evidence": "Complete evidence for every task.md acceptance criterion (10 items) is recorded in the 10 numbered entries below plus validation_commands and applied_skills[].checks_completed. Backend: self-registration with optional address (no migration needed) and a full Google/Facebook OAuth authorization-code flow, config-driven Graph API versioning, atomic first-time provisioning, provider-preserving refresh rotation, OAuth-callback log redaction (review-cycle-10 #1), a Facebook contract test bound to a hash-verified pinned snapshot of Meta's own open-source SDK (review-cycle-10 #2) — 323/323 unit tests (67 suites), 139/139 e2e tests (16 suites) against real Postgres/Redis/MinIO. Frontend: shared UserMenuTrigger (AuthModal signed-out, AccountPopover signed-in) on desktop header + mobile bottom nav, two real Dialog bugs found and fixed (focus-trap race, panel-positioning), the standalone /login route now shares the same phone/PUBLIC contract as the modal instead of a dead legacy email form (review-cycle-10 #3) — 100 public-web + 37 ui-package tests, clean build for both public-web and admin-web, real browser evidence (Playwright) for signed-out and signed-in surfaces at desktop+mobile. execution-plan.json completed; evidence/provenance regenerated against this cycle's fingerprint."
+    },
+    {
+      "criterion": "1. Khi chưa đăng nhập, bấm icon người dùng mở modal đăng nhập (không điều hướng), đóng được qua nút đóng/Escape/overlay, focus quản lý đúng.",
+      "status": "passed",
+      "evidence": "apps/public-web/components/auth/user-menu-trigger.tsx + auth-modal.tsx (built on packages/ui Dialog's focus-trap/Escape/overlay dismiss); review-cycle-6 #5 found and fixed a real bug in packages/ui/src/components/dialog.tsx (the mounted-gate/useDismissableLayer race described in decisions) and replaced the previous rendering-only 'moves focus into the dialog' test with real assertions: initial active focus on the close button, Shift+Tab from the first element wraps to the last and Tab from the last wraps back to the first, closing via a direct overlay mousedown, and focus restoration to the trigger element on close (apps/public-web/test/auth-modal.spec.tsx, 9 tests); packages/ui/test/popover.spec.tsx gained the same focus-lifecycle coverage (10 tests) since AccountPopover shares the same useDismissableLayer hook; real headless-Chromium screenshots (ai/tasks/MEMORIES-0005/evidence/browser-focus-review-006/) confirm the modal opens correctly with the close button focused at both desktop and mobile viewports; apps/public-web/test/site-header.spec.tsx, mobile-bottom-nav.spec.tsx, user-menu-trigger.spec.tsx. Review-cycle-9 #1: fixed a second real Dialog bug — the panel lacked `position: relative`, so DialogClose rendered pinned to the viewport corner instead of the panel corner. Fixed with `relative` on the panel div; structural regression test (dialog.spec.tsx) plus real Playwright bounding-box containment at both viewports (browser-review-009/results.json, all `true`)."
+    },
+    {
+      "criterion": "2. Modal đăng nhập: phone+password bắt buộc, gửi với portal PUBLIC, chống submit lặp, lỗi validation/API hiển thị rõ mà không mất dữ liệu đã nhập.",
+      "status": "passed",
+      "evidence": "apps/public-web/components/auth/login-form.tsx (react-hook-form isSubmitting disables the button; applyApiErrorToForm keeps field values); packages/validation/src/auth.ts phoneLoginSchema; libs/modules/identity-access/src/presentation/http/login.dto.ts (pre-existing, unchanged); apps/public-web/test/login-form.spec.tsx incl. 'prevents a duplicate submit while the login request is still pending' (deferred-promise test proving the disabled pending button blocks a second submit and the auth action fires exactly once — review-cycle-4 #5); apps/api/test/auth-flow.e2e-spec.ts login describe block (pre-existing, still passing)"
+    },
+    {
+      "criterion": "3. Google/Facebook login trong modal: hoàn tất OAuth tạo phiên PUBLIC và cập nhật UI; hủy/từ chối/lỗi trả về web với thông báo hiểu được, không tạo phiên giả/dở dang.",
+      "status": "passed",
+      "evidence": "backend: oauth.controller.ts (start now redirects unconfigured/unsupported providers back to webRedirectUrl with reason=provider_unavailable/unsupported_provider instead of a raw 400/500 — fix-request-review-3 #7), oauth-login.use-case.ts, google-oauth.client.ts + facebook-oauth.client.ts (secrets/tokens now only ever sent via POST body/Authorization header, never a URL — #1; both reject malformed 2xx payloads with a blank access_token/subject before persistence — #5; Facebook's Graph API version is now config-driven, defaulting to the currently-supported v26.0 instead of the retired v19.0 — review-cycle-6 #1); apps/api/test/oauth-flow.e2e-spec.ts (start redirect+state cookie, success sets refresh cookie, access_denied/invalid_state/unsupported_provider/provider_unavailable/oauth_failed all redirect with oauth=error&reason=... and create no session; a two-barrier Promise.all race test — one on the mocked token exchange, one precisely on the AuthIdentity preflight lookup — deterministically forces the real provider_subject unique-constraint conflict/recovery path and asserts exact table-count deltas prove no orphan graph, review-cycle-4 #1; a second, separate app instance proves a *configured* Facebook callback also completes through the real HTTP/DI/session graph — not just Google — review-cycle-4 #3; first-time account provisioning is now atomic with session issuance — OAuthLoginUseCase.provisionAndIssueSession owns one transaction across both, with a new real-Postgres test forcing a post-graph-write failure and proving all five tables are unchanged and a retry provisions cleanly — review-cycle-6 #2; a rotated/refreshed Google or Facebook session now keeps its real authProvider instead of being silently relabeled LOCAL, asserted across two chained refreshes for both providers — review-cycle-6 #3); frontend: social-login-buttons.tsx (window.location.href navigation), oauth-redirect-handler.tsx (only reports oauth=success once AuthProvider's refresh-on-mount call has verified isAuthenticated — never trusts the URL alone; forged oauth=success with no real session surfaces the same failure toast as oauth_failed — #2), apps/public-web/test/oauth-redirect-handler.spec.tsx (4 tests). Review-cycle-9 #3: facebook-oauth.client.contract.spec.ts, a contract harness anchored to Meta's official Graph API v26.0 documentation (fetched live 2026-08-17), validates the client's request/response shapes against Zod schemas built from those docs (5 tests) — no real Facebook credentials exist for this task, so this stands in for a live sandbox call per the finding's own suggested alternative; see decisions for detail. Also fixed a real bug found along the way: oauth-state.helper.ts's readOAuthStateCookie now fails closed on a malformed percent-encoded cookie instead of throwing an uncaught 500 (oauth-state.helper.spec.ts, 3 tests; oauth-flow.e2e-spec.ts +1 e2e test). Review-cycle-10 #1: libs/platform/observability/src/logger.module.ts's pino-http request serializer now redacts code/state/access_token/token/id_token/client_secret from both req.query and req.url (the latter previously leaked the same values as a raw query-string substring even with req.query redacted) — verified with a new real-app integration test (logger.module.spec.ts, 3 tests) and by re-running the full oauth-flow e2e suite and grepping its log output for zero unredacted occurrences. Review-cycle-10 #2: facebook-oauth.client.contract.spec.ts no longer defines its own schemas/fixtures self-referentially — it's now bound (hash-verified, pinned-commit) to fixtures/facebook-graph-api-contract/, a snapshot of Meta's own official open-source Graph API SDK source (developers.facebook.com/graph.facebook.com are DNS-blocked from this sandbox — verified, not assumed — and no sandbox credentials exist for this task; GitHub was reachable and hosts Meta's own SDK repo). Review-cycle-10 missing-evidence #4: added a negative test proving a provider error paired with a missing or mismatched state still redirects access_denied and creates no session, closing the one untested error/state combination."
+    },
+    {
+      "criterion": "4. Modal đăng nhập có lời mời/hành động 'Đăng ký' chuyển sang form đăng ký trong cùng modal và quay lại được.",
+      "status": "passed",
+      "evidence": "apps/public-web/components/auth/auth-modal.tsx view state machine; apps/public-web/test/auth-modal.spec.tsx 'switches to the register view and back without leaving the modal'"
+    },
+    {
+      "criterion": "5. Form đăng ký: phone/password/confirmPassword/fullName bắt buộc, address tùy chọn; chặn submit khi không hợp lệ hoặc confirmPassword không khớp, lỗi tại đúng trường.",
+      "status": "passed",
+      "evidence": "packages/validation/src/auth.ts localRegisterSchema (.refine on confirmPassword); apps/public-web/components/auth/register-form.tsx; apps/public-web/test/register-form.spec.tsx; libs/modules/identity-access/src/presentation/http/register.dto.ts (address optional)"
+    },
+    {
+      "criterion": "6. Đăng ký thành công tạo đúng 1 Account PUBLIC + AuthIdentity LOCAL + UserProfile (fullName/address) + role mặc định + session trong 1 giao dịch nhất quán; số điện thoại trùng báo lỗi, không tạo dữ liệu trùng/dang dở.",
+      "status": "passed",
+      "evidence": "fix-request-review-3 #3: register.use-case.ts now opens a single owning unitOfWork.withTransaction around the whole flow (account/profile/role creation via create-account.use-case.ts's own withTransaction call, which now joins instead of committing independently, thanks to typeorm-unit-of-work.ts's reentrancy fix) through to RefreshSession persistence, so a session-stage failure rolls back the entire account graph, not just the profile stage; apps/api/test/auth-flow.e2e-spec.ts 'stores the optional address...', 'registers successfully when the optional address is omitted', pre-existing 'rejects registration with a phone that is already registered...', the concurrent-duplicate-phone race test, and a nested describe 'atomicity: refresh-session issuance failing after account/profile/role writes' -> 'leaves no Account/AuthIdentity/AccountRole/UserProfile/RefreshSession committed, and the phone is free to register again' (real Postgres, forces TOKEN_SERVICE to reject; review-cycle-4 strengthened this to capture a five-table row-count baseline via raw DataSource.query before the forced failure and assert the exact same counts after, in addition to the same-phone-retry check); libs/platform/database/test/typeorm-unit-of-work.spec.ts (2 new tests: nested withTransaction joins the outer one and doesn't open a second connection; a nested failure rolls back the single outer transaction)"
+    },
+    {
+      "criterion": "7. Sau đăng nhập/đăng ký thành công, modal đóng, trạng thái xác thực cập nhật, phiên vẫn theo cơ chế access token in-memory + refresh cookie HttpOnly.",
+      "status": "passed",
+      "evidence": "packages/auth/src/auth-provider.tsx (isAuthenticated fix + loginWithPhone/registerLocal set TokenStore only, never localStorage); apps/public-web/test/auth-provider.spec.tsx (5 tests, real AuthProvider); apps/public-web/test/auth-modal.spec.tsx 'closes after a successful login'; ai/skills/implement-nextjs-vertical-slice/scripts/check_frontend_security.py PASSED (no credential storage in browser storage); the in-memory access-token session policy now correctly preserves which provider issued it across every refresh rotation, not just LOCAL — RefreshSessionUseCase preserves the real authProvider claim instead of hard-coding LOCAL (review-cycle-6 #3), covered by apps/api/test/auth-flow.e2e-spec.ts and apps/api/test/oauth-flow.e2e-spec.ts"
+    },
+    {
+      "criterion": "8. Khi đã đăng nhập, bấm icon mở popup neo tại icon với hành động 'Đăng xuất' gọi API logout, revoke/clear phiên, đóng popup, về trạng thái chưa đăng nhập.",
+      "status": "passed",
+      "evidence": "apps/public-web/components/auth/account-popover.tsx + packages/ui/src/components/popover.tsx (anchored, not portaled full-screen); logout() reuses the pre-existing, unchanged AuthProvider.logout -> POST /auth/logout (JwtAuthGuard + LogoutUseCase revokes the RefreshSession) + clears the token; account-popover.tsx's existing try/catch already surfaced a destructive toast and kept the popup open/retryable on a rejected logout() call, but no test proved it until review-cycle-4 #4 added 'shows an error toast, keeps the popup open and stays retryable when the logout API call fails' to apps/public-web/test/user-menu-trigger.spec.tsx; apps/public-web/test/site-header.spec.tsx, mobile-bottom-nav.spec.tsx, auth-provider.spec.tsx 'clears the token and returns to signed-out after logout'; apps/api/test/auth-flow.e2e-spec.ts logout describe block (pre-existing, unmodified, still passing)"
+    },
+    {
+      "criterion": "9. Modal/popup/form/nút dùng design token hiện hữu, hiển thị tốt desktop+mobile, accessible name/role, thao tác bàn phím, không phá vỡ header/nav/route public hiện tại.",
+      "status": "passed",
+      "evidence": "All new components use @memories/ui primitives (Dialog, Popover, Button, IconButton, FormField) and existing Tailwind/design-system tokens only; ai/skills/establish-frontend-design-system/scripts/check_design_system_usage.py's one finding is pre-existing and unrelated (see applied_skills note); npm run build:public and build:admin both succeed (header/nav untouched structurally); full public-web (99 tests) and admin-web (2 tests) suites pass; keyboard operability (Tab/Shift+Tab trap, Escape, overlay dismiss, focus restoration) is asserted directly, not just implied, in apps/public-web/test/auth-modal.spec.tsx and packages/ui/test/popover.spec.tsx (review-cycle-6 #5, see decisions for the real Dialog focus-trap bug this uncovered and fixed). Review-cycle-9 #1/#4: fixed a second real Dialog bug (missing panel `position: relative` mispositioned DialogClose) and captured new real-browser evidence for desktop/mobile usability beyond the signed-out modal — the signed-in AccountPopover is within-viewport and correctly anchored at both breakpoints (not clipped/overlapped), and the mobile registration form's every field/action is reachable by scroll (browser-review-009/, all results.json assertions true). Review-cycle-10 #3 (public-route compatibility): the standalone apps/public-web/app/(auth)/login route now renders the identical LoginForm/RegisterForm pair as AuthModal (same design tokens, same phone/PUBLIC contract) instead of a dead legacy email form that could never authenticate against the real backend — apps/public-web/test/login-page.spec.tsx (4 tests) proves the phone field renders (not email) and both login/register submit through the same loginWithPhone/registerLocal calls the modal uses; admin-web's separately-scoped email /login route and build are unaffected (confirmed via repo-wide grep for loginSchema/LoginInput usage and a clean admin-web build)."
+    },
+    {
+      "criterion": "10. Component xác thực tái sử dụng được, không nhân bản form/logic API giữa desktop/mobile; test bao phủ happy path, validation/error, chuyển đổi login-register, OAuth callback, logout.",
+      "status": "passed",
+      "evidence": "UserMenuTrigger is the single component instance type used by both site-header.tsx and mobile-bottom-nav.tsx (only the rendered trigger markup differs via renderTrigger render-prop); no duplicated API-calling logic exists outside packages/auth's AuthProvider. The standalone /login route (review-cycle-10 #3) reuses the exact same LoginForm/RegisterForm components as AuthModal — no separate page-level auth form logic. Test inventory (current): packages/validation (12), packages/ui popover (10, incl. review-cycle-6's focus-lifecycle tests) + dialog (4, incl. review-cycle-9's panel-positioning structural regression test), packages/api-client register-dto-contract (1), apps/public-web login-form (5, incl. duplicate-submit test) + register-form (6, incl. duplicate-submit test) + login-page (4, review-cycle-10 #3: phone/PUBLIC contract, register-view switch, registerLocal-not-legacy-login regression) + auth-modal (9, incl. review-cycle-6's Tab-trap/overlay-dismiss/focus-restoration tests) + user-menu-trigger (4, incl. logout-API-failure test) + site-header (4) + mobile-bottom-nav (3) + auth-provider (5) + oauth-redirect-handler (4); backend unit oauth-login.use-case (6) + google-oauth.client (7, incl. 2 malformed-payload tests) + facebook-oauth.client (7, incl. 2 malformed-payload tests, a secret-location test, and review-cycle-6's config-driven-Graph-API-version test) + facebook-oauth.client.contract (13, review-cycle-10 #2: fixture-integrity + contract-term-presence checks against a pinned Meta SDK snapshot, then the real client exercised against it) + oauth-state.helper (3, review-cycle-9: malformed-cookie decode-failure regression) + logger.module (3, review-cycle-10 #1: OAuth code/state never appear in a real pino-http log line) + refresh-session.use-case (covered via e2e, review-cycle-6 #3) + register.use-case (regression, address-aware) + typeorm-unit-of-work (7, incl. 2 reentrancy tests); backend e2e oauth-flow (14, incl. the two-barrier real-concurrency race test with table-count-delta assertions, provider_unavailable/unsupported_provider redirect tests, the separate-app configured-Facebook-callback test, review-cycle-6's provisioning-atomicity rollback test, review-cycle-9's malformed-state-cookie invalid_state-not-500 regression, and review-cycle-10's provider-error-with-missing/mismatched-state regression) + auth-flow address additions (2) + LOCAL refresh-provider regression (1) + register atomicity rollback (1, strengthened with five-table count-delta assertions). Real-browser evidence (Playwright) covers login modal, register modal, signed-in popover (desktop+mobile), and OAuth callback error paths (browser-focus-review-006/, browser-review-009/)."
+    }
+  ],
+  "knowledge_updates": [
+    {
+      "target": "ai/domains/authorization/INDEX.md",
+      "type": "addition",
+      "summary": "Google/Facebook OAuth is now implemented end to end for the PUBLIC portal (previously only LOCAL was implemented; the domain doc noted Google/Apple/Facebook as contract-only). Link/create rule: an AuthIdentity resolves an Account strictly by (provider, providerSubject) — provider-supplied email is never used to cross-link to an existing LOCAL or other-provider Account. Apple remains contract-only/unimplemented."
+    },
+    {
+      "target": "ai/repos/frontend/INDEX.md",
+      "type": "addition",
+      "summary": "packages/auth's AuthContextValue gained loginWithPhone(phone, password, portal)/registerLocal(input) alongside the pre-existing login(email, password) (kept only for apps/admin-web, whose real backend contract mismatch is a separate pre-existing issue out of this task's scope). isAuthenticated is now derived from access-token presence alone, not a `user` object — neither /auth/login, /auth/register nor /auth/refresh's real response includes one."
+    },
+    {
+      "target": "ai/repos/frontend/INDEX.md",
+      "type": "addition",
+      "summary": "New packages/ui primitive: Popover/PopoverItem — a lightweight, non-portaled anchored menu (position:relative parent required), for cases like an account menu where <Dialog>'s full-screen portal/overlay is the wrong shape."
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "addition",
+      "summary": "TypeOrmUnitOfWork.withTransaction is now reentrant: if called while a transaction is already active on the current async context (TypeOrmQueryRunnerContext), it joins that transaction (just runs the callback) instead of opening a second, independent connection/transaction. This lets a use case that calls another transactional use case (e.g. RegisterUseCase wrapping CreateAccountUseCase) get one atomic operation for free by wrapping the whole flow in its own outer withTransaction — the inner use case's own withTransaction call needs no change. Every repository already resolves its query runner through the same TypeOrmQueryRunnerContext, so this composes transparently across module boundaries."
+    }
+  ],
+  "implementation_cycle": 1,
+  "change_cycle": 0
+}

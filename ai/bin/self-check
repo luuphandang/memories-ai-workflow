@@ -4,7 +4,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -13,21 +12,9 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib.ai_common import AI_ROOT, ROOT, read_yaml, validate_json
 
-SECRET_PATTERNS = [
-    re.compile(r"sk-mem-[A-Za-z0-9]{20,}"),
-    re.compile(r"Bearer\s+[A-Za-z0-9._-]{20,}"),
-    re.compile(r"AKID[A-Za-z0-9]{16,}"),
-]
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Validate AI workspace configuration and optionally run an isolated smoke pipeline")
     parser.add_argument("--smoke", action="store_true", help="Run an end-to-end orchestration test in a temporary workspace")
-    parser.add_argument(
-        "--memory-integration",
-        action="store_true",
-        help="Additionally probe the real memory backend via `ai memory health` (opt-in; not part of --smoke)",
-    )
     args = parser.parse_args()
 
     errors: list[str] = []
@@ -128,97 +115,12 @@ def main() -> None:
     if "Bash(git rev-parse *)" not in allowed:
         errors.append("Claude settings do not allow read-only git rev-parse")
 
-    memory_provider = os.environ.get("AI_MEMORY_PROVIDER", "tencentdb").strip().lower()
-    if memory_provider not in {"tencentdb", "fake"}:
-        errors.append("AI_MEMORY_PROVIDER must be tencentdb or fake")
-    memory_enabled_raw = os.environ.get("AI_MEMORY_ENABLED", "false").strip().lower()
-    if memory_enabled_raw not in {"true", "false"}:
-        errors.append("AI_MEMORY_ENABLED must be true or false")
-
-    memory_config_path = AI_ROOT / "integrations" / "tencentdb-memory" / "config.yaml"
-    if not memory_config_path.is_file():
-        errors.append(f"Missing memory config: {memory_config_path.relative_to(ROOT)}")
-    else:
-        memory_config = read_yaml(memory_config_path)
-        for key in ("provider", "enabled", "required", "timeout_seconds", "recall", "fallback"):
-            if key not in memory_config:
-                errors.append(f"{memory_config_path.relative_to(ROOT)} missing required key: {key}")
-        if not isinstance(memory_config.get("enabled"), bool):
-            errors.append(f"{memory_config_path.relative_to(ROOT)}: enabled must be a boolean")
-        if not isinstance(memory_config.get("required"), bool):
-            errors.append(f"{memory_config_path.relative_to(ROOT)}: required must be a boolean")
-        timeout = memory_config.get("timeout_seconds")
-        if not isinstance(timeout, int) or isinstance(timeout, bool) or timeout <= 0:
-            errors.append(f"{memory_config_path.relative_to(ROOT)}: timeout_seconds must be a positive integer")
-
-    env_example = (ROOT / ".env.ai.example").read_text(encoding="utf-8")
-    for var_name in (
-        "AI_MEMORY_ENABLED",
-        "AI_MEMORY_PROVIDER",
-        "AI_MEMORY_SERVICE_ROOT",
-        "AI_MEMORY_BASE_URL",
-        "AI_MEMORY_KNOWLEDGE_BASE_URL",
-        "AI_MEMORY_TIMEOUT_SECONDS",
-        "AI_MEMORY_API_KEY",
-    ):
-        if var_name not in env_example:
-            errors.append(f".env.ai.example is missing {var_name}")
-
-    required_integration_files = [
-        AI_ROOT / "integrations" / "README.md",
-        AI_ROOT / "integrations" / "memory" / "README.md",
-        AI_ROOT / "integrations" / "memory" / "provider-contract.md",
-        AI_ROOT / "integrations" / "memory" / "policies" / "recall-policy.md",
-        AI_ROOT / "integrations" / "memory" / "policies" / "publish-policy.md",
-        AI_ROOT / "integrations" / "tencentdb-memory" / "README.md",
-        AI_ROOT / "integrations" / "tencentdb-memory" / "upstream-notes.md",
-        AI_ROOT / "integrations" / "tencentdb-memory" / "config.yaml",
-        AI_ROOT / "integrations" / "tencentdb-memory" / "asset-mapping.yaml",
-        AI_ROOT / "integrations" / "tencentdb-memory" / "recall-policy.yaml",
-        AI_ROOT / "integrations" / "tencentdb-memory" / "publish-policy.yaml",
-        AI_ROOT / "integrations" / "tencentdb-memory" / "prompts" / "recall.md",
-        AI_ROOT / "integrations" / "tencentdb-memory" / "prompts" / "publish.md",
-        AI_ROOT / "integrations" / "tencentdb-memory" / "local-index" / "superseded-assets.json",
-        AI_ROOT / "bin" / "lib" / "memory" / "__init__.py",
-        AI_ROOT / "bin" / "lib" / "memory" / "models.py",
-        AI_ROOT / "bin" / "lib" / "memory" / "provider.py",
-        AI_ROOT / "bin" / "lib" / "memory" / "tencentdb.py",
-        AI_ROOT / "bin" / "lib" / "memory" / "fake.py",
-    ]
-    for path in required_integration_files:
-        if not path.is_file():
-            errors.append(f"Missing required memory integration file: {path.relative_to(ROOT)}")
-
-    scan_roots = [AI_ROOT / "integrations" / "tencentdb-memory", AI_ROOT / "bin" / "lib" / "memory"]
-    for scan_root in scan_roots:
-        if not scan_root.is_dir():
-            continue
-        for path in scan_root.rglob("*"):
-            if not path.is_file() or path.suffix == ".pyc":
-                continue
-            try:
-                text = path.read_text(encoding="utf-8")
-            except (UnicodeDecodeError, OSError):
-                continue
-            for pattern in SECRET_PATTERNS:
-                if pattern.search(text):
-                    errors.append(f"Possible hardcoded secret literal in {path.relative_to(ROOT)}")
-                    break
-
-    try:
-        import importlib
-
-        for module_name in ("lib.memory", "lib.memory.models", "lib.memory.provider", "lib.memory.tencentdb", "lib.memory.fake"):
-            importlib.import_module(module_name)
-    except Exception as exc:
-        errors.append(f"lib.memory is not importable: {exc}")
-
     if errors:
         raise SystemExit("Self-check FAILED:\n- " + "\n- ".join(errors))
     print("Static self-check PASSED")
 
     if args.smoke:
-        for test_name in ("skill_gate_fixtures.py", "smoke_pipeline.py", "agent_gate_pipeline.py", "memory_smoke_pipeline.py"):
+        for test_name in ("skill_gate_fixtures.py", "smoke_pipeline.py", "agent_gate_pipeline.py"):
             result = subprocess.run(
                 [sys.executable, str(AI_ROOT / "tests" / test_name)],
                 cwd=ROOT,
@@ -230,22 +132,6 @@ def main() -> None:
             print(result.stdout, end="")
             if result.returncode != 0:
                 raise SystemExit(result.returncode)
-
-    if args.memory_integration:
-        result = subprocess.run(
-            [str(AI_ROOT / "bin" / "memory-health")],
-            cwd=ROOT,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            check=False,
-        )
-        print(result.stdout, end="")
-        if result.returncode != 0:
-            raise SystemExit(
-                "Real memory backend integration check failed "
-                f"(exit {result.returncode}); see output above"
-            )
 
 
 if __name__ == "__main__":

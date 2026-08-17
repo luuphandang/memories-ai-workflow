@@ -1,0 +1,499 @@
+{
+  "generated_at": "2026-08-17T11:10:28+07:00",
+  "task_id": "MEMORIES-0005",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "active_change": null,
+  "requirement_precedence": "task.md then unconsolidated requirement addenda by ascending cycle (addenda from cycles at or below requirements_consolidated_through_cycle are already folded into task.md and excluded here); newest active unconsolidated addendum wins only for explicit conflicts",
+  "files": [
+    {
+      "path": "ai/shared/policies/security.md",
+      "sha256": "03b2bc8a21431383667f5d39127d23ce509cb47cdac767344e4f6805e13d2619",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/shared/policies/git-policy.md",
+      "sha256": "b2a34262a04fdf1e593db7980edbba4d0480b01d481c760e55e9a3503eaf99d3",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/shared/policies/worktree-policy.md",
+      "sha256": "dbf6a2a5a4666e7e7dcf990ec9afc3d29a423ac5332a0f88d927aaa17dc12416",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/shared/quality/definition-of-done.md",
+      "sha256": "42f4f66c4e9aa8a16fedef512280f3ef2f45ab3a5be75e4bbcc3c64bc05de2fe",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/shared/workflows/requirement-change.md",
+      "sha256": "88b06544caa84e0544a6142ef1cfcd36f0eb7ed02daee5ff6a4f4d644dc5c254",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/shared/workflows/user-acceptance.md",
+      "sha256": "81fcf1017b1677e7c9ccc5023a96cffbce496617d1ce57873f5286b19cc8e249",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/backend/INDEX.md",
+      "sha256": "b70684673e92c48cbd67598908d450de69a0094314e3823d3f13a85d87217363",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/backend/architecture.md",
+      "sha256": "14dcb70cfee78725d759aef1fc8ff28a69e1558dd066a4ab938449dffe8e7b8d",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/backend/conventions.md",
+      "sha256": "9da99b3736b78c2cc16b7a2b4b4bd7289710d06b0d4581b8f4dbc221679d528c",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/backend/testing.md",
+      "sha256": "8d7d80be4107605ceeb0790a4678a6636360538f2ccea0568492c7d10a4761c3",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/backend/source-map.md",
+      "sha256": "a75d9ef01a6a31c6a223d0bc0737d590ebfd00cd68ff6c7e5ea555ef4c4595dd",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/frontend/INDEX.md",
+      "sha256": "3c3102452ca5d67011305e6e8a65a8cf3dd16e53f25019e22d675637c5f2afb6",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/frontend/architecture.md",
+      "sha256": "90b7bf4135c4f584a0a81c729bd1ddd3219fb938e943089d102f2a85cee902f2",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/frontend/conventions.md",
+      "sha256": "9fcfc28642e67f97bf6a82020c41524bed39bfcb75e184ead65f9cba88df6d3c",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/frontend/testing.md",
+      "sha256": "6c5c82863201c23d230c78396b45afb992f1631124feb9f3c83f451f0b8bf4e0",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/frontend/source-map.md",
+      "sha256": "5007204941f741555046c91a439a16d5daf301ab8054a0fe688f53fa41a264e5",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/domains/authorization/INDEX.md",
+      "sha256": "b8f59111ccdcd243074a957d1224ae9f57509839826bc0e21e55e1d79ebdca0a",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/tasks/MEMORIES-0005/task.md",
+      "sha256": "f418223dc9e6af736cb091d4f7b55c60dd12ccff2cb60fed63edc9ed5040d2c3",
+      "load": "initial",
+      "category": "requirement"
+    }
+  ],
+  "requirements": [
+    "ai/tasks/MEMORIES-0005/task.md"
+  ],
+  "repositories": {
+    "backend": {
+      "path": "worktrees/MEMORIES-0005/backend",
+      "base_ref": "origin/master",
+      "head_sha": "e70db3207463b8742a92162b050f52dd45a6e477",
+      "branch": "feature/MEMORIES-0005-public-authorization",
+      "registered_branch": "feature/MEMORIES-0005-public-authorization",
+      "status": "M .env.example\n M apps/api/test/auth-flow.e2e-spec.ts\n M libs/modules/identity-access/src/application/use-cases/refresh-session.use-case.ts\n M libs/modules/identity-access/src/application/use-cases/register.use-case.ts\n M libs/modules/identity-access/src/identity-access.module.ts\n M libs/modules/identity-access/src/infrastructure/persistence/typeorm-auth-identity.repository.ts\n M libs/modules/identity-access/src/presentation/http/auth.controller.ts\n M libs/modules/identity-access/src/presentation/http/register.dto.ts\n M libs/modules/identity-access/src/public-api.ts\n M libs/modules/identity-access/test/register.use-case.spec.ts\n M libs/platform/configuration/src/config/auth.config.ts\n M libs/platform/configuration/src/public-api.ts\n M libs/platform/configuration/src/schemas/env.schema.ts\n M libs/platform/database/src/typeorm-unit-of-work.ts\n M libs/platform/database/test/typeorm-unit-of-work.spec.ts\n M libs/platform/observability/src/logger.module.ts\n M package.json\n?? apps/api/test/oauth-flow.e2e-spec.ts\n?? libs/modules/identity-access/src/application/ports/oauth-client.port.ts\n?? libs/modules/identity-access/src/application/use-cases/oauth-login.use-case.ts\n?? libs/modules/identity-access/src/infrastructure/security/facebook-oauth.client.ts\n?? libs/modules/identity-access/src/infrastructure/security/google-oauth.client.ts\n?? libs/modules/identity-access/src/presentation/http/oauth-state.helper.ts\n?? libs/modules/identity-access/src/presentation/http/oauth.controller.ts\n?? libs/modules/identity-access/test/facebook-oauth.client.contract.spec.ts\n?? libs/modules/identity-access/test/facebook-oauth.client.spec.ts\n?? libs/modules/identity-access/test/fixtures/\n?? libs/modules/identity-access/test/google-oauth.client.spec.ts\n?? libs/modules/identity-access/test/oauth-login.use-case.spec.ts\n?? libs/modules/identity-access/test/oauth-state.helper.spec.ts\n?? libs/platform/observability/test/logger.module.spec.ts"
+    },
+    "frontend": {
+      "path": "worktrees/MEMORIES-0005/frontend",
+      "base_ref": "origin/master",
+      "head_sha": "a98a3dbcf468ca08e6ec96fe171cf4c4db93778b",
+      "branch": "feature/MEMORIES-0005-public-authorization",
+      "registered_branch": "feature/MEMORIES-0005-public-authorization",
+      "status": "M apps/public-web/app/(auth)/login/page.tsx\n M apps/public-web/app/providers.tsx\n M apps/public-web/components/icons.tsx\n M apps/public-web/components/mobile-bottom-nav.tsx\n M apps/public-web/components/site-header.tsx\n M apps/public-web/test/login-page.spec.tsx\n M apps/public-web/test/site-header.spec.tsx\n M packages/api-client/src/generated/schema.d.ts\n M packages/api-client/src/routes.ts\n M packages/auth/src/auth-provider.tsx\n M packages/ui/src/components/dialog.tsx\n M packages/ui/src/index.ts\n M packages/ui/test/dialog.spec.tsx\n M packages/validation/src/auth.ts\n M packages/validation/test/auth.spec.ts\n?? apps/public-web/components/auth/\n?? apps/public-web/test/auth-modal.spec.tsx\n?? apps/public-web/test/auth-provider.spec.tsx\n?? apps/public-web/test/login-form.spec.tsx\n?? apps/public-web/test/mobile-bottom-nav.spec.tsx\n?? apps/public-web/test/oauth-redirect-handler.spec.tsx\n?? apps/public-web/test/register-form.spec.tsx\n?? apps/public-web/test/user-menu-trigger.spec.tsx\n?? packages/api-client/test/register-dto-contract.spec.ts\n?? packages/ui/src/components/popover.tsx\n?? packages/ui/test/popover.spec.tsx"
+    }
+  },
+  "codegraph": {
+    "mode": "optional",
+    "repositories": {
+      "backend": {
+        "mode": "optional",
+        "path": "/Users/cmc/Documents/Memories/worktrees/MEMORIES-0005/backend",
+        "available": true,
+        "indexed": true,
+        "ready": true,
+        "command": "/Users/cmc/.local/bin/codegraph",
+        "status_text": "CodeGraph Status\n\nProject: /Users/cmc/Documents/Memories/worktrees/MEMORIES-0005/backend\n\nIndex Statistics:\n  Files:     433\n  Nodes:     3,965\n  Edges:     9,652\n  DB Size:   14.10 MB\n  Backend:   node:sqlite — built-in (full WAL)\n  Journal:   wal\n\nNodes by Kind:\n  import          1,606\n  method          653\n  file            428\n  property        406\n  class           251\n  constant        191\n  interface       173\n  function        153\n  enum_member     43\n  route           28\n  enum            13\n  type_alias      9\n  field           8\n  namespace       3\n\nFiles by Language:\n  typescript      420\n  javascript      5\n  yaml            5\n  php             3\n\n✓ Index is up to date"
+      },
+      "frontend": {
+        "mode": "optional",
+        "path": "/Users/cmc/Documents/Memories/worktrees/MEMORIES-0005/frontend",
+        "available": true,
+        "indexed": true,
+        "ready": true,
+        "command": "/Users/cmc/.local/bin/codegraph",
+        "status_text": "CodeGraph Status\n\nProject: /Users/cmc/Documents/Memories/worktrees/MEMORIES-0005/frontend\n\nIndex Statistics:\n  Files:     272\n  Nodes:     1,623\n  Edges:     3,581\n  DB Size:   5.01 MB\n  Backend:   node:sqlite — built-in (full WAL)\n  Journal:   wal\n\nNodes by Kind:\n  import          689\n  file            267\n  function        250\n  constant        156\n  interface       103\n  type_alias      58\n  route           42\n  method          25\n  component       14\n  variable        9\n  class           6\n  property        4\n\nFiles by Language:\n  tsx             147\n  typescript      105\n  javascript      15\n  yaml            5\n\n✓ Index is up to date"
+      }
+    }
+  },
+  "skills": {
+    "required": {
+      "implement": [
+        "decompose-implementation-task",
+        "verify-implementation-handoff",
+        "validate-evidence-provenance",
+        "implement-nestjs-vertical-slice",
+        "create-backend-migration",
+        "design-database-invariants",
+        "implement-auth-security-change",
+        "verify-openapi-contract",
+        "implement-nextjs-vertical-slice",
+        "establish-frontend-design-system"
+      ],
+      "review": [
+        "review-code-change",
+        "review-vertical-slice-completeness"
+      ]
+    },
+    "locked": {
+      "create-backend-migration": {
+        "path": "ai/skills/create-backend-migration/SKILL.md",
+        "sha256": "10c61a5c17ae6498d59a6699ae6fa68cabb90ca0753c196e483a98eb14f5821a",
+        "files": [
+          {
+            "path": "ai/skills/create-backend-migration/SKILL.md",
+            "sha256": "f06218c1f9229147e9c9a3a9ddfcf01f4e045767712f16908ef1e85538934541"
+          },
+          {
+            "path": "ai/skills/create-backend-migration/agents/openai.yaml",
+            "sha256": "34330de18b16b2ef15cc22b073e57fbf2f8cd4be8c0157506e40ba4f5903124a"
+          }
+        ]
+      },
+      "decompose-implementation-task": {
+        "path": "ai/skills/decompose-implementation-task/SKILL.md",
+        "sha256": "0d8e89a94111bd5679c8c5ef6c8f5ce250621909f51704bf676af966f2fd4673",
+        "files": [
+          {
+            "path": "ai/skills/decompose-implementation-task/SKILL.md",
+            "sha256": "e76360df532bcd2ca38cde438c7626d17330561e5299343400c0a6b746d152e3"
+          },
+          {
+            "path": "ai/skills/decompose-implementation-task/agents/openai.yaml",
+            "sha256": "c7bf833bcb990adf03cabfaddf25b463ad652bc6c69a385f094c4ab3d67a5d3f"
+          },
+          {
+            "path": "ai/skills/decompose-implementation-task/references/scope-thresholds.md",
+            "sha256": "b913b844e0371b7916c27e112a1e0c4d3a645dbc5659916bfdd6d6309107fe54"
+          },
+          {
+            "path": "ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py",
+            "sha256": "e7aee9f8bbd374ee7ccd909f09cb3a91adb963fb0fe4a40d974201cec867833c"
+          }
+        ]
+      },
+      "design-database-invariants": {
+        "path": "ai/skills/design-database-invariants/SKILL.md",
+        "sha256": "be72c2b32b011c21030c2c411b780bc3a45c9f47ef52b6f54ec05b0ca5008741",
+        "files": [
+          {
+            "path": "ai/skills/design-database-invariants/SKILL.md",
+            "sha256": "c44a427cf342ba9ab8644e4a52de480b261689865d6507ce7490923222e4c441"
+          },
+          {
+            "path": "ai/skills/design-database-invariants/agents/openai.yaml",
+            "sha256": "1d41bc27c747578addcb92a374cca735255119c947cfa36c206796263940d5b4"
+          },
+          {
+            "path": "ai/skills/design-database-invariants/references/mutation-matrix.md",
+            "sha256": "bc6a18346ecd042a6a13774a43ac83ecb8ac012ec5a2da866c0898893cb56d24"
+          },
+          {
+            "path": "ai/skills/design-database-invariants/scripts/check_invariant_matrix.py",
+            "sha256": "61b2b71960864210859cc4c07a098409be75271efebad5cd20b82165336ad3aa"
+          }
+        ]
+      },
+      "establish-frontend-design-system": {
+        "path": "ai/skills/establish-frontend-design-system/SKILL.md",
+        "sha256": "55351ecf13ad7f59e5fbb53946b0dcf3c0772cac1349cc97d1d81852b3d171b0",
+        "files": [
+          {
+            "path": "ai/skills/establish-frontend-design-system/SKILL.md",
+            "sha256": "41f878320932fa2579a9ddb697f2a380d59fcb4e75f448ddc42836a30dc2dce2"
+          },
+          {
+            "path": "ai/skills/establish-frontend-design-system/agents/openai.yaml",
+            "sha256": "4ef63d090eee5cfe4e5286e0ed6549d3d5d602e6cfed2f95e520c809a510008a"
+          },
+          {
+            "path": "ai/skills/establish-frontend-design-system/references/component-ownership.md",
+            "sha256": "687db246de2f70f7124560e95171c6e3ebd6d9cb5ba564a7f1606bd2477a8c04"
+          },
+          {
+            "path": "ai/skills/establish-frontend-design-system/references/token-and-theme-rules.md",
+            "sha256": "91a25529f0313e1802b477465609cab78b86e0826290496026f76c77aa026142"
+          },
+          {
+            "path": "ai/skills/establish-frontend-design-system/scripts/check_design_system_usage.py",
+            "sha256": "1bc02c227dcc4365038c79a4cce12562c8a722f521dda7cbb801708fdcbbd3c2"
+          }
+        ]
+      },
+      "implement-auth-security-change": {
+        "path": "ai/skills/implement-auth-security-change/SKILL.md",
+        "sha256": "8de0236f5e04b9c74a738f6ffc71224070c4ddd230cbccbe88fe8e1144627332",
+        "files": [
+          {
+            "path": "ai/skills/implement-auth-security-change/SKILL.md",
+            "sha256": "dbb30f984b81b81f3d59a89e754e78f61de4dbd1271159df236fc3f90fc4ddd7"
+          },
+          {
+            "path": "ai/skills/implement-auth-security-change/agents/openai.yaml",
+            "sha256": "ca97db424a047e2e0ea74ad29a00d28a9482577a61213ee9d435d3487988187c"
+          },
+          {
+            "path": "ai/skills/implement-auth-security-change/references/identity-and-credentials.md",
+            "sha256": "4db762f3b851633808e3f267fe12ecf99d9a9b9788707d1263d384af60ee2be0"
+          },
+          {
+            "path": "ai/skills/implement-auth-security-change/references/security-verification.md",
+            "sha256": "2392d5d5b6684ec94c667f82fc8702255ab352111d01134079512e8172cf1759"
+          },
+          {
+            "path": "ai/skills/implement-auth-security-change/references/sessions-and-authorization.md",
+            "sha256": "65842379d2b8999e78df3a9a1b4ba8a5912cf932c04fa53c607b337470c9a086"
+          },
+          {
+            "path": "ai/skills/implement-auth-security-change/scripts/check_auth_invariants.py",
+            "sha256": "560becc3ce95ae28d86219fd6868ca85c236441a4c401f4616faaa5fb8f87648"
+          }
+        ]
+      },
+      "implement-nestjs-vertical-slice": {
+        "path": "ai/skills/implement-nestjs-vertical-slice/SKILL.md",
+        "sha256": "46320b8e5f671d095152f339031d0470207a8caa7de73e0e219b45b683321335",
+        "files": [
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/SKILL.md",
+            "sha256": "d2fd8e3b76d834d1eebab0f6c483c8f8f4fd4719af59897bf17b910d47b30b09"
+          },
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/agents/openai.yaml",
+            "sha256": "94ac591ab17919e4a12c2f7ff9b86ada8f5369fc766eae18146491421f60ff19"
+          },
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/references/clean-architecture.md",
+            "sha256": "ef3b5a5cf6257ab7034e9cbd384cae91ace3be28188cc4c40a90711b07bb5bd8"
+          },
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/references/dependency-injection.md",
+            "sha256": "5b0735862d5e39a0d4e8cc5121eadb52b9038e825db53714ad571ef5d071043a"
+          },
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/references/persistence.md",
+            "sha256": "4d895be7a1dfd9f1d74e62c2e37ea9d898dd4e45d43a1cd8a5e01a1b84197f1c"
+          },
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/references/testing.md",
+            "sha256": "83652fe179d6b695a58282e79e06321f0c6b406a3b53c565a4b0a41093a40129"
+          },
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/scripts/check_module_wiring.py",
+            "sha256": "40717005a2b7c64f9508bf96f08ad424a50686f89c4a02843d9b543e11fa9782"
+          },
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/scripts/check_port_bindings.py",
+            "sha256": "50b16fb42abb1ad7012577aef0ec03d1e913a8e70fb0bac6737056c59480647f"
+          }
+        ]
+      },
+      "implement-nextjs-vertical-slice": {
+        "path": "ai/skills/implement-nextjs-vertical-slice/SKILL.md",
+        "sha256": "25827b18cf8482619030897189630b1dc404eacf1d974be8a42d14d2b7a70d9b",
+        "files": [
+          {
+            "path": "ai/skills/implement-nextjs-vertical-slice/SKILL.md",
+            "sha256": "8d8e4e5b620f32e7ff61ede9ef346f954f0f0d6998eb0e0e2a55417effe67eb9"
+          },
+          {
+            "path": "ai/skills/implement-nextjs-vertical-slice/agents/openai.yaml",
+            "sha256": "b3121fffc2cbb4089ade994a2b970eddcb88b17dac14890201381b10344fbd33"
+          },
+          {
+            "path": "ai/skills/implement-nextjs-vertical-slice/references/accessibility-and-testing.md",
+            "sha256": "b0dd89baf39155898f05a1379e96095355df3918cf256c61cc4ef2b45dd5c97b"
+          },
+          {
+            "path": "ai/skills/implement-nextjs-vertical-slice/references/data-and-forms.md",
+            "sha256": "fc4277a6cb0dee2c3d48ee751e1eeace502d5a9d12b7b3c68829109a543e5485"
+          },
+          {
+            "path": "ai/skills/implement-nextjs-vertical-slice/references/routing-and-rendering.md",
+            "sha256": "16f1e1972eda80e22d40cc8460d136f186cd3e12ec70f217bd486795b2ff696c"
+          },
+          {
+            "path": "ai/skills/implement-nextjs-vertical-slice/scripts/check_frontend_security.py",
+            "sha256": "78ec09be475518e271c4cf678c6390b19525698c9566529208e68f4e88538af4"
+          }
+        ]
+      },
+      "review-code-change": {
+        "path": "ai/skills/review-code-change/SKILL.md",
+        "sha256": "194eb62a12b70eb6efd922af05d797d4c0296efc8299ece3b9df5b156e8d6b9a",
+        "files": [
+          {
+            "path": "ai/skills/review-code-change/SKILL.md",
+            "sha256": "f914780e510e59951b32bbd8ec9c87002c27882be553698db38ae456294716b5"
+          },
+          {
+            "path": "ai/skills/review-code-change/agents/openai.yaml",
+            "sha256": "89bf0eb8d7d8c4c46768a8ef8a7ff6e0b884d138b6827faf6b20235f7f6da239"
+          },
+          {
+            "path": "ai/skills/review-code-change/references/findings-and-verdicts.md",
+            "sha256": "92eee3f8b1e985b6797915799e731f2ab6b3475a5619239d33a04eeb23efdd20"
+          },
+          {
+            "path": "ai/skills/review-code-change/references/review-passes.md",
+            "sha256": "32d7a4272ca4b27f6dcf82e610001d2df3da7a178d218feac826e3f6f2ce33c2"
+          },
+          {
+            "path": "ai/skills/review-code-change/references/test-matrix.md",
+            "sha256": "0e5113c2fd032589d08075564c1ce2b8e50775a4759a447cf8422a85bc3bd166"
+          },
+          {
+            "path": "ai/skills/review-code-change/scripts/validate_review.py",
+            "sha256": "9bc1889616268eaf6c099a3144215ecb31cbe4bc5540d07c658cd1b7c5b9a79d"
+          }
+        ]
+      },
+      "review-vertical-slice-completeness": {
+        "path": "ai/skills/review-vertical-slice-completeness/SKILL.md",
+        "sha256": "e81a7ff83e887692a56ff0dd8d1173b34410afacdb09e2c30011cf3c9d5de099",
+        "files": [
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/SKILL.md",
+            "sha256": "93eec980619cb1aa3834b189bac7af43abb448231c2339ca598e9a028fe9fead"
+          },
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/agents/openai.yaml",
+            "sha256": "e196bf2320746ec34429ae876a64884421aae76b9aae46369b016ea4e7744742"
+          },
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/references/evidence-matrix.md",
+            "sha256": "94c10689d431deb1d20bbfcebfeddf9479f1b28517ce2ccb653f71987614bf16"
+          },
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/references/review-gates.md",
+            "sha256": "49b2ec8c1b41687890f0434088b635e108d23765dd5dbf3bada9e3efd529c467"
+          },
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/scripts/build_evidence_matrix.py",
+            "sha256": "ddf9624d7b7ae57603a14a6c2cd1fcd62e2ab8eccf89d15fa641370a3ab7a95b"
+          }
+        ]
+      },
+      "validate-evidence-provenance": {
+        "path": "ai/skills/validate-evidence-provenance/SKILL.md",
+        "sha256": "fefea84ca94f1c7376c4aec81079d1d1951c86b034ccafdba1303eb94f66bf8a",
+        "files": [
+          {
+            "path": "ai/skills/validate-evidence-provenance/SKILL.md",
+            "sha256": "4b3c8734b043753630396547d22cb2d00152f36a198ff011e188f2fa6b4e7a62"
+          },
+          {
+            "path": "ai/skills/validate-evidence-provenance/agents/openai.yaml",
+            "sha256": "84e0d62d27ea824ba63a3ec2aaece7e19de2f89b700b95181eedd2c5c8fbe139"
+          },
+          {
+            "path": "ai/skills/validate-evidence-provenance/references/manifest.md",
+            "sha256": "72a44180f3f92a131cad7f3f5b233b84c9b34a1d2e7632e5a5fed9dcdef7eeef"
+          },
+          {
+            "path": "ai/skills/validate-evidence-provenance/scripts/check_provenance.py",
+            "sha256": "ea3ce99b19e8d3c049a05b2809f2061d37ab869f887b7a223f7004a8a8903887"
+          },
+          {
+            "path": "ai/skills/validate-evidence-provenance/scripts/sync_provenance.py",
+            "sha256": "8c7b222814185768ddde989d061f77034d4910d1ea51bdc22a1c807f828d1259"
+          }
+        ]
+      },
+      "verify-implementation-handoff": {
+        "path": "ai/skills/verify-implementation-handoff/SKILL.md",
+        "sha256": "570af30068f0ef579bd0538cb88368138530aa99852f3f0d0d531e082ce548a5",
+        "files": [
+          {
+            "path": "ai/skills/verify-implementation-handoff/SKILL.md",
+            "sha256": "e1d26530d15ad4e723ba68d980128aeb281845aa5ce45ef38e083364ac4e9916"
+          },
+          {
+            "path": "ai/skills/verify-implementation-handoff/agents/openai.yaml",
+            "sha256": "762a6330b1443adf98cc3e7098e81b9d42e44deae1252e9b6424f03130e7e2a2"
+          },
+          {
+            "path": "ai/skills/verify-implementation-handoff/scripts/check_handoff.py",
+            "sha256": "acb2f5152715741f18421cb54508b16ddf98c90f5d8566a90ab468664d1430c2"
+          }
+        ]
+      },
+      "verify-openapi-contract": {
+        "path": "ai/skills/verify-openapi-contract/SKILL.md",
+        "sha256": "c55f03a12edf369434e1588f7eb141eb3a9816286d813bbde4522b5e9bf7b9ba",
+        "files": [
+          {
+            "path": "ai/skills/verify-openapi-contract/SKILL.md",
+            "sha256": "8edc6b39b7a444d013b37414a0644b8305d67dd110569ee4bae23bdbc054c440"
+          },
+          {
+            "path": "ai/skills/verify-openapi-contract/agents/openai.yaml",
+            "sha256": "810ea071b2fdd1fd56c1963a4417a230bb8eae844c3aa5847e74dbdff3a01af5"
+          },
+          {
+            "path": "ai/skills/verify-openapi-contract/references/manifest.md",
+            "sha256": "b793e00004be5146274e0fe73c403970ff9f95f98b0230638c4bd889e264d544"
+          },
+          {
+            "path": "ai/skills/verify-openapi-contract/scripts/check_openapi_contract.py",
+            "sha256": "ec8bd84c50f8525e59d275202a484232db3c0874c0345034dcebb024f5841c45"
+          }
+        ]
+      }
+    }
+  },
+  "execution_plan": "ai/tasks/MEMORIES-0005/execution-plan.json",
+  "scope_assessment": {
+    "acceptance_items": 11,
+    "risk_dimensions": [
+      "api",
+      "database",
+      "security",
+      "ui"
+    ],
+    "large": true
+  }
+}

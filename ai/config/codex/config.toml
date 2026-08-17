@@ -1,9 +1,11 @@
 approval_policy = "never"
 sandbox_mode = "workspace-write"
 project_doc_max_bytes = 8192
+model = "gpt-5.6-sol"
+model_reasoning_effort = "medium"
 
 [projects."/Users/cmc/Documents/Memories"]
 trust_level = "trusted"
 
 [tui.model_availability_nux]
-"gpt-5.6-sol" = 1
+"gpt-5.6-sol" = 4

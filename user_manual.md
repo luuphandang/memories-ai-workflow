@@ -130,158 +130,6 @@ Thông tin chi tiết còn được nhắc lại tại mục **4.2 Cài CodeGrap
 một lần**, mục **11 Chuẩn bị CodeGraph, plan, skill và context**, và mục **21 Tham chiếu
 đầy đủ toàn bộ lệnh**.
 
-## Cài đặt và sử dụng Memory (TencentDB) — hướng dẫn nhanh
-
-Memory là lớp persistent memory/retrieval **tùy chọn**, giúp Claude/Codex không phải
-đọc lại kiến thức đã có từ các task trước. Service `services/tencentdb-agent-memory/`
-**đã được clone sẵn** — không clone lại. Memory **không** thay thế `ai/shared/`,
-`ai/repos/`, `ai/domains/`; các file đó luôn thắng khi có xung đột.
-
-### Bước 1 — Chạy service TencentDB cục bộ
-
-Các lệnh dưới đây được thiết kế để chạy từ **root của workspace**
-(`/Users/cmc/Documents/Memories`), không cần `cd` vào thư mục deploy.
-
-Khởi tạo file cấu hình trong lần đầu tiên (không ghi đè `.env` đã tồn tại):
-
-```bash
-test -f services/tencentdb-agent-memory/deploy/global-images/.env || \
-  cp services/tencentdb-agent-memory/deploy/global-images/.env.example \
-     services/tencentdb-agent-memory/deploy/global-images/.env
-$EDITOR services/tencentdb-agent-memory/deploy/global-images/.env
-```
-
-Trước khi start, cấu hình các giá trị LLM thật trong file trên; không để
-`MEMORY_LLM_API_KEY` hoặc `PROXY_UPSTREAM_API_KEY` là `REPLACE_ME`. Giá trị
-`AI_MEMORY_API_KEY` trong `.env.ai` phải giống `MEMORY_CORE_GATEWAY_API_KEY` trong
-file `.env` của TencentDB.
-
-Start toàn bộ service từ workspace root:
-
-```bash
-./services/tencentdb-agent-memory/deploy/global-images/start-all.sh
-```
-
-Restart thông thường:
-
-```bash
-./services/tencentdb-agent-memory/deploy/global-images/stop-all.sh
-./services/tencentdb-agent-memory/deploy/global-images/start-all.sh
-```
-
-Với flow Claude implement → Codex review không đi qua MemoryProxy, start MemoryCore
-trước, sau đó start MemoryHub (Panel + MemoryKnowledge):
-
-```bash
-./services/tencentdb-agent-memory/deploy/global-images/start-memory-core.sh
-./services/tencentdb-agent-memory/deploy/global-images/start-memory-hub.sh
-```
-
-Hai lệnh này đều chạy trực tiếp từ workspace root và không yêu cầu cấu hình
-nhóm `PROXY_UPSTREAM_*`.
-
-Kiểm tra container và health của MemoryCore/MemoryKnowledge:
-
-```bash
-docker ps
-curl http://127.0.0.1:8420/health
-curl http://127.0.0.1:8424/health
-```
-
-Xem `services/tencentdb-agent-memory/INSTALL.md` để biết chi tiết (port, các service
-con MemoryCore/MemoryKnowledge/MemoryPanel/MemoryProxy).
-
-Không dùng `stop-all.sh --purge` cho restart thông thường: tùy chọn `--purge` có thể
-xóa dữ liệu/volume của service.
-
-### Bước 2 — Cấu hình `.env.ai`
-
-```bash
-export AI_MEMORY_ENABLED="true"        # off theo mặc định — đây là kill switch toàn cục
-export AI_MEMORY_PROVIDER="tencentdb"
-export AI_MEMORY_BASE_URL="http://127.0.0.1:8420"
-export AI_MEMORY_KNOWLEDGE_BASE_URL="http://127.0.0.1:8424"
-export AI_MEMORY_TIMEOUT_SECONDS="10"
-export AI_MEMORY_API_KEY="<cùng giá trị MEMORY_CORE_GATEWAY_API_KEY>"
-export AI_MEMORY_SERVICE_ID="default"
-export AI_MEMORY_TEAM_ID="default"
-export AI_MEMORY_AGENT_ID="claude"
-export AI_MEMORY_USER_ID="workspace"
-```
-
-`AI_MEMORY_ENABLED=false` (mặc định) khiến mọi lệnh `ai task ...` hoạt động y hệt như
-trước khi tích hợp memory tồn tại — không có gì thay đổi hành vi khi tắt.
-
-### Bước 3 — Kiểm tra health
-
-```bash
-source .env.ai
-./ai/bin/ai memory health
-```
-
-In ra `provider`, `enabled`, `service_available`, `wiki_supported`, `code_graph_supported`,
-v.v. (không bao giờ in API key thật). Exit code `0` nghĩa là dùng được, `1` nghĩa là
-không sẵn sàng.
-
-### Bước 4 — Recall tự động khi chuẩn bị context
-
-```bash
-./ai/bin/ai task prepare-context <TASK-ID>
-```
-
-Khi memory bật, bước này tự gọi recall và ghi `ai/tasks/<TASK-ID>/memory/recall.json`
-(máy đọc) và `recall.md` (người đọc), đồng thời khóa `context.lock.json.memory` (pointer
-+ hash). Claude/Codex chỉ đọc hai file này, không bao giờ gọi service trực tiếp. Muốn
-làm mới memory giữa chừng, chạy lại `prepare-context`.
-
-Nếu service không sẵn sàng và task không đặt `memory.required: true`, `prepare-context`
-vẫn chạy tiếp bằng static context (cảnh báo `MEMORY_UNAVAILABLE`, `fallback:
-static_context`). Nếu `required: true`, `prepare-context` dừng lại và task chuyển
-`blocked` — giống hệt cách thiếu context file/worktree khiến task bị chặn.
-
-### Bước 5 — Publish sau khi nghiệm thu
-
-Chỉ chạy được khi `state.status == completed` **và** `acceptance.status == accepted`:
-
-```bash
-./ai/bin/ai memory publish <TASK-ID>
-```
-
-Đẩy các entry đã `approved: true` trong `knowledge-updates.json` (chạy sau
-`update-knowledge`, không thay thế nó) thành persistent memory. Không publish trước
-nghiệm thu, và không publish cho một correction cycle bị reject.
-
-### Bước 6 — Sync CodeGraph cho một repository ổn định
-
-```bash
-./ai/bin/ai memory sync <REPO>
-```
-
-Chỉ đồng bộ `apps/<REPO>` (repo ổn định, đã merge) — không bao giờ đồng bộ
-`worktrees/<TICKET_ID>/<REPO>` (delta chưa merge). Upstream TencentDB CodeGraph hiện
-chỉ index được repo có remote `origin` công khai dạng `https://`; nếu `apps/<REPO>`
-không có remote như vậy, lệnh báo `supports_code_graph: false` thay vì giả lập thành
-công. Không tự chạy khi `task accept` — người dùng chủ động chạy sau khi code đã merge
-vào `apps/<REPO>`.
-
-### Correction / requirement change
-
-Một correction cycle (`request-change`) lưu `ai/tasks/<TASK-ID>/memory/` vào
-`changes/cycle-NNN/baseline/memory/` rồi tạo lại từ đầu — recall mới sẽ được sinh ở lần
-`prepare-context` tiếp theo. Không có publish nào xảy ra cho cycle bị reject. Một
-requirement change sau khi đã completed tạo recall mới và, khi publish lại cùng
-target, tự động đánh dấu entry cũ của cùng task là `superseded` trong
-`ai/integrations/tencentdb-memory/local-index/superseded-assets.json`.
-
-### Tắt hoàn toàn
-
-```bash
-export AI_MEMORY_ENABLED="false"
-```
-
-Đây cũng là giá trị mặc định trong `.env.ai.example` — không cần làm gì thêm nếu chưa
-muốn dùng memory.
-
 ## 2. Thuật ngữ quan trọng
 
 | Thuật ngữ | Ý nghĩa |
@@ -1119,9 +967,8 @@ detail. Xem danh sách ngắn bằng `./ai/bin/ai --help`. Bảng dưới đây 
 | Lệnh | Chức năng và tùy chọn |
 |---|---|
 | `ai bootstrap` | Cài symlink config/skill cục bộ vào `~/.project-ai/`; chạy lại sau khi đổi config hoặc thêm skill. |
-| `ai self-check` | Kiểm tra JSON/schema, skill, quyền Claude, Codex trust, path, biến CodeGraph/Memory và dấu hiệu secret. |
+| `ai self-check` | Kiểm tra JSON/schema, skill, quyền Claude, Codex trust, path và cấu hình CodeGraph. |
 | `ai self-check --smoke` | Thêm pipeline giả lập end-to-end trong temp; không gọi agent thật. |
-| `ai self-check --memory-integration` | Thêm probe Memory backend thật; tách biệt với `--smoke`. |
 | `ai indexes rebuild` | Sinh lại năm index `backlog`, `in-progress`, `review`, `completed`, `failed` từ mọi `state.yaml`. |
 | `ai metrics <ID>` | Tổng hợp attempt, thời gian, token, turn và cost từ runtime metrics của task. |
 
@@ -1134,7 +981,7 @@ detail. Xem danh sách ngắn bằng `./ai/bin/ai --help`. Bảng dưới đây 
 | `ai task classify-skills <ID>` | Chỉ in các skill được đề xuất từ scope. `--apply` ghi đề xuất vào `task.yaml`; phải review trước khi apply. |
 | `ai task prepare-plan <ID>` | Sinh `execution-plan.json`; từ chối ghi đè plan hiện có trừ khi dùng `--force`. Sau mỗi thay đổi requirement/skill phải tạo lại plan. |
 | `ai task codegraph <ID>` | Sync incremental và in status JSON cho mọi worktree. `--init` tạo index còn thiếu; `--no-sync` chỉ kiểm tra. |
-| `ai task prepare-context <ID>` | Kiểm tra requirement, knowledge, worktree/branch, skill, plan, Memory và CodeGraph rồi khóa `context.lock.json`. `--allow-placeholders` chỉ dành cho template/demo; không dùng cho task thật vì cho phép marker chưa được điền. |
+| `ai task prepare-context <ID>` | Kiểm tra requirement, knowledge, worktree/branch, skill, plan và CodeGraph rồi khóa `context.lock.json`. `--allow-placeholders` chỉ dành cho template/demo; không dùng cho task thật vì cho phép marker chưa được điền. |
 
 ### 21.3 Implement, validation, review và report
 
@@ -1156,15 +1003,6 @@ detail. Xem danh sách ngắn bằng `./ai/bin/ai --help`. Bảng dưới đây 
 | `ai task consolidate-requirements <ID>` | Với task completed, dùng Claude tạo draft gộp addendum nhưng chưa sửa `task.md`. `--dry-run` hoặc `--print-command` để kiểm tra trước. |
 | `ai task apply-requirements-consolidation <ID> --approved-by <NAME>` | Kiểm hash/cycle/manifest rồi áp dụng draft đã được người duyệt xác nhận; backup lịch sử để audit. |
 | `ai task update-knowledge <ID>` | Hiển thị kế hoạch cập nhật knowledge đã approved. `--apply` mới ghi vào `ai/shared`, `ai/repos`, `ai/domains`; `--force` là escape hatch có kiểm soát khi cần vượt guard trạng thái. |
-
-### 21.5 Memory
-
-| Lệnh | Chức năng và tùy chọn |
-|---|---|
-| `ai memory health` | Probe provider, MemoryCore và MemoryKnowledge; không in API key. Exit `0` khi sẵn sàng, `1` khi không sẵn sàng. |
-| `ai memory recall <ID>` | Recall thủ công và ghi `memory/recall.json`, `recall.md`. Bình thường `prepare-context` tự gọi. |
-| `ai memory publish <ID>` | Publish các knowledge entry `approved: true`; chỉ sau `completed` + accepted. `--supersedes <ASSET_ID>` là escape hatch để chỉ rõ asset của task khác bị thay thế. |
-| `ai memory sync <REPO>` | Sync repository ổn định `apps/<REPO>` lên TencentDB CodeGraph; không nhận worktree. Hiện cần remote `origin` public HTTPS, nếu không trả exit `1` và `supports_code_graph: false`. |
 
 Ví dụ vận hành hằng ngày:
 
@@ -1202,7 +1040,6 @@ find worktrees/<ID>/.ai -maxdepth 3 -type f | sort
 | `prepare-context` báo context/skill/plan stale | Chạy lại `classify-skills --apply` khi cần, `prepare-plan --force`, `codegraph --init` và cuối cùng `prepare-context`. Luôn khóa context sau thay đổi cuối. |
 | Placeholder chưa xử lý | Tìm bằng `rg 'BỔ SUNG THEO' ai/tasks/<ID> ai/domains/<domain>` và điền dữ liệu thật. Không dùng `--allow-placeholders` cho production task. |
 | CodeGraph thiếu index/stale | `ai task codegraph <ID> --init`; kiểm tra JSON `available/indexed/ready`. Nếu vẫn lỗi, chạy `codegraph status <worktree-path>` và kiểm tra `CODEGRAPH_COMMAND`. Tạm fallback bằng `AI_CODEGRAPH_MODE=optional` hoặc tắt bằng `off`. |
-| Memory health exit `1` | Kiểm `docker ps`, `curl http://127.0.0.1:8420/health`, `curl http://127.0.0.1:8424/health`; đối chiếu API key hai file env. Nếu không bắt buộc, đặt `AI_MEMORY_ENABLED=false`; nếu task có `memory.required: true` thì phải khôi phục service. |
 | Validation fail | Đọc `worktrees/<ID>/.ai/validation/summary.json` và file `<repo>.json`; chạy riêng command lỗi bằng `ai task validate-code <ID> --command <NAME> --tier full`. Sửa source/config rồi chạy lại full validation. |
 | Dry-run pass nhưng review/report bị chặn | Đây là hành vi đúng: chạy validation thật `--tier full`, rồi review thật. Dry-run không phải evidence. |
 | Task ở `interrupted` | Đọc log mới nhất trong `worktrees/<ID>/.ai/exchange/`, xử lý quota/network/timeout, rồi chạy `ai task run <ID> --resume-interrupted --max-interrupted-retries 1`. Không resume liên tục khi nguyên nhân chưa hết. |
@@ -1213,11 +1050,10 @@ find worktrees/<ID>/.ai -maxdepth 3 -type f | sort
 | Report/accept bị chặn | Kiểm `state.yaml`, cycle trong implementation/review/validation, verdict, `review.fail_on`, và full-validation không phải dry-run. Không dùng `--force` chỉ để vượt nghiệm thu. |
 | Requirement consolidation báo hash/cycle mismatch | Không sửa manifest. Tạo lại draft bằng `consolidate-requirements`, review lại rồi apply với người duyệt. |
 | Index trạng thái sai | Chạy `ai indexes rebuild`; index là dữ liệu sinh, `state.yaml` mới là nguồn thật. |
-| Memory publish bị từ chối | Chỉ publish sau `task accept`; đảm bảo `knowledge-updates.json` có entry `approved: true` và memory health pass. |
 
 Log/artifact cần gửi khi nhờ hỗ trợ: command đầy đủ đã chạy, exit code, `state.yaml`,
 `context.lock.json`, validation `summary.json`, và log exchange liên quan. Xóa/redact secret
-trước khi chia sẻ; không gửi `.env.ai` hoặc file `.env` của TencentDB.
+trước khi chia sẻ; không gửi `.env.ai` hoặc file cấu hình chứa bí mật.
 
 ## 23. Tự kiểm tra workspace
 

@@ -1,0 +1,83 @@
+{
+  "invariants": [
+    {
+      "invariant": "At most one AuthIdentity exists per (provider, providerSubject) among non-deleted rows — a Google/Facebook identity resolves to exactly one Account.",
+      "enforcement": "Partial unique index UQ_identity_auth_identities_provider_subject (pre-existing migration 1786791535416-CreateIdentityAccessSchema) WHERE deleted_at IS NULL AND provider_subject IS NOT NULL; TypeOrmAuthIdentityRepository.translateUniqueViolation now also maps this constraint's violation to DomainError.conflict('provider_identity_already_exists', ...) (previously only the LOCAL provider_identifier constraint was translated).",
+      "cases": [
+        {
+          "operation": "OAuthLoginUseCase creates a new Account+AuthIdentity for a providerSubject never seen before",
+          "expected": "Account, AuthIdentity(provider, providerSubject, identifier=null, passwordHash=null), default role assignment and UserProfile are committed together; a session is issued",
+          "test": "libs/modules/identity-access/test/oauth-login.use-case.spec.ts > creates a new PUBLIC account + AuthIdentity + UserProfile when no identity is linked yet"
+        },
+        {
+          "operation": "OAuthLoginUseCase resolves an existing (provider, providerSubject) AuthIdentity",
+          "expected": "No new Account/AuthIdentity is created; a session is issued for the existing Account",
+          "test": "libs/modules/identity-access/test/oauth-login.use-case.spec.ts > logs in directly when the (provider, providerSubject) identity already exists, without creating a new account"
+        },
+        {
+          "operation": "Two concurrent OAuth callbacks for the same brand-new providerSubject race to insert the AuthIdentity (replayed/double-submitted callback)",
+          "expected": "The loser's insert fails on UQ_identity_auth_identities_provider_subject, is translated to a conflict, and OAuthLoginUseCase re-resolves the winner's identity and issues a session for it instead of surfacing a user-facing error or leaving a half-created Account",
+          "test": "libs/modules/identity-access/test/oauth-login.use-case.spec.ts > self-heals a double-submitted/replayed callback: a provider_subject unique-violation on create resolves to the winner's session instead of failing (unit); apps/api/test/oauth-flow.e2e-spec.ts > handles two truly concurrent first-time callbacks for the same brand-new provider identity as a real Postgres race: exactly one account graph, no raw 500s (fix-request-review-3 #6 — real Promise.all race with a synchronization barrier inside the mocked exchangeCodeForProfile, replacing a previous sequential completeCallback()/completeCallback() pair that never actually exercised the unique-constraint conflict path); the pre-existing sequential 'logs into the same account on a second, later callback' test is retained separately to cover ordinary repeat-login, not race recovery"
+        },
+        {
+          "operation": "Repository-level unique-violation translation for the provider_subject constraint specifically (not the pre-existing provider_identifier constraint)",
+          "expected": "QueryFailedError with constraint=UQ_identity_auth_identities_provider_subject is translated to DomainError.conflict('provider_identity_already_exists', ...); the pre-existing provider_identifier -> phone_already_exists mapping is unaffected",
+          "test": "libs/modules/identity-access/test/create-account.use-case.spec.ts (phone_already_exists path, regression) and oauth-login.use-case.spec.ts (provider_identity_already_exists path)"
+        }
+      ]
+    },
+    {
+      "invariant": "The optional `address` supplied at self-registration is written to the same UserProfile row created in the account-creation transaction, or left null when omitted — never a separate/partial write.",
+      "enforcement": "RegisterUseCase forwards address into CreateAccountUseCase.execute (unchanged transaction boundary — CreateAccountUseCase already wrote address for admin-created accounts; this closes the gap for public self-registration), which passes it to USER_PROFILE_PROVISIONER.provision inside the same UnitOfWork.withTransaction as the Account/AuthIdentity/AccountRole writes.",
+      "cases": [
+        {
+          "operation": "POST /auth/register with address set",
+          "expected": "201, and GET /user-profiles/:id returns the same address string",
+          "test": "apps/api/test/auth-flow.e2e-spec.ts > stores the optional address supplied at registration on the provisioned UserProfile"
+        },
+        {
+          "operation": "POST /auth/register with address omitted",
+          "expected": "201, and GET /user-profiles/:id returns address: null (no default/placeholder value)",
+          "test": "apps/api/test/auth-flow.e2e-spec.ts > registers successfully when the optional address is omitted"
+        },
+        {
+          "operation": "RegisterUseCase.execute passes its address field straight through to CreateAccountUseCase.execute's input",
+          "expected": "createAccount.execute is called with address preserved verbatim",
+          "test": "libs/modules/identity-access/test/register.use-case.spec.ts > creates the Account via CreateAccountUseCase and issues a PUBLIC-portal session, like a successful login"
+        }
+      ]
+    },
+    {
+      "invariant": "Self-registration commits or rolls back the entire Account/AuthIdentity/AccountRole/UserProfile/RefreshSession graph as one operation — a session-stage failure (permission check, token issuance, refresh-session persistence) never leaves a committed account behind (fix-request-review-3 #3, AC6 'trong 1 giao dịch nhất quán').",
+      "enforcement": "RegisterUseCase.execute wraps its entire flow (CreateAccountUseCase.execute call + permission check + token issuance + RefreshSession.save) in a single owning unitOfWork.withTransaction; TypeOrmUnitOfWork.withTransaction was made reentrant (joins the already-active TypeOrmQueryRunnerContext instead of opening a second, independent connection/transaction), so CreateAccountUseCase's own withTransaction call participates in the same outer transaction rather than committing on its own.",
+      "cases": [
+        {
+          "operation": "Refresh-session issuance (tokenService.issueAccessToken/issueRefreshToken) fails after the Account/AuthIdentity/AccountRole/UserProfile writes have already happened in the same (still open) transaction",
+          "expected": "500, and the entire transaction rolls back — no Account, AuthIdentity, AccountRole, UserProfile or RefreshSession row is committed; the same phone is free to register again immediately afterward",
+          "test": "apps/api/test/auth-flow.e2e-spec.ts > register (changes/cycle-002 addendum) > atomicity: refresh-session issuance failing after account/profile/role writes > leaves no Account/AuthIdentity/AccountRole/UserProfile committed, and the phone is free to register again (e2e, real Postgres, TOKEN_SERVICE forced to reject in an isolated NestJS testing module)"
+        },
+        {
+          "operation": "A use case's own withTransaction call is invoked while already inside another use case's active transaction (the general reentrancy mechanism this invariant depends on)",
+          "expected": "No second QueryRunner/connection is created; the nested call runs inside the outer transaction and does not commit or roll back independently of it",
+          "test": "libs/platform/database/test/typeorm-unit-of-work.spec.ts > joins an already-active transaction instead of opening a second connection, and lets the outer call own commit/rollback; > rolls back the single outer transaction when a nested withTransaction call throws"
+        }
+      ]
+    },
+    {
+      "invariant": "First-time OAuth account provisioning commits or rolls back the entire Account/AuthIdentity/AccountRole/UserProfile/RefreshSession graph as one operation — a session-stage failure after the account graph is written never leaves a committed social account with no session behind (fix-request-review-006 #2).",
+      "enforcement": "OAuthLoginUseCase.provisionAndIssueSession wraps createAccountForProfile + issueSessionForAccount (token issuance + RefreshSession.save) in a single owning unitOfWork.withTransaction, reusing the same reentrant TypeOrmUnitOfWork mechanism as RegisterUseCase. On a provider-subject unique-constraint conflict (concurrent-callback race), that transaction has already rolled back in full (TypeOrmUnitOfWork.withTransaction calls rollbackTransaction() before rethrowing) by the time the catch block re-resolves the winner and calls issueSessionForAccount again — which then opens its own fresh, separate transaction since no ambient one exists.",
+      "cases": [
+        {
+          "operation": "Refresh-token issuance fails after the Account/AuthIdentity/AccountRole/UserProfile writes have already happened in the same (still open) transaction, for a brand-new OAuth identity",
+          "expected": "The callback redirects with oauth=error&reason=oauth_failed and no refresh cookie; the entire transaction rolls back — no Account, AuthIdentity, AccountRole, UserProfile or RefreshSession row is committed; a retry with a fresh callback provisions cleanly",
+          "test": "apps/api/test/oauth-flow.e2e-spec.ts > rolls back the entire first-time account graph when session issuance fails after the graph is written (fix-request-review-006 #2) (e2e, real Postgres, TOKEN_SERVICE.issueRefreshToken forced to reject once via jest.spyOn)"
+        },
+        {
+          "operation": "Two truly concurrent first-time callbacks for the same brand-new provider identity race on the provider-subject unique index (retained from the pre-existing invariant, re-verified against the refactored transaction boundary)",
+          "expected": "Exactly one account graph is committed; the loser's failed transaction leaves no partial state, and both callbacks converge on the winner's session",
+          "test": "apps/api/test/oauth-flow.e2e-spec.ts > handles two truly concurrent first-time callbacks for the same brand-new provider identity as a real Postgres race: exactly one account graph, no raw 500s (unchanged by this cycle's refactor, re-run and re-verified)"
+        }
+      ]
+    }
+  ]
+}

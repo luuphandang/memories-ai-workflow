@@ -225,9 +225,6 @@ source .env.ai
 ./ai/bin/ai bootstrap
 ./ai/bin/ai self-check
 ./ai/bin/ai self-check --smoke
-
-# Chỉ chạy khi cần kiểm tra kết nối Memory backend thật
-./ai/bin/ai self-check --memory-integration
 ```
 
 ### Chuẩn bị task
@@ -328,27 +325,6 @@ rủi ro và luôn yêu cầu final full review trước report.
 
 ./ai/bin/ai indexes rebuild
 ```
-
-### Memory tùy chọn
-
-```bash
-# Kiểm tra service trước khi chuẩn bị context
-./ai/bin/ai memory health
-
-# Recall thường được prepare-context gọi tự động; dùng lệnh này khi cần chạy thủ công
-./ai/bin/ai memory recall <TASK-ID>
-
-# Chỉ publish sau khi task đã completed và được người dùng accept
-./ai/bin/ai memory publish <TASK-ID>
-
-# Chỉ sync repository ổn định sau khi code đã merge, không sync worktree
-./ai/bin/ai memory sync <REPO>
-```
-
-Khi Memory được bật, `task prepare-context` tự recall và khóa kết quả vào context.
-`memory publish` không thay thế `task update-knowledge`; chạy publish sau khi proposal
-knowledge đã được review, apply và task đã nghiệm thu. `memory sync` chỉ nhận repository
-trong `apps/<REPO>`.
 
 ### Git read-only để kiểm tra nhanh
 

@@ -39,8 +39,6 @@ source .env.ai
 - Chức năng từng file/folder: [`folder_structure_guide.md`](folder_structure_guide.md)
 - CodeGraph theo task: cài CLI, chạy `./ai/bin/ai task codegraph <ID> --init`, rồi
   `prepare-context`; xem chi tiết trong [`ai/README.md`](ai/README.md).
-- Memory (TencentDB, tùy chọn, tắt mặc định): `./ai/bin/ai memory health|recall|
-  publish|sync`; xem [`ai/integrations/tencentdb-memory/README.md`](ai/integrations/tencentdb-memory/README.md).
 
 ## An toàn
 

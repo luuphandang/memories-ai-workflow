@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -15,6 +16,39 @@ def invoke(args: list[str]) -> int:
     print("RUN:", " ".join(args), flush=True)
     result = subprocess.run(args, text=True, check=False)
     return result.returncode
+
+
+def repository_fingerprint(task: dict) -> str:
+    """Hash tracked diffs and untracked contents across registered worktrees."""
+    digest = hashlib.sha256()
+    for item in sorted(task.get("worktrees", []), key=lambda value: value.get("repo", "")):
+        repo = ROOT / item["path"]
+        digest.update(str(item.get("repo", "")).encode())
+        diff = subprocess.run(
+            ["git", "diff", "--binary", "HEAD", "--"],
+            cwd=repo,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+        digest.update(diff.stdout)
+        untracked = subprocess.run(
+            ["git", "ls-files", "--others", "--exclude-standard", "-z"],
+            cwd=repo,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+        for raw_path in sorted(path for path in untracked.stdout.split(b"\0") if path):
+            digest.update(raw_path)
+            path = repo / raw_path.decode("utf-8", errors="surrogateescape")
+            if path.is_file():
+                digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
+def is_no_progress_failure(code: int, status: str | None, before: str, after: str) -> bool:
+    return (code != 0 or status == "failed") and before == after
 
 
 def validation_fix_request(task_id: str, attempt: int) -> Path:
@@ -36,10 +70,12 @@ def validation_fix_request(task_id: str, attempt: int) -> Path:
     return path
 
 
-def delivery_gate_fix_request(task_id: str, attempt: int) -> Path:
+def delivery_gate_fix_request(task_id: str, attempt: int) -> Path | None:
     runtime = runtime_dir(task_id)
     gate_path = runtime / "validation" / "skills" / "delivery-gates.json"
     gate = read_json(gate_path) if gate_path.exists() else {}
+    if gate.get("passed") is True or not gate.get("failures"):
+        return None
     lines = [
         f"# Delivery-gate fix request — {task_id} — automation attempt {attempt}", "",
         "Fix the implementation handoff or implementation defects reported below without weakening or bypassing the gates.",
@@ -102,7 +138,9 @@ def main() -> None:
         state["automation"]["attempts"] = attempt
         write_yaml(td / "state.yaml", state)
 
+        before_fingerprint = repository_fingerprint(task)
         code = invoke([str(AI_ROOT / "bin" / "run-claude"), args.task_id])
+        after_fingerprint = repository_fingerprint(task)
         state = read_yaml(td / "state.yaml")
         if state.get("status") == "interrupted":
             if args.resume_interrupted and interrupted_retries < args.max_interrupted_retries:
@@ -112,11 +150,27 @@ def main() -> None:
             state["automation"].update({"status": "interrupted", "finished_at": now_iso()})
             write_yaml(td / "state.yaml", state)
             raise SystemExit(code or 1)
+        if is_no_progress_failure(code, state.get("status"), before_fingerprint, after_fingerprint):
+            state["status"] = "blocked"
+            state["last_error"] = (
+                "Implementation attempt made no code changes; automation stopped to prevent "
+                "a no-progress retry loop"
+            )
+            state.setdefault("automation", {}).update({"status": "blocked", "finished_at": now_iso()})
+            write_yaml(td / "state.yaml", state)
+            raise SystemExit(state["last_error"])
         if (
             (code != 0 or state.get("status") == "failed")
             and str(state.get("last_error", "")).startswith("Required skill checks failed:")
         ):
             request = delivery_gate_fix_request(args.task_id, attempt)
+            if request is None:
+                state.setdefault("automation", {}).update({"status": "stopped", "finished_at": now_iso()})
+                write_yaml(td / "state.yaml", state)
+                raise SystemExit(
+                    "Implementation reported required-skill failures, but delivery-gates.json "
+                    "is passing or contains no failures; refusing to queue an empty fix request"
+                )
             print(f"Delivery quality gates failed; queued for next implementation attempt: {request}")
             if attempt < max_attempts:
                 continue

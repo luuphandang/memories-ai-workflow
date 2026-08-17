@@ -27,10 +27,6 @@ def usage():
   ai task apply-requirements-consolidation <ID> --approved-by NAME
   ai indexes rebuild
   ai metrics <ID>
-  ai memory health
-  ai memory recall <ID>
-  ai memory publish <ID> [--supersedes ASSET_ID]
-  ai memory sync <REPO>
 """)
 
 
@@ -41,10 +37,6 @@ def main():
     elif args[0]=="self-check": script,rest="self-check",args[1:]
     elif args[:2]==["indexes","rebuild"]: script,rest="rebuild-indexes",args[2:]
     elif args[0]=="metrics": script,rest="metrics",args[1:]
-    elif args[0]=="memory" and len(args)>=2:
-        mapping={"health":"memory-health","recall":"memory-recall","publish":"memory-publish","sync":"memory-sync"}
-        script=mapping.get(args[1]); rest=args[2:]
-        if not script: usage(); raise SystemExit(2)
     elif args[0]=="task" and len(args)>=2:
         mapping={"create":"create-task","register-worktree":"register-worktree","prepare-context":"prepare-context","prepare-plan":"prepare-plan","classify-skills":"classify-skills","codegraph":"manage-codegraph","implement":"run-claude","run":"run-task","validate-code":"validate","review":"run-codex-review","request-fixes":"request-fixes","report":"finalize-task","accept":"accept-task","request-change":"request-change","update-knowledge":"update-knowledge","consolidate-requirements":"consolidate-requirements","apply-requirements-consolidation":"apply-requirements-consolidation"}
         script=mapping.get(args[1]); rest=args[2:]

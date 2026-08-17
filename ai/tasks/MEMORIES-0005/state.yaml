@@ -1,0 +1,145 @@
+task_id: MEMORIES-0005
+status: interrupted
+implementation_cycle: 1
+review_cycle: 13
+review_cycles_total: 13
+change_cycle: 0
+active_change: null
+timestamps:
+  created_at: '2026-08-16T14:51:12+07:00'
+  context_prepared_at: '2026-08-17T11:10:28+07:00'
+  implementation_started_at: '2026-08-17T11:15:36+07:00'
+  implementation_finished_at: '2026-08-17T11:15:38+07:00'
+  validation_started_at: '2026-08-17T10:32:01+07:00'
+  validation_finished_at: '2026-08-17T10:34:03+07:00'
+  review_started_at: '2026-08-17T10:36:14+07:00'
+  review_finished_at: '2026-08-17T10:49:11+07:00'
+  fix_requested_at: '2026-08-17T11:09:46+07:00'
+agents:
+  implementation: claude
+  review: codex
+repositories:
+  backend:
+    path: worktrees/MEMORIES-0005/backend
+    base_ref: origin/master
+    head_sha: e70db3207463b8742a92162b050f52dd45a6e477
+    branch: feature/MEMORIES-0005-public-authorization
+    registered_branch: feature/MEMORIES-0005-public-authorization
+    status: "M .env.example\n M apps/api/test/auth-flow.e2e-spec.ts\n M libs/modules/identity-access/src/application/use-cases/refresh-session.use-case.ts\n\
+      \ M libs/modules/identity-access/src/application/use-cases/register.use-case.ts\n\
+      \ M libs/modules/identity-access/src/identity-access.module.ts\n M libs/modules/identity-access/src/infrastructure/persistence/typeorm-auth-identity.repository.ts\n\
+      \ M libs/modules/identity-access/src/presentation/http/auth.controller.ts\n\
+      \ M libs/modules/identity-access/src/presentation/http/register.dto.ts\n M libs/modules/identity-access/src/public-api.ts\n\
+      \ M libs/modules/identity-access/test/register.use-case.spec.ts\n M libs/platform/configuration/src/config/auth.config.ts\n\
+      \ M libs/platform/configuration/src/public-api.ts\n M libs/platform/configuration/src/schemas/env.schema.ts\n\
+      \ M libs/platform/database/src/typeorm-unit-of-work.ts\n M libs/platform/database/test/typeorm-unit-of-work.spec.ts\n\
+      \ M libs/platform/observability/src/logger.module.ts\n M package.json\n?? apps/api/test/oauth-flow.e2e-spec.ts\n\
+      ?? libs/modules/identity-access/src/application/ports/oauth-client.port.ts\n\
+      ?? libs/modules/identity-access/src/application/use-cases/oauth-login.use-case.ts\n\
+      ?? libs/modules/identity-access/src/infrastructure/security/facebook-oauth.client.ts\n\
+      ?? libs/modules/identity-access/src/infrastructure/security/google-oauth.client.ts\n\
+      ?? libs/modules/identity-access/src/presentation/http/oauth-state.helper.ts\n\
+      ?? libs/modules/identity-access/src/presentation/http/oauth.controller.ts\n\
+      ?? libs/modules/identity-access/test/facebook-oauth.client.contract.spec.ts\n\
+      ?? libs/modules/identity-access/test/facebook-oauth.client.spec.ts\n?? libs/modules/identity-access/test/fixtures/\n\
+      ?? libs/modules/identity-access/test/google-oauth.client.spec.ts\n?? libs/modules/identity-access/test/oauth-login.use-case.spec.ts\n\
+      ?? libs/modules/identity-access/test/oauth-state.helper.spec.ts\n?? libs/platform/observability/test/logger.module.spec.ts"
+  frontend:
+    path: worktrees/MEMORIES-0005/frontend
+    base_ref: origin/master
+    head_sha: a98a3dbcf468ca08e6ec96fe171cf4c4db93778b
+    branch: feature/MEMORIES-0005-public-authorization
+    registered_branch: feature/MEMORIES-0005-public-authorization
+    status: "M apps/public-web/app/(auth)/login/page.tsx\n M apps/public-web/app/providers.tsx\n\
+      \ M apps/public-web/components/icons.tsx\n M apps/public-web/components/mobile-bottom-nav.tsx\n\
+      \ M apps/public-web/components/site-header.tsx\n M apps/public-web/test/login-page.spec.tsx\n\
+      \ M apps/public-web/test/site-header.spec.tsx\n M packages/api-client/src/generated/schema.d.ts\n\
+      \ M packages/api-client/src/routes.ts\n M packages/auth/src/auth-provider.tsx\n\
+      \ M packages/ui/src/components/dialog.tsx\n M packages/ui/src/index.ts\n M packages/ui/test/dialog.spec.tsx\n\
+      \ M packages/validation/src/auth.ts\n M packages/validation/test/auth.spec.ts\n\
+      ?? apps/public-web/components/auth/\n?? apps/public-web/test/auth-modal.spec.tsx\n\
+      ?? apps/public-web/test/auth-provider.spec.tsx\n?? apps/public-web/test/login-form.spec.tsx\n\
+      ?? apps/public-web/test/mobile-bottom-nav.spec.tsx\n?? apps/public-web/test/oauth-redirect-handler.spec.tsx\n\
+      ?? apps/public-web/test/register-form.spec.tsx\n?? apps/public-web/test/user-menu-trigger.spec.tsx\n\
+      ?? packages/api-client/test/register-dto-contract.spec.ts\n?? packages/ui/src/components/popover.tsx\n\
+      ?? packages/ui/test/popover.spec.tsx"
+user_acceptance:
+  status: pending
+  accepted_at: null
+  accepted_by: null
+  accepted_change_cycle: null
+last_error: Claude was interrupted by a usage/session limit (rate_limit_info.status
+  != allowed); retry implement to resume. See /Users/cmc/Documents/Memories/worktrees/MEMORIES-0005/.ai/exchange/claude-session-attempt-045.jsonl
+automation:
+  status: interrupted
+  started_at: '2026-08-17T11:15:31+07:00'
+  max_attempts: 16
+  attempts: 1
+  finished_at: '2026-08-17T11:15:38+07:00'
+implementation_attempt: 45
+claude_session_id: 25352e77-b1d9-4606-b8a6-4550bf8204d7
+last_implementation_log: /Users/cmc/Documents/Memories/worktrees/MEMORIES-0005/.ai/exchange/claude-session-attempt-045.jsonl
+budget_warnings:
+- attempt 1 slice task-requirements used 81862817 context tokens
+- attempt 2 slice task-requirements used 2181685 context tokens
+- attempt 3 slice task-requirements used 888082 context tokens
+- attempt 4 slice task-requirements used 456791 context tokens
+- attempt 5 slice task-requirements used 664461 context tokens
+- attempt 6 slice task-requirements used 375438 context tokens
+- attempt 7 slice task-requirements used 3751127 context tokens
+- attempt 8 slice task-requirements used 35274233 context tokens
+- attempt 9 slice task-requirements used 1693257 context tokens
+- attempt 10 slice task-requirements used 1122044 context tokens
+- attempt 11 slice task-requirements used 353114 context tokens
+- attempt 12 slice task-requirements used 455719 context tokens
+- attempt 13 slice task-requirements used 491389 context tokens
+- attempt 14 slice task-requirements used 544039 context tokens
+- attempt 15 slice task-requirements used 653688 context tokens
+- attempt 16 slice task-requirements used 236691 context tokens
+- attempt 17 slice task-requirements used 596588 context tokens
+- attempt 18 slice task-requirements used 398822 context tokens
+- attempt 19 slice task-requirements used 373453 context tokens
+- attempt 20 slice task-requirements used 322270 context tokens
+- attempt 21 slice task-requirements used 234654 context tokens
+- attempt 22 slice task-requirements used 296157 context tokens
+- attempt 23 slice task-requirements used 322468 context tokens
+- attempt 24 slice task-requirements used 351078 context tokens
+- attempt 25 slice task-requirements used 595941 context tokens
+- attempt 26 slice task-requirements used 442710 context tokens
+- attempt 27 slice task-requirements used 495795 context tokens
+- attempt 28 slice task-requirements used 366253 context tokens
+- attempt 29 slice task-requirements used 1038229 context tokens
+- attempt 30 slice task-requirements used 523204 context tokens
+- attempt 31 slice task-requirements used 512940 context tokens
+- attempt 32 slice task-requirements used 633670 context tokens
+- attempt 33 slice task-requirements used 294604 context tokens
+- attempt 34 slice task-requirements used 106852 context tokens
+- attempt 36 slice task-requirements used 547233 context tokens
+- attempt 37 slice task-requirements used 22891731 context tokens
+- attempt 38 slice whole-task used 49000924 context tokens
+- attempt 39 slice whole-task used 15452359 context tokens
+- attempt 40 slice whole-task used 37500152 context tokens
+- attempt 41 slice whole-task used 41842903 context tokens
+- attempt 43 slice task-requirements used 1156046 context tokens
+last_budget_breach:
+  attempt: 43
+  slice: task-requirements
+  context_tokens: 1156046
+  action: next work continues in a fresh bounded session
+last_review_mode: full
+last_correction_scope:
+  review_cycle: 13
+  impacted_slices: []
+  full_plan_fallback_required: true
+  full_plan_fallback_reason: 'sensitive correction (risk categories: auth, contract)
+    always escalates to full-plan scope; 5 finding(s)/criterion(criteria) could not
+    be mapped to a specific slice; missing validation evidence is not attributable
+    to a specific slice; no finding or criterion mapped to any slice'
+last_completed_slice: null
+last_correction_implementation_scope:
+  mode: full_plan
+  slices: []
+  full_plan_fallback_reason: 'sensitive correction (risk categories: auth, contract)
+    always escalates to full-plan scope; 6 finding(s)/criterion(criteria) could not
+    be mapped to a specific slice; missing validation evidence is not attributable
+    to a specific slice; no finding or criterion mapped to any slice'

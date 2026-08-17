@@ -1,0 +1,41 @@
+{
+  "task_id": "MEMORIES-0005",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "status": "ready",
+  "slices": [
+    {
+      "id": "task-requirements",
+      "title": "Task requirements",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Task requirements"
+      ],
+      "requirement_details": {
+        "Task requirements": [
+          "Đổi hành vi icon người dùng trên `SiteHeader`: mở modal xác thực khi chưa đăng nhập;",
+          "Xây modal đăng nhập gồm số điện thoại, mật khẩu, submit đăng nhập LOCAL, nút đăng",
+          "Xây biểu mẫu đăng ký gồm số điện thoại (bắt buộc), mật khẩu (bắt buộc), xác nhận mật",
+          "Kết nối đăng nhập, đăng ký, đăng xuất với API và cập nhật `AuthProvider`/validation/",
+          "Mở rộng backend để tiếp nhận và lưu `address?` khi tự đăng ký, không cho client tự",
+          "Triển khai luồng đăng nhập Google ở cả backend/frontend, gồm bắt đầu",
+          "Vô hiệu hóa Facebook Login trên public website và backend public surface: không render",
+          "Tách trigger, auth modal, form đăng nhập, form đăng ký, nút social-login và account",
+          "Bổ sung trạng thái loading, lỗi validation/API, chống submit lặp và hành vi đóng/mở",
+          "Test thay đổi liên quan.",
+          "Tài liệu/knowledge update nếu phát sinh kiến thức bền vững."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    }
+  ]
+}
