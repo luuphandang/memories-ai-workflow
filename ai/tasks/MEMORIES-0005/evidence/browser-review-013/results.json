@@ -1,0 +1,46 @@
+{
+  "desktop": {
+    "afterToRegister": {
+      "inDialog": true,
+      "tag": "H2",
+      "text": "Tạo tài khoản mới",
+      "isBody": false
+    },
+    "afterForwardTab": {
+      "inDialog": true,
+      "isBody": false,
+      "tag": "INPUT"
+    },
+    "afterShiftTab": {
+      "inDialog": true,
+      "isBody": false
+    },
+    "afterToLogin": {
+      "inDialog": true,
+      "tag": "H2",
+      "text": "Đăng nhập"
+    }
+  },
+  "mobile": {
+    "afterToRegister": {
+      "inDialog": true,
+      "tag": "H2",
+      "text": "Tạo tài khoản mới",
+      "isBody": false
+    },
+    "afterForwardTab": {
+      "inDialog": true,
+      "isBody": false,
+      "tag": "INPUT"
+    },
+    "afterShiftTab": {
+      "inDialog": true,
+      "isBody": false
+    },
+    "afterToLogin": {
+      "inDialog": true,
+      "tag": "H2",
+      "text": "Đăng nhập"
+    }
+  }
+}

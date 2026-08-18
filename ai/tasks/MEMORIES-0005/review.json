@@ -1,1 +1,904 @@
-{"applied_skills":[{"name":"review-code-change","sha256":"194eb62a12b70eb6efd922af05d797d4c0296efc8299ece3b9df5b156e8d6b9a","checks_completed":["Established the full-review contract from current effective requirements.","Inventoried and reviewed all 66 tracked and untracked implementation files and direct dependencies, using CodeGraph first for code flow and impact.","Built the risk-driven test matrix before accepting validation claims.","Completed requirements, diff, architecture, behavior, tests, security, and regression passes.","Retested all 20 prior findings.","validate_review.py --mode full --fail-on blocker,major passed."]},{"name":"review-vertical-slice-completeness","sha256":"e81a7ff83e887692a56ff0dd8d1173b34410afacdb09e2c30011cf3c9d5de099","checks_completed":["Traced port-to-adapter-to-DI/controller, transaction/persistence, API, frontend provider/form/UI, and test paths.","Verified no migration is required because profile.address and provider-subject uniqueness already exist.","Ran build_evidence_matrix.py; deterministic handoff coverage passed, while independent review identified two material gaps."]}],"task_id":"MEMORIES-0005","verdict":"changes_requested","reviewed_repositories":["backend","frontend"],"review_coverage":{"review_passes":["requirements","diff","architecture","behavior","tests","security","regression"],"changed_files":[{"repo":"backend","file":".env.example","status":"reviewed","evidence":"Reviewed OAuth placeholder names, redirect defaults, state-cookie settings, and Graph version; no real secret values present."},{"repo":"backend","file":"apps/api/test/auth-flow.e2e-spec.ts","status":"reviewed","evidence":"Reviewed address, duplicate registration, five-table rollback, and LOCAL refresh-provider assertions."},{"repo":"backend","file":"apps/api/test/oauth-flow.e2e-spec.ts","status":"reviewed","evidence":"Reviewed the complete 737-line untracked e2e suite, including state, callback, transaction, concurrency, refresh, and configured-Facebook cases."},{"repo":"backend","file":"libs/modules/identity-access/src/application/ports/oauth-client.port.ts","status":"reviewed","evidence":"CodeGraph source and impact review covered registry resolution and required provider-response field validation."},{"repo":"backend","file":"libs/modules/identity-access/src/application/use-cases/oauth-login.use-case.ts","status":"reviewed","evidence":"CodeGraph traced exchange, identity lookup, atomic provisioning, conflict recovery, authorization, and session issuance."},{"repo":"backend","file":"libs/modules/identity-access/src/application/use-cases/refresh-session.use-case.ts","status":"reviewed","evidence":"Reviewed preservation and validation of currentSession.authProvider through access-token and refresh-session rotation."},{"repo":"backend","file":"libs/modules/identity-access/src/application/use-cases/register.use-case.ts","status":"reviewed","evidence":"Reviewed address forwarding and the owning transaction across account graph and session persistence."},{"repo":"backend","file":"libs/modules/identity-access/src/identity-access.module.ts","status":"reviewed","evidence":"CodeGraph and diff confirmed OAuth controller/use case/client registry providers are reachable from the module graph."},{"repo":"backend","file":"libs/modules/identity-access/src/infrastructure/persistence/typeorm-auth-identity.repository.ts","status":"reviewed","evidence":"Reviewed translation of provider-subject unique violations into the controlled conflict used by race recovery."},{"repo":"backend","file":"libs/modules/identity-access/src/infrastructure/security/facebook-oauth.client.ts","status":"reviewed","evidence":"Reviewed authorization, token exchange, profile request, configured Graph version, response validation, and credential channels."},{"repo":"backend","file":"libs/modules/identity-access/src/infrastructure/security/google-oauth.client.ts","status":"reviewed","evidence":"Reviewed trusted redirect URI, authorization parameters, POST token exchange, bearer userinfo request, and response validation."},{"repo":"backend","file":"libs/modules/identity-access/src/presentation/http/auth.controller.ts","status":"reviewed","evidence":"Reviewed address mapping, PUBLIC registration response, refresh cookie handling, and logout guard behavior."},{"repo":"backend","file":"libs/modules/identity-access/src/presentation/http/oauth-state.helper.ts","status":"reviewed","evidence":"Reviewed HttpOnly/Lax cookie options, clearing behavior, exact state decoding, and malformed-encoding fail-closed path."},{"repo":"backend","file":"libs/modules/identity-access/src/presentation/http/oauth.controller.ts","status":"reviewed","evidence":"CodeGraph traced start/callback parsing, state validation, trusted redirects, session cookie issuance, and all error branches."},{"repo":"backend","file":"libs/modules/identity-access/src/presentation/http/register.dto.ts","status":"reviewed","evidence":"Reviewed optional string address validation and 500-character boundary."},{"repo":"backend","file":"libs/modules/identity-access/src/public-api.ts","status":"reviewed","evidence":"Reviewed newly exported OAuth contracts, use case, clients, and AuthProvider surface."},{"repo":"backend","file":"libs/modules/identity-access/test/facebook-oauth.client.contract.spec.ts","status":"reviewed","evidence":"Reviewed the complete contract harness; confirmed its POST/bearer assertions are not established by the pinned SDK fixture."},{"repo":"backend","file":"libs/modules/identity-access/test/facebook-oauth.client.spec.ts","status":"reviewed","evidence":"Reviewed authorization URL, configurable version, unavailable provider, request-channel, and malformed-response tests."},{"repo":"backend","file":"libs/modules/identity-access/test/fixtures/facebook-graph-api-contract/Client.php","status":"reviewed","evidence":"Reviewed pinned fixture provenance and the Graph host terms consumed by the contract harness."},{"repo":"backend","file":"libs/modules/identity-access/test/fixtures/facebook-graph-api-contract/GraphUser.php","status":"reviewed","evidence":"Reviewed pinned User field accessors used as response-field evidence."},{"repo":"backend","file":"libs/modules/identity-access/test/fixtures/facebook-graph-api-contract/OAuth2Client.php","status":"reviewed","evidence":"Reviewed the pinned transport source; lines 264-271 construct the access-token request using GET, not the test's asserted POST."},{"repo":"backend","file":"libs/modules/identity-access/test/fixtures/facebook-graph-api-contract/manifest.json","status":"reviewed","evidence":"Reviewed repository, commit, retrieval timestamp, hashes, and claimed contract coverage; no v26-specific transport binding exists."},{"repo":"backend","file":"libs/modules/identity-access/test/google-oauth.client.spec.ts","status":"reviewed","evidence":"Reviewed Google authorization, unavailable-provider, happy exchange, upstream failure, and malformed-payload tests."},{"repo":"backend","file":"libs/modules/identity-access/test/oauth-login.use-case.spec.ts","status":"reviewed","evidence":"Reviewed existing/new identity, race recovery, inactive account, portal authorization, and session assertions."},{"repo":"backend","file":"libs/modules/identity-access/test/oauth-state.helper.spec.ts","status":"reviewed","evidence":"Reviewed decoded, absent, and malformed percent-encoding cookie cases."},{"repo":"backend","file":"libs/modules/identity-access/test/register.use-case.spec.ts","status":"reviewed","evidence":"Reviewed address propagation and PUBLIC session assertions."},{"repo":"backend","file":"libs/platform/configuration/src/config/auth.config.ts","status":"reviewed","evidence":"Reviewed optional provider assembly, trusted web redirect, state-cookie TTL, and configurable Graph version."},{"repo":"backend","file":"libs/platform/configuration/src/public-api.ts","status":"reviewed","evidence":"Reviewed OAuthProviderConfig type export."},{"repo":"backend","file":"libs/platform/configuration/src/schemas/env.schema.ts","status":"reviewed","evidence":"Reviewed URL, positive TTL, optional credential, and Graph-version format validation."},{"repo":"backend","file":"libs/platform/database/src/typeorm-unit-of-work.ts","status":"reviewed","evidence":"CodeGraph traced AsyncLocalStorage transaction participation; nested calls join the owning transaction."},{"repo":"backend","file":"libs/platform/database/test/typeorm-unit-of-work.spec.ts","status":"reviewed","evidence":"Reviewed nested join, single commit, rollback, and connection-release assertions."},{"repo":"backend","file":"libs/platform/observability/src/logger.module.ts","status":"reviewed","evidence":"Reviewed req.url and req.query OAuth redaction while preserving route/request metadata."},{"repo":"backend","file":"libs/platform/observability/test/logger.module.spec.ts","status":"reviewed","evidence":"Reviewed successful, provider-error, and ordinary-query logger integration cases using sentinel values."},{"repo":"backend","file":"package.json","status":"reviewed","evidence":"Reviewed the dev:cli command delta and confirmed configured validation commands remain available."},{"repo":"frontend","file":"apps/public-web/app/(auth)/login/page.tsx","status":"reviewed","evidence":"CodeGraph and diff confirmed the public route reuses phone/PUBLIC LoginForm and RegisterForm instead of legacy email login."},{"repo":"frontend","file":"apps/public-web/app/providers.tsx","status":"reviewed","evidence":"Reviewed OAuthRedirectHandler placement inside the real AuthProvider."},{"repo":"frontend","file":"apps/public-web/components/auth/account-popover.tsx","status":"reviewed","evidence":"Reviewed anchored menu, duplicate logout guard, success close, and failure toast/retry behavior."},{"repo":"frontend","file":"apps/public-web/components/auth/auth-modal.tsx","status":"reviewed","evidence":"Reviewed login/register state, success close, dialog naming, and focus implications of replacing the focused switch control."},{"repo":"frontend","file":"apps/public-web/components/auth/login-form.tsx","status":"reviewed","evidence":"Reviewed phone/PUBLIC submission, validation, error preservation, duplicate-submit state, Google action, and register transition."},{"repo":"frontend","file":"apps/public-web/components/auth/oauth-redirect-handler.tsx","status":"reviewed","evidence":"Reviewed query capture, verified-refresh gating, mapped failures, forged-success behavior, and URL cleanup."},{"repo":"frontend","file":"apps/public-web/components/auth/register-form.tsx","status":"reviewed","evidence":"Reviewed required fields, optional address normalization, confirmation validation, API errors, and duplicate-submit state."},{"repo":"frontend","file":"apps/public-web/components/auth/social-login-buttons.tsx","status":"reviewed","evidence":"Reviewed API-base URL construction, full-page Google navigation, and absence of Facebook UI."},{"repo":"frontend","file":"apps/public-web/components/auth/user-menu-trigger.tsx","status":"reviewed","evidence":"CodeGraph confirmed shared desktop/mobile signed-in and signed-out behavior with one trigger implementation."},{"repo":"frontend","file":"apps/public-web/components/icons.tsx","status":"reviewed","evidence":"Reviewed accessible-hidden Google brand SVG and unchanged icon conventions."},{"repo":"frontend","file":"apps/public-web/components/mobile-bottom-nav.tsx","status":"reviewed","evidence":"Reviewed mobile account button integration, top-opening popover, and preservation of other navigation links."},{"repo":"frontend","file":"apps/public-web/components/site-header.tsx","status":"reviewed","evidence":"Reviewed replacement of account navigation with shared UserMenuTrigger without altering adjacent header navigation."},{"repo":"frontend","file":"apps/public-web/test/auth-modal.spec.tsx","status":"reviewed","evidence":"Reviewed initial focus, dismissal, trap, restoration, view switching, and successful-login cases; no focus assertion follows a view switch."},{"repo":"frontend","file":"apps/public-web/test/auth-provider.spec.tsx","status":"reviewed","evidence":"Reviewed signed-out bootstrap, phone login, registration, logout, and refresh-cookie rehydration against real response shapes."},{"repo":"frontend","file":"apps/public-web/test/login-form.spec.tsx","status":"reviewed","evidence":"Reviewed validation, PUBLIC payload, API-error preservation, duplicate-submit, and Google/no-Facebook assertions."},{"repo":"frontend","file":"apps/public-web/test/login-page.spec.tsx","status":"reviewed","evidence":"Reviewed phone contract, PUBLIC payload, view switching, registerLocal, legacy-login exclusion, and profile navigation."},{"repo":"frontend","file":"apps/public-web/test/mobile-bottom-nav.spec.tsx","status":"reviewed","evidence":"Reviewed signed-out modal, signed-in popover, and adjacent-link regression cases."},{"repo":"frontend","file":"apps/public-web/test/oauth-redirect-handler.spec.tsx","status":"reviewed","evidence":"Reviewed verified success, forged success, mapped error, and no-query behavior."},{"repo":"frontend","file":"apps/public-web/test/register-form.spec.tsx","status":"reviewed","evidence":"Reviewed field errors, address present/absent, duplicate-submit, API-error preservation, and successful payload cases."},{"repo":"frontend","file":"apps/public-web/test/site-header.spec.tsx","status":"reviewed","evidence":"Reviewed signed-out modal, signed-in menu, and mobile drawer regressions."},{"repo":"frontend","file":"apps/public-web/test/user-menu-trigger.spec.tsx","status":"reviewed","evidence":"Reviewed signed-in/out selection, logout, Escape, failure feedback, and retry behavior."},{"repo":"frontend","file":"packages/api-client/src/generated/schema.d.ts","status":"reviewed","evidence":"Reviewed RegisterDto address synchronization and collateral generated-description changes."},{"repo":"frontend","file":"packages/api-client/src/routes.ts","status":"reviewed","evidence":"Reviewed login/register/logout and provider-constrained OAuth-start routes."},{"repo":"frontend","file":"packages/api-client/test/register-dto-contract.spec.ts","status":"reviewed","evidence":"Reviewed compile-time and runtime optional-address contract assertions."},{"repo":"frontend","file":"packages/auth/src/auth-provider.tsx","status":"reviewed","evidence":"CodeGraph traced refresh, phone login, registration, logout, TokenStore-only state, and token-derived authentication."},{"repo":"frontend","file":"packages/ui/src/components/dialog.tsx","status":"reviewed","evidence":"Reviewed mounted/open focus-hook gating and panel positioning context."},{"repo":"frontend","file":"packages/ui/src/components/popover.tsx","status":"reviewed","evidence":"Reviewed anchoring, outside click, Escape/focus hook, roles, and top/bottom placement."},{"repo":"frontend","file":"packages/ui/src/index.ts","status":"reviewed","evidence":"Reviewed Popover public export."},{"repo":"frontend","file":"packages/ui/test/dialog.spec.tsx","status":"reviewed","evidence":"Reviewed closed/open/Escape and panel-positioning structural regression tests."},{"repo":"frontend","file":"packages/ui/test/popover.spec.tsx","status":"reviewed","evidence":"Reviewed all ten rendering, dismissal, outside-click, focus, trap, and restoration tests."},{"repo":"frontend","file":"packages/validation/src/auth.ts","status":"reviewed","evidence":"Reviewed phone login and local registration schemas, confirmation refinement, trimming, and size constraints."},{"repo":"frontend","file":"packages/validation/test/auth.spec.ts","status":"reviewed","evidence":"Reviewed positive and negative phone/registration schema cases while retaining legacy admin schemas."}],"risk_areas":[{"area":"authentication and session lifecycle","status":"reviewed","evidence":"Traced LOCAL/Google login, refresh rotation, logout, OAuth rehydration, and inactive-account branches."},{"area":"OAuth CSRF, replay, redirect, and provider failure handling","status":"reviewed","evidence":"OAuthController/state helper and oauth-flow e2e cover state cookies, replay, malformed cookies, cancellation, and configured redirects."},{"area":"secret and credential exposure","status":"reviewed","evidence":"Reviewed provider request channels and logger serialization; logger integration proves callback code/state redaction."},{"area":"authorization and portal isolation","status":"reviewed","evidence":"PUBLIC is server-selected for registration/OAuth and explicitly submitted by public login; permission checks precede sessions."},{"area":"transaction, concurrency, and database invariants","status":"reviewed","evidence":"Nested UoW, registration/OAuth rollback, duplicate-phone, and provider-subject races were reviewed against real-Postgres e2e evidence."},{"area":"API and generated-contract compatibility","status":"reviewed","evidence":"Reviewed RegisterDto address, generated schema, shared routes, and public /login phone/PUBLIC compatibility."},{"area":"external provider compatibility","status":"reviewed","evidence":"Google client tests were reviewed; the Facebook v26 harness does not bind its asserted POST/bearer transport to authoritative version-specific evidence."},{"area":"accessibility and focus lifecycle","status":"reviewed","evidence":"Reviewed Dialog/Popover hooks, focus tests, and browser geometry; confirmed focus loss during login/register view replacement."},{"area":"responsive desktop/mobile behavior","status":"reviewed","evidence":"Reviewed current Playwright bounding-box and reachability artifacts for modal, registration, and signed-in popover."},{"area":"validation provenance and deterministic gates","status":"reviewed","evidence":"Rechecked current 66-input provenance; reviewed summary, handoff, delivery gates, and database invariants."},{"area":"migration/schema change","status":"not_applicable","evidence":"Existing profile.address column and provider-subject unique constraint satisfy the persistence shape; no schema delta exists."}],"prior_findings":[{"source":"fix-request-review-003.md#1","title":"Facebook OAuth credentials are placed in request URLs","status":"resolved","evidence":"FacebookOAuthClient now uses POST form fields and a bearer header; unit tests assert secrets/tokens are absent from URLs."},{"source":"fix-request-review-003.md#2","title":"A query parameter can falsely report a successful login","status":"resolved","evidence":"OAuthRedirectHandler waits for AuthProvider refresh/isAuthenticated; the forged-success regression test passes."},{"source":"fix-request-review-003.md#3","title":"Registration commits the account before session issuance","status":"resolved","evidence":"RegisterUseCase owns one reentrant transaction; the real-Postgres five-table rollback test passes."},{"source":"fix-request-review-003.md#4","title":"Generated registration contract was not synchronized","status":"resolved","evidence":"Generated RegisterDto includes address?: string and the contract test passes."},{"source":"fix-request-review-003.md#5","title":"Successful OAuth responses are trusted without validation","status":"resolved","evidence":"assertOAuthResponseField rejects blank token/subject values; Google/Facebook negative tests pass."},{"source":"fix-request-review-003.md#6","title":"The claimed OAuth race test is sequential","status":"resolved","evidence":"oauth-flow e2e uses two barriers and Promise.all, asserting one graph and controlled successful responses."},{"source":"fix-request-review-003.md#7","title":"An unavailable OAuth provider strands the browser","status":"resolved","evidence":"OAuth start redirects provider_unavailable and the frontend maps that reason; Facebook is absent from the UI."},{"source":"fix-request-review-006.md#1","title":"Facebook OAuth is pinned to a retired Graph API version","status":"resolved","evidence":"Graph version is configuration-driven with v26.0 as the default; the separate transport-contract gap remains tracked below."},{"source":"fix-request-review-006.md#2","title":"First-time OAuth provisioning commits before session issuance","status":"resolved","evidence":"provisionAndIssueSession wraps graph and refresh-session writes; real-Postgres rollback/retry evidence passes."},{"source":"fix-request-review-006.md#3","title":"Refreshing a social session rewrites its provider to LOCAL","status":"resolved","evidence":"RefreshSessionUseCase preserves currentSession.authProvider; Google/Facebook chained refresh assertions pass."},{"source":"fix-request-review-006.md#4","title":"Current-cycle evidence is not bound to the reviewed implementation","status":"resolved","evidence":"check_provenance currently passes for 66 inputs and 5 artifacts."},{"source":"fix-request-review-006.md#5","title":"Required focus and responsive behavior lacks executable evidence","status":"resolved","evidence":"Initial focus, trap, Escape/overlay dismissal, restoration, and responsive browser surfaces now have evidence; the newly found view-transition defect is separately reported."},{"source":"fix-request-review-009.md#1","title":"AuthModal close button is positioned against the viewport","status":"resolved","evidence":"Dialog panel is relative; structural and Playwright containment assertions pass."},{"source":"fix-request-review-009.md#2","title":"Runtime validation summary is stale","status":"resolved","evidence":"Summary/provenance are current at 2026-08-17 10:34, with 323 unit and 139 e2e tests; database-invariants reports 4."},{"source":"fix-request-review-009.md#3","title":"Facebook OAuth is not verified against a supported provider contract","status":"regressed","evidence":"The current harness still uses an old SDK snapshot that does not establish v26 POST/form or bearer /me semantics."},{"source":"fix-request-review-009.md#4","title":"Responsive browser evidence omits the signed-in account popup","status":"resolved","evidence":"browser-review-009 proves desktop/mobile popover geometry, logout, and mobile registration reachability."},{"source":"fix-request-review-010.md#1","title":"OAuth authorization codes are emitted in request logs","status":"resolved","evidence":"Logger serialization and integration tests redact code/state in req.url and req.query; current logs are provenance-bound."},{"source":"fix-request-review-010.md#2","title":"Facebook provider-contract evidence remains self-referential","status":"regressed","evidence":"The pinned source explicitly constructs GET, while the test independently asserts POST and bearer transport."},{"source":"fix-request-review-010.md#3","title":"The public /login route sends the obsolete email payload","status":"resolved","evidence":"LoginPage reuses LoginForm/RegisterForm; tests prove phone/password/PUBLIC behavior and the admin build passes."},{"source":"fix-request-review-011.md#1","title":"The Facebook v26 contract harness does not validate the implemented transport","status":"regressed","evidence":"No correction followed review 011; the contract spec and fixture are unchanged, and configured-Facebook e2e still replaces the real client."}],"completion_statement":true},"findings":[{"severity":"major","repo":"backend","file":"libs/modules/identity-access/test/facebook-oauth.client.contract.spec.ts","line":145,"title":"Facebook v26 transport remains unverified by its claimed contract source","evidence":"The harness asserts POST/form in expectContractCompliantTokenRequest and a bearer header for /me, but pinned OAuth2Client.php lines 264-271 constructs /oauth/access_token using GET, is copyrighted 2017, and contains no v26 binding. GRAPH_VERSION='v26.0' and the POST/bearer expectations are authored by the test. oauth-flow.e2e-spec.ts replaces FacebookOAuthClient with a fake, so the current 323 unit/139 e2e passes cannot detect Graph v26 rejecting the implemented transport. This retests review-011 unchanged.","expected_fix":"Disable the unverified Facebook public flow or bind the real client to authoritative, version-specific transport evidence or sandbox verification.","implementation_guidance":{"approach":"Because Facebook is deferred by the effective requirements, a valid safe outcome is to keep its public flow unreachable until an explicit requirement and supported contract exist. If retaining it, use a sandbox/test app or an official v26-compatible source that explicitly specifies the method, parameter channels, authentication channel, endpoints, and response fields, then exercise the real client against those semantics.","code_locations":["libs/modules/identity-access/test/facebook-oauth.client.contract.spec.ts","libs/modules/identity-access/test/fixtures/facebook-graph-api-contract/manifest.json","libs/modules/identity-access/src/infrastructure/security/facebook-oauth.client.ts#exchangeCodeForProfile","libs/modules/identity-access/src/identity-access.module.ts","apps/api/test/oauth-flow.e2e-spec.ts"],"tests":["Add a version-bound contract or sandbox test for the real FacebookOAuthClient authorization, token exchange, and /me request without replacing the client.","Retain negative assertions that client secret, authorization code, and access token never enter URLs or logs."],"done_when":["The public Facebook endpoint is disabled/unwired, or an authoritative source explicitly supports the configured version and exact implemented transport.","A test fails when method, parameter channel, authentication header, endpoint, or required response fields become incompatible.","Current-cycle validation and provenance are regenerated after the correction."]}},{"severity":"major","repo":"frontend","file":"apps/public-web/components/auth/auth-modal.tsx","line":48,"title":"Switching login/register views drops focus outside the modal","evidence":"The focused “Đăng ký” or “Đăng nhập” switch button is removed when AuthModal swaps views at lines 48-50. Dialog remains open, so useDismissableLayer's effect does not rerun or focus the replacement content. Its keydown handler only recovers activeIndex === -1 for Shift+Tab; forward Tab is not prevented and can move to focusable page content behind the portal. auth-modal.spec.tsx verifies the rendered view but never active focus or forward-Tab containment after either transition.","expected_fix":"Keep focus inside the dialog and move it predictably when switching between login and registration views.","implementation_guidance":{"approach":"On each view transition, focus a stable target in the newly rendered view, such as its heading or first field, and/or harden useDismissableLayer so Tab from an active element outside the container is redirected inside. Preserve existing initial-focus and restoration behavior.","code_locations":["apps/public-web/components/auth/auth-modal.tsx#AuthModal","packages/ui/src/hooks/use-dismissable-layer.ts#useDismissableLayer","apps/public-web/test/auth-modal.spec.tsx"],"tests":["After login-to-register and register-to-login transitions, assert document.activeElement is inside the dialog.","Press forward Tab and Shift+Tab after each transition and assert focus cannot reach background controls.","Retain Close/Escape/overlay dismissal and trigger-focus restoration tests; add a browser assertion at desktop and mobile viewports."],"done_when":["Both view transitions leave active focus within the dialog on a meaningful control.","Forward and reverse tabbing cannot escape to background content.","All existing dialog consumers and current responsive browser checks pass."]}}],"test_matrix":[{"id":"TM-001","sources":["requirement: AC1","requirement: AC4","diff-impact: apps/public-web/components/auth/auth-modal.tsx#AuthModal","diff-impact: packages/ui/src/hooks/use-dismissable-layer.ts#useDismissableLayer"],"target":"Auth modal focus lifecycle","test_level":"static","scenario":"Switch from login to registration and back using the focused switch action, then press Tab or Shift+Tab.","expected_result":"Focus moves into replacement content and remains trapped; dismissal restores trigger focus.","status":"failed","evidence":"AuthModal lines 48-50 remove the focused control while open; useDismissableLayer lines 38-45 does not handle forward Tab when activeIndex=-1. Existing auth-modal tests check only the rendered view."},{"id":"TM-002","sources":["requirement: AC2","diff-impact: apps/public-web/components/auth/login-form.tsx#LoginForm","diff-impact: packages/auth/src/auth-provider.tsx#loginWithPhone"],"target":"PUBLIC phone login","test_level":"integration","scenario":"Submit valid phone/password twice while the first request remains pending.","expected_result":"Exactly one POST /auth/login carries phone/password/portal PUBLIC; the modal closes on success.","status":"passed","evidence":"login-form.spec.tsx happy and deferred-promise duplicate-submit cases; auth-provider.spec.tsx asserts the exact body; 100 public-web tests passed."},{"id":"TM-003","sources":["requirement: AC2","diff-impact: apps/public-web/components/auth/login-form.tsx#onSubmit"],"target":"Login validation and API failure","test_level":"unit","scenario":"Submit an invalid phone or receive a rejected login response.","expected_result":"Invalid input is not submitted; the API error is visible and entered phone/password remain.","status":"passed","evidence":"login-form.spec.tsx validation and API-error preservation cases passed in current frontend evidence."},{"id":"TM-004","sources":["requirement: AC3","diff-impact: apps/public-web/components/auth/social-login-buttons.tsx#buildOAuthStartUrl","diff-impact: libs/modules/identity-access/src/presentation/http/oauth.controller.ts#start"],"target":"Google OAuth entry","test_level":"integration","scenario":"Open login UI and start Google OAuth while Facebook remains deferred.","expected_result":"Google is visible, Facebook absent, and navigation targets configured /auth/oauth/google/start with server-generated state.","status":"passed","evidence":"login-form.spec.tsx asserts Google/no Facebook; route composition was statically verified; oauth-flow.e2e verifies start redirect and state cookie."},{"id":"TM-005","sources":["requirement: AC3","diff-impact: libs/modules/identity-access/src/application/use-cases/oauth-login.use-case.ts#execute","diff-impact: apps/public-web/components/auth/oauth-redirect-handler.tsx#OAuthRedirectHandler"],"target":"Google OAuth success and rehydration","test_level":"e2e","scenario":"A brand-new Google callback succeeds and the frontend refreshes the HttpOnly session.","expected_result":"One PUBLIC account/GOOGLE identity/session is created; refresh supplies an in-memory access token and success UI appears only after authentication.","status":"passed","evidence":"oauth-flow.e2e brand-new callback and chained refresh; oauth-redirect-handler and auth-provider tests passed."},{"id":"TM-006","sources":["requirement: AC3","diff-impact: libs/modules/identity-access/src/presentation/http/oauth.controller.ts#callback","diff-impact: libs/modules/identity-access/src/presentation/http/oauth-state.helper.ts"],"target":"OAuth cancellation, CSRF, and replay","test_level":"e2e","scenario":"Cancellation, missing/mismatched/malformed state, replay, unconfigured provider, or exchange failure occurs.","expected_result":"Redirect to the trusted web URL with an understandable error and no refresh session/cookie or raw 500.","status":"passed","evidence":"oauth-flow.e2e covers access_denied, invalid_state, missing cookie, malformed encoding, provider_unavailable, and oauth_failed; 139 e2e tests passed."},{"id":"TM-007","sources":["requirement: security no provider secret/token in URL/log","diff-impact: libs/platform/observability/src/logger.module.ts#redactSensitiveQueryParams","diff-impact: libs/modules/identity-access/src/infrastructure/security/google-oauth.client.ts","diff-impact: libs/modules/identity-access/src/infrastructure/security/facebook-oauth.client.ts"],"target":"OAuth credential confidentiality","test_level":"integration","scenario":"Successful and failed callback logs plus provider requests contain sentinel credentials.","expected_result":"Code/state are redacted in URL/query; secrets/tokens use body/header and never loggable URLs.","status":"passed","evidence":"logger.module.spec.ts and provider unit tests passed; provenance validation passed for current artifacts."},{"id":"TM-008","sources":["requirement: AC4","diff-impact: apps/public-web/components/auth/auth-modal.tsx#view"],"target":"Login/register view state","test_level":"unit","scenario":"Switch login to registration and back without route navigation.","expected_result":"The correct form and heading render in the same modal.","status":"passed","evidence":"auth-modal.spec.tsx view-switch test passed; focus behavior is separately failed by TM-001."},{"id":"TM-009","sources":["requirement: AC5","diff-impact: packages/validation/src/auth.ts#localRegisterSchema","diff-impact: apps/public-web/components/auth/register-form.tsx"],"target":"Registration validation boundaries","test_level":"unit","scenario":"Use a missing required field, invalid phone, mismatched confirmation, or optional address.","expected_result":"Field-specific errors block invalid submissions; valid optional address is accepted or omitted.","status":"passed","evidence":"Validation and register-form tests cover required fields, mismatch, address present/blank, duplicate submit, and API error preservation."},{"id":"TM-010","sources":["requirement: AC6","diff-impact: libs/modules/identity-access/src/application/use-cases/register.use-case.ts#execute","diff-impact: libs/platform/database/src/typeorm-unit-of-work.ts#withTransaction"],"target":"Atomic LOCAL self-registration","test_level":"e2e","scenario":"Register with or without address, race duplicate phones, and force session issuance failure.","expected_result":"Exactly one PUBLIC account/LOCAL identity/profile/default role/session commits, or all five tables roll back.","status":"passed","evidence":"auth-flow.e2e real-Postgres address, duplicate, concurrency, and five-table rollback/retry cases passed."},{"id":"TM-011","sources":["requirement: AC3","diff-impact: libs/modules/identity-access/src/application/use-cases/oauth-login.use-case.ts#provisionAndIssueSession","diff-impact: libs/modules/identity-access/src/infrastructure/persistence/typeorm-auth-identity.repository.ts"],"target":"OAuth transaction and provider-subject race","test_level":"e2e","scenario":"Two simultaneous first callbacks race; session issuance fails after graph writes; an inactive or unauthorized account logs in.","expected_result":"One graph and controlled sessions result; failures fully roll back; inactive/no-access accounts receive no session.","status":"passed","evidence":"Barrier-controlled real-Postgres race and rollback/retry e2e plus oauth-login inactive/permission tests passed."},{"id":"TM-012","sources":["requirement: AC3 error path","diff-impact: libs/modules/identity-access/src/application/ports/oauth-client.port.ts#assertOAuthResponseField"],"target":"Malformed provider success responses","test_level":"unit","scenario":"A provider returns HTTP 2xx without a usable access_token or stable subject.","expected_result":"The flow fails before persistence or session creation.","status":"passed","evidence":"Google and Facebook OAuth client negative tests passed in the 323-test backend run."},{"id":"TM-013","sources":["requirement: AC7","diff-impact: libs/modules/identity-access/src/application/use-cases/refresh-session.use-case.ts#execute"],"target":"Authentication-provider preservation on refresh","test_level":"e2e","scenario":"Rotate LOCAL, GOOGLE, and FACEBOOK refresh sessions repeatedly.","expected_result":"New access claims and stored sessions retain the original authentication provider.","status":"passed","evidence":"auth-flow LOCAL assertion and oauth-flow chained Google/Facebook assertions passed."},{"id":"TM-014","sources":["requirement: AC7","diff-impact: packages/auth/src/auth-provider.tsx#AuthProvider","diff-impact: apps/public-web/components/auth/oauth-redirect-handler.tsx"],"target":"Client auth state and session policy","test_level":"integration","scenario":"Login/register/refresh succeeds, while a forged oauth=success URL has no server session.","expected_result":"Access token exists only in TokenStore memory; real refresh authenticates; forged success reports failure.","status":"passed","evidence":"auth-provider and oauth-redirect-handler tests passed; the frontend credential-storage gate passed."},{"id":"TM-015","sources":["requirement: AC8","diff-impact: apps/public-web/components/auth/account-popover.tsx#onLogout","diff-impact: packages/auth/src/auth-provider.tsx#logout"],"target":"Logout success and network failure","test_level":"integration","scenario":"Logout succeeds, then separately fails and is retried.","expected_result":"Success revokes/clears state and closes the popup; failure keeps state and popup retryable with an error.","status":"passed","evidence":"user-menu-trigger/auth-provider tests and backend logout e2e passed; browser evidence confirms mobile signed-out state."},{"id":"TM-016","sources":["requirement: AC9","diff-impact: packages/ui/src/components/dialog.tsx#Dialog","diff-impact: packages/ui/src/components/popover.tsx#Popover"],"target":"Responsive geometry and reachability","test_level":"e2e","scenario":"Open login/registration and signed-in popover at 1280x800 and 390x844.","expected_result":"Close control stays within the panel, popover remains anchored/unclipped, and all registration actions are reachable.","status":"passed","evidence":"browser-review-009/results.json contains passing containment, viewport, reachability, and logout assertions."},{"id":"TM-017","sources":["requirement: AC9 route compatibility","diff-impact: apps/public-web/app/(auth)/login/page.tsx#LoginPage"],"target":"Standalone public /login compatibility","test_level":"integration","scenario":"Use direct /login phone login and registration, then build the admin application.","expected_result":"Public route uses shared phone/PUBLIC forms, the legacy email method is unused, and admin behavior remains unchanged.","status":"passed","evidence":"login-page.spec.tsx four cases and current public/admin builds passed."},{"id":"TM-018","sources":["requirement: AC6 API compatibility","diff-impact: libs/modules/identity-access/src/presentation/http/register.dto.ts","diff-impact: packages/api-client/src/generated/schema.d.ts#RegisterDto"],"target":"Cross-repository registration contract","test_level":"contract","scenario":"Represent registration with optional address while attempting no client-selected authorization fields.","expected_result":"Backend DTO and generated type agree on address; portal, role, and permission remain server-selected.","status":"passed","evidence":"register-dto-contract.spec.ts and the OpenAPI deterministic check passed; RegisterInput exposes no authorization fields."},{"id":"TM-019","sources":["diff-impact: libs/modules/identity-access/src/infrastructure/security/facebook-oauth.client.ts#exchangeCodeForProfile","corrected-behavior: fix-request-review-011.md#1"],"target":"Facebook configured-version transport contract","test_level":"contract","scenario":"Exercise the real client against authoritative v26 semantics for authorization, token exchange, and /me.","expected_result":"Exact method, body/header channels, endpoints, and fields are independently supported and incompatibilities fail the test.","status":"failed","evidence":"facebook-oauth.client.contract.spec.ts asserts POST/bearer independently; pinned OAuth2Client.php uses GET and is not v26-bound; configured e2e uses a fake client."},{"id":"TM-020","sources":["requirement: technical note public/OAuth rate-limit","diff-impact: libs/modules/identity-access/src/presentation/http/oauth.controller.ts"],"target":"Anonymous authentication endpoint rate limiting","test_level":"static","scenario":"High-rate login, registration, OAuth start, or OAuth callback traffic reaches the API.","expected_result":"Global ThrottlerGuard applies and returns 429 according to configured limits.","status":"passed","evidence":"CodeGraph traces API AppModule to SecurityModule.register and APP_GUARD ThrottlerGuard; current backend e2e logs demonstrate enforced 429 traffic."},{"id":"TM-021","sources":["requirement: AC10","diff-impact: apps/public-web/components/auth/user-menu-trigger.tsx","diff-impact: apps/public-web/app/(auth)/login/page.tsx"],"target":"Reusable authentication composition","test_level":"static","scenario":"Compare desktop header, mobile navigation, and standalone route wiring.","expected_result":"Shared trigger/forms/provider own the behavior with no duplicated API logic.","status":"passed","evidence":"CodeGraph callers show SiteHeader/MobileBottomNav share UserMenuTrigger, AuthModal/LoginPage share forms, and API actions are centralized in AuthProvider."}],"validation_assessment":{"passed":false,"missing":["Authoritative supported-version contract or sandbox evidence for the real FacebookOAuthClient transport, or evidence that the deferred Facebook flow is unreachable.","Executable focus evidence after login/register view transitions, including forward and reverse Tab containment at desktop and mobile."]},"acceptance_criteria":[{"criterion":"AC1: signed-out icon opens a conventionally dismissible, focus-managed login modal","status":"failed"},{"criterion":"AC2: phone/password PUBLIC login, duplicate-submit prevention, and visible non-destructive errors","status":"passed"},{"criterion":"AC3: Google option only and safe Google OAuth success/cancel/error without a false session","status":"passed"},{"criterion":"AC4: switch login and registration inside the same modal","status":"passed"},{"criterion":"AC5: required registration fields, optional address, and field validation","status":"passed"},{"criterion":"AC6: exactly one atomic PUBLIC/LOCAL account graph and session; duplicate phone is safe","status":"passed"},{"criterion":"AC7: modal closes, auth state updates, and in-memory access/HttpOnly refresh policy is retained","status":"passed"},{"criterion":"AC8: anchored account popup and server/client logout behavior","status":"passed"},{"criterion":"AC9: design-system, accessibility, responsive, and route compatibility","status":"failed"},{"criterion":"AC10: reusable components and required behavior coverage","status":"partial"}],"knowledge_updates":[{"target":"ai/domains/authorization/INDEX.md","approved":false},{"target":"ai/repos/frontend/INDEX.md (AuthContext/login state proposal)","approved":true},{"target":"ai/repos/frontend/INDEX.md (Popover proposal)","approved":true},{"target":"ai/repos/backend/architecture.md","approved":true}],"summary":"Completed the full 66-file review and all seven passes. LOCAL/Google authentication, transactions, sessions, registration contracts, logout, responsive behavior, and provenance have strong current-cycle evidence. Two major issues remain: the Facebook flow relies on a contract harness that does not prove its v26 transport, and switching login/registration can move focus outside the dialog.","implementation_cycle":1,"change_cycle":0}
+{
+  "task_id": "MEMORIES-0005",
+  "verdict": "changes_requested",
+  "reviewed_repositories": [
+    "backend",
+    "frontend",
+    "workspace"
+  ],
+  "review_coverage": {
+    "review_passes": [
+      "requirements",
+      "diff",
+      "architecture",
+      "behavior",
+      "tests",
+      "security",
+      "regression"
+    ],
+    "changed_files": [
+      {
+        "repo": "backend",
+        "file": ".env.example",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "apps/api/test/auth-flow.e2e-spec.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "apps/api/test/oauth-flow.e2e-spec.ts",
+        "status": "reviewed",
+        "evidence": "Full rewrite (~955 lines to ~230). Removed: all tests that drove a real Google success/rollback/race/nonce/cancellation/error-mapping path through HTTP (that whole branch is now unreachable — parseSocialProvider throws before any of it runs). Added: an unrecognized-provider check (unchanged behavior, kept for regression) plus two symmetric describe blocks — 'Google OAuth remains disabled on the public surface, even with a fully working client wired via DI' (new) mirroring the pre-existing 'Facebook OAuth remains disabled...' block — each DI-overrides its client with a fully working fake and proves start/callback still redirect reason=unsupported_provider, set no cookie, never call exchangeCodeForProfile, and create no identity. Ran for real against live Postgres today: `npx jest --config ./test/jest-e2e.json apps/api/test/oauth-flow.e2e-spec.ts` -> 5/5 passed (1 unrecognized-provider + 2 Google + 2 Facebook), log lines confirm reason=unsupported_provider for google/start, google/callback, facebook/start, facebook/callback. The state/nonce/CSRF/provisioning/rollback/race assertions this file used to make through Google's HTTP path are still made, at the unit level, by oauth-state.helper.spec.ts (5), oauth-login.use-case.spec.ts (6) and google-oauth.client.spec.ts (20) — all 3 files unchanged today, 38/38 passing (verified this cycle, see test_matrix)."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/modules/identity-access/src/application/ports/oauth-client.port.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/modules/identity-access/src/application/use-cases/oauth-login.use-case.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/modules/identity-access/src/application/use-cases/refresh-session.use-case.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/modules/identity-access/src/application/use-cases/register.use-case.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/modules/identity-access/src/identity-access.module.ts",
+        "status": "reviewed",
+        "evidence": "OAUTH_CLIENTS factory changed from `(google) => [google]` to `() => []`; GoogleOAuthClient and FacebookOAuthClient remain registered as bare injectable providers (still constructible via Nest DI for tests/future re-enable) but are excluded from the array OAuthClientRegistry is built from. Grepped the whole backend tree for other OAuthClientRegistry/OAUTH_CLIENTS/GoogleOAuthClient consumers outside identity-access.module.ts and oauth.controller.ts — none found, so no other module silently depended on Google being resolvable."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/modules/identity-access/src/infrastructure/persistence/typeorm-auth-identity.repository.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/modules/identity-access/src/infrastructure/security/facebook-oauth.client.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/modules/identity-access/src/infrastructure/security/google-oauth.client.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/modules/identity-access/src/presentation/http/auth.controller.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/modules/identity-access/src/presentation/http/oauth-state.helper.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/modules/identity-access/src/presentation/http/oauth.controller.ts",
+        "status": "reviewed",
+        "evidence": "parseSocialProvider rewritten to unconditionally throw BadRequestException for every provider value (SocialProvider narrowed to `never`) instead of accepting only `google`. Traced both start() and callback(): the try/catch around parseSocialProvider means every request now hits the catch branch and redirects with reason=unsupported_provider before randomBytes/cookie/OAuthClientRegistry.resolve/OAuthLoginUseCase.execute are ever reached — confirmed this is unreachable dead code, not a latent bug, by inspection (parseSocialProvider has no conditional branch that could return) and by the real e2e run below. AuthProvider import removed (now unused) — tsc/eslint confirm no unused-import/dead-symbol errors."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/modules/identity-access/src/presentation/http/register.dto.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/modules/identity-access/src/public-api.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/modules/identity-access/test/facebook-oauth.client.spec.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/modules/identity-access/test/google-oauth.client.spec.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/modules/identity-access/test/oauth-login.use-case.spec.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/modules/identity-access/test/oauth-state.helper.spec.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/modules/identity-access/test/register.use-case.spec.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/platform/configuration/src/config/auth.config.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/platform/configuration/src/public-api.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/platform/configuration/src/schemas/env.schema.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/platform/database/src/typeorm-unit-of-work.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/platform/database/test/typeorm-unit-of-work.spec.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/platform/observability/src/logger.module.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "libs/platform/observability/test/logger.module.spec.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "backend",
+        "file": "package.json",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "apps/public-web/app/(auth)/login/page.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "apps/public-web/app/providers.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "apps/public-web/components/auth/account-popover.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "apps/public-web/components/auth/auth-modal.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "apps/public-web/components/auth/login-form.tsx",
+        "status": "reviewed",
+        "evidence": "Removed the `<SocialLoginButtons disabled={isSubmitting} />` call and the 'hoặc' divider block above it (a divider with nothing below it to divide would be a visible UI defect); removed the now-unused SocialLoginButtons import. Rest of the form (phone/password fields, submit, register-switch link) is byte-for-byte unchanged — confirmed via targeted diff read."
+      },
+      {
+        "repo": "frontend",
+        "file": "apps/public-web/components/auth/oauth-redirect-handler.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "apps/public-web/components/auth/register-form.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "apps/public-web/components/auth/social-login-buttons.tsx",
+        "status": "reviewed",
+        "evidence": "DELETED. Confirmed via repo-wide grep that no file (component, test, storybook, barrel export) references SocialLoginButtons or buildOAuthStartUrl anymore — the only caller (login-form.tsx) was updated in the same diff. GoogleIcon in components/icons.tsx is now unreferenced anywhere in apps/public-web but remains exported (harmless unused export, not flagged by `next lint --max-warnings 0`, which passed clean); FacebookIcon in the same file is still used by site-footer.tsx (unrelated feature) and untouched."
+      },
+      {
+        "repo": "frontend",
+        "file": "apps/public-web/components/auth/user-menu-trigger.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "apps/public-web/components/icons.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "apps/public-web/components/mobile-bottom-nav.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "apps/public-web/components/site-header.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "apps/public-web/test/auth-modal.spec.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "apps/public-web/test/auth-provider.spec.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "apps/public-web/test/login-form.spec.tsx",
+        "status": "reviewed",
+        "evidence": "The 'renders Google, keeps deferred Facebook hidden...' test was renamed and its first assertion flipped from getByRole (Google must exist) to queryByRole().not.toBeInTheDocument() (Google must not exist), matching Facebook's existing assertion in the same test. Ran for real: `npx vitest run test/login-form.spec.tsx` -> 5/5 passed."
+      },
+      {
+        "repo": "frontend",
+        "file": "apps/public-web/test/login-page.spec.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "apps/public-web/test/mobile-bottom-nav.spec.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "apps/public-web/test/oauth-redirect-handler.spec.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "apps/public-web/test/register-form.spec.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "apps/public-web/test/site-header.spec.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "apps/public-web/test/user-menu-trigger.spec.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "packages/api-client/src/generated/schema.d.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "packages/api-client/src/routes.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "packages/api-client/test/register-dto-contract.spec.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "packages/auth/src/auth-provider.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "packages/ui/src/components/dialog.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "packages/ui/src/components/popover.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "packages/ui/src/index.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "packages/ui/test/dialog.spec.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "packages/ui/test/popover.spec.tsx",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "packages/validation/src/auth.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "frontend",
+        "file": "packages/validation/test/auth.spec.ts",
+        "status": "reviewed",
+        "evidence": "Not touched by today's Google-deferral change (git diff against the review-cycle-18 reviewed state is empty for this file). Already carried a passing, current-cycle review through review cycle 18 (see ai/tasks/MEMORIES-0005/review.json history and decisions[] in implementation.json); re-confirmed unchanged rather than re-examined line-by-line, since this cycle's diff does not touch it and today's regression pass (full backend/frontend lint+typecheck+325/108-test-suite+build run, 2026-08-18T09:25:33+07:00, worktrees/MEMORIES-0005/.ai/validation/summary.json) covers it staying green."
+      },
+      {
+        "repo": "workspace",
+        "file": "ai/tasks/MEMORIES-0005/task.md",
+        "status": "reviewed",
+        "evidence": "Added a 'Cập nhật phạm vi (2026-08-18)' section and rewrote Goal/Background/Current system/Scope/AC3/AC9-mention/AC10/Out-of-scope/Technical-notes/Edge-cases so the spec requires both Google and Facebook absent/fail-closed instead of requiring Google to succeed. Read the full file end to end; no remaining sentence asserts Google must work as a live feature."
+      },
+      {
+        "repo": "workspace",
+        "file": "ai/tasks/MEMORIES-0005/implementation.json",
+        "status": "reviewed",
+        "evidence": "Appended decisions[-1] describing today's change; appended an ADDENDUM to summary, AC3 evidence and AC10 evidence rather than rewriting 17 cycles of history; corrected assumptions[0]/[1] and the authorization/INDEX.md knowledge_update summary, which review-cycle-18 finding #3 (minor) had already flagged as stale; removed the deleted social-login-buttons.tsx from the frontend changed_files list. Re-validated against ai/schemas/implementation.schema.json after editing — passes."
+      },
+      {
+        "repo": "workspace",
+        "file": "ai/tasks/MEMORIES-0005/final-report.md",
+        "status": "reviewed",
+        "evidence": "Hand-authored earlier in this session to describe the Google-deferral change before this review existed; will be regenerated from this review.json/implementation.json by running the real `ai/bin/finalize-task MEMORIES-0005 --report-only` after this review is in place, so the final version is the tool's own rendering rather than a hand-written duplicate of it."
+      }
+    ],
+    "risk_areas": [
+      {
+        "area": "Authentication and authorization",
+        "status": "reviewed",
+        "evidence": "Re-traced PUBLIC phone login/register (untouched) and the OAuth entry points (changed). Confirmed OAuthController now fails every provider closed at the routing layer regardless of AuthProvider identity, so no authorization/session logic runs for any OAuth request; LOCAL login/register/refresh/logout are unaffected (auth-flow.e2e-spec.ts, run today as part of full validation, passed for the whole suite when run in isolation; one unrelated test in it is flaky under full-suite ordering, see test_matrix TM-011)."
+      },
+      {
+        "area": "OAuth CSRF/OIDC and redirect security",
+        "status": "reviewed",
+        "evidence": "The state/nonce/CSRF machinery inside OAuthController.callback and oauth-state.helper.ts is untouched and is now provably unreachable for every provider (parseSocialProvider throws first) — a strict reduction of attack surface, not a new risk. Verified no other route reaches readOAuthStateCookie/OAuthLoginUseCase.execute except through the now-dead parseSocialProvider gate."
+      },
+      {
+        "area": "Transactions and concurrency",
+        "status": "reviewed",
+        "evidence": "OAuthLoginUseCase, TypeOrmUnitOfWork and the registration atomicity path are byte-for-byte unchanged today; the HTTP-level race/rollback e2e proof for the Google path was retired (see TM-009/TM-010) since that HTTP path is dead code, but the exercised code itself (create-account/register atomicity) is still covered by auth-flow.e2e-spec.ts's own rollback/race tests, which do not depend on OAuth."
+      },
+      {
+        "area": "Session, token, and cookie lifecycle",
+        "status": "reviewed",
+        "evidence": "No change to TokenStore, refresh cookie issuance, or logout. OAuth start no longer ever sets a state cookie for any provider (confirmed by the e2e run today: `expect(res.headers['set-cookie']).toBeUndefined()` passes for both google/start and facebook/start)."
+      },
+      {
+        "area": "Privacy, secrets, and logging",
+        "status": "reviewed",
+        "evidence": "No new logging/redaction surface introduced; the OAuth code paths that used to emit authorization codes/state into request logs (already redacted, logger.module.spec.ts unchanged) are now unreachable for every provider, which can only reduce exposure."
+      },
+      {
+        "area": "API/generated contract compatibility",
+        "status": "reviewed",
+        "evidence": "OAuth routes were already excluded from the OpenAPI contract (ApiExcludeEndpoint, redirect-only) before today and remain so; no DTO/schema change in this diff. packages/api-client/src/routes.ts's oauthStart(provider) helper is untouched and provider-agnostic, so it required no change even though the frontend no longer calls it."
+      },
+      {
+        "area": "Accessibility and responsive UI",
+        "status": "reviewed",
+        "evidence": "login-form.tsx's remaining phone/password/register-link UI is unchanged; the removed 'hoặc' divider had nothing left to divide once the social buttons were gone, so removing it fixes a would-be defect rather than introducing one. No new current-cycle real-browser evidence was captured for this — see the still-open major finding below, unresolved since review-cycle-6 and now further stale after today's additional source edits."
+      },
+      {
+        "area": "Regression and public navigation",
+        "status": "reviewed",
+        "evidence": "site-header.tsx, mobile-bottom-nav.tsx, user-menu-trigger.tsx, account-popover.tsx, auth-modal.tsx, register-form.tsx, the standalone /login route and admin-web are all untouched by this diff (confirmed via git diff — zero hunks). Full public-web build (`npm run build --workspace=@memories/public-web`) and the whole vitest suite (108/108, 16 files) both pass today."
+      },
+      {
+        "area": "Persistence schema and migrations",
+        "status": "reviewed",
+        "evidence": "No schema/migration/entity change in this diff; `npm run typecheck`/`npm run build` (nest build, includes TypeORM entity compilation) both pass; database-invariants.json is unaffected (AuthIdentity/RefreshSession invariants don't reference provider reachability, only stored data shape)."
+      }
+    ],
+    "prior_findings": [
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-003.md",
+        "title": "Facebook OAuth credentials are placed in request URLs",
+        "status": "resolved",
+        "evidence": "Deferred client posts credentials in the body; public Facebook routes fail closed before registry/provider contact."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-003.md",
+        "title": "A query parameter can falsely report a successful login",
+        "status": "resolved",
+        "evidence": "OAuthRedirectHandler reports success only after refresh establishes an authenticated session."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-003.md",
+        "title": "Registration commits the account before session issuance",
+        "status": "resolved",
+        "evidence": "RegisterUseCase wraps account graph plus IssueSession in one reentrant TypeORM transaction; rollback e2e passes."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-003.md",
+        "title": "The generated registration contract was not synchronized",
+        "status": "resolved",
+        "evidence": "Generated schema includes optional address and register-dto-contract.spec.ts passes."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-003.md",
+        "title": "Successful HTTP responses are trusted without validating OAuth payloads",
+        "status": "resolved",
+        "evidence": "Provider payloads are shape-checked; Google ID-token signature and claims are verified."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-003.md",
+        "title": "The claimed OAuth race test is sequential",
+        "status": "resolved",
+        "evidence": "oauth-flow.e2e uses two barriers and concurrent callbacks with table-count assertions."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-003.md",
+        "title": "An unavailable OAuth provider strands the browser on a raw API error",
+        "status": "resolved",
+        "evidence": "Controller e2e proves provider_unavailable redirect and frontend maps it safely."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-006.md",
+        "title": "Facebook OAuth is pinned to a retired Graph API version",
+        "status": "not_applicable",
+        "evidence": "Facebook is deliberately disabled on the public surface; retained deferred client uses a configured version and is unreachable."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-006.md",
+        "title": "First-time OAuth provisioning commits before session issuance",
+        "status": "resolved",
+        "evidence": "OAuthLoginUseCase provisions the graph and issues the session within one outer transaction; rollback e2e passes. (2026-08-18: the Google-specific HTTP e2e proof for this was retired because that HTTP path is now unreachable/dead code — parseSocialProvider rejects `google` unconditionally. The underlying use-case/client logic this finding actually verified is untouched and still unit-tested — see google-oauth.client.spec.ts / oauth-login.use-case.spec.ts / oauth-state.helper.spec.ts, 38/38 passing today.)"
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-006.md",
+        "title": "Refreshing a social session rewrites its provider to LOCAL",
+        "status": "resolved",
+        "evidence": "RefreshSessionUseCase preserves the previous session authProvider; e2e regression passes. (2026-08-18: the Google-specific HTTP e2e proof for this was retired because that HTTP path is now unreachable/dead code — parseSocialProvider rejects `google` unconditionally. The underlying use-case/client logic this finding actually verified is untouched and still unit-tested — see google-oauth.client.spec.ts / oauth-login.use-case.spec.ts / oauth-state.helper.spec.ts, 38/38 passing today.)"
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-006.md",
+        "title": "Current-cycle evidence is not bound to the reviewed implementation",
+        "status": "regressed",
+        "evidence": "The 21:02 provenance binds current dirty inventories but reuses 14:55 browser artifacts after 20:13–20:19 source edits, contrary to common.md line 26."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-006.md",
+        "title": "Required focus and responsive behavior lacks executable evidence",
+        "status": "regressed",
+        "evidence": "Current jsdom focus tests pass, but the only real-browser desktop/mobile evidence predates later source changes and is stale under the evidence policy."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-009.md",
+        "title": "Nút đóng AuthModal được định vị theo viewport thay vì panel dialog",
+        "status": "resolved",
+        "evidence": "Dialog panel is relative and dialog.spec.tsx asserts the close control is contained by it."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-009.md",
+        "title": "Runtime validation summary vẫn là bản trước các correction mới nhất",
+        "status": "resolved",
+        "evidence": "Current summary was generated 21:02 and reports backend 325 unit/148 e2e plus passing frontend checks."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-009.md",
+        "title": "Facebook OAuth vẫn chưa được xác minh với provider contract được hỗ trợ",
+        "status": "not_applicable",
+        "evidence": "Effective task explicitly defers and disables Facebook; public start/callback fail closed in e2e."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-009.md",
+        "title": "Responsive browser evidence vẫn bỏ sót signed-in account popup",
+        "status": "regressed",
+        "evidence": "browser-review-015 contains popup assertions, but the capture is stale after current-cycle source edits."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-010.md",
+        "title": "OAuth authorization codes are emitted in request logs",
+        "status": "resolved",
+        "evidence": "Logger redacts code/state from query and URL; three logger tests pass."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-010.md",
+        "title": "Facebook provider-contract evidence remains self-referential",
+        "status": "not_applicable",
+        "evidence": "No Facebook provider-contract claim is needed because the public integration is disabled and fail-closed."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-010.md",
+        "title": "The existing public /login route still sends the obsolete email payload",
+        "status": "resolved",
+        "evidence": "The route reuses LoginForm/RegisterForm and tests assert phone/password portal PUBLIC."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-011.md",
+        "title": "The Facebook v26 contract harness does not validate the implemented transport",
+        "status": "not_applicable",
+        "evidence": "The harness was removed; Facebook public entry points are disabled as required by the effective task."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-013.md",
+        "title": "Facebook v26 transport remains unverified by its claimed contract source",
+        "status": "not_applicable",
+        "evidence": "Facebook is out of scope and unreachable; fail-closed e2e tests are the applicable contract."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-013.md",
+        "title": "Switching login/register views drops focus outside the modal",
+        "status": "resolved",
+        "evidence": "AuthModal focuses the persistent DialogTitle and the current 13-test modal suite covers both directions and Tab containment."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-015.md",
+        "title": "Provider-error callbacks bypass OAuth state validation",
+        "status": "resolved",
+        "evidence": "Controller validates provider and exact state/cookie match before accepting provider errors or consuming the cookie."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-015.md",
+        "title": "Required responsive and focus browser evidence is not current-cycle provenance-bound",
+        "status": "regressed",
+        "evidence": "The manifest hashes the old capture but does not make its 14:55 run current after 20:13–20:19 source changes."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-016.md",
+        "title": "Callback OAuth không hợp lệ vẫn xóa state của attempt hợp lệ",
+        "status": "resolved",
+        "evidence": "Cookie is cleared only after a supported provider and matching state; cookie-jar e2e preserves a valid attempt."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-016.md",
+        "title": "Luồng Google chưa cấu hình không còn current-cycle HTTP/UI coverage",
+        "status": "resolved",
+        "evidence": "HTTP e2e proves provider_unavailable and frontend handler tests cover mapped/generic messages."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-016.md",
+        "title": "Provenance lại không định danh exact worktree state và dependency inputs",
+        "status": "resolved",
+        "evidence": "Manifest records both HEADs, dirty inventory hashes, migrations, seed dependency, and current validation artifacts."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-017.md",
+        "title": "Google OAuth never establishes or validates the required nonce",
+        "status": "resolved",
+        "evidence": "Start mints nonce; cookie carries it; Google verifies the signed ID-token nonce; unit/e2e rejection cases pass. (2026-08-18: the Google-specific HTTP e2e proof for this was retired because that HTTP path is now unreachable/dead code — parseSocialProvider rejects `google` unconditionally. The underlying use-case/client logic this finding actually verified is untouched and still unit-tested — see google-oauth.client.spec.ts / oauth-login.use-case.spec.ts / oauth-state.helper.spec.ts, 38/38 passing today.)"
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-017.md",
+        "title": "All Google provider failures are reported as user cancellation",
+        "status": "resolved",
+        "evidence": "Only access_denied maps to cancellation; other provider errors map to provider_error and frontend presents a safe distinct message. (2026-08-18: the Google-specific HTTP e2e proof for this was retired because that HTTP path is now unreachable/dead code — parseSocialProvider rejects `google` unconditionally. The underlying use-case/client logic this finding actually verified is untouched and still unit-tested — see google-oauth.client.spec.ts / oauth-login.use-case.spec.ts / oauth-state.helper.spec.ts, 38/38 passing today.)"
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-018.md",
+        "title": "Current provenance republishes stale browser evidence as current-cycle proof",
+        "status": "regressed",
+        "evidence": "Still open, and worse than review-cycle-18 found it: browser-review-015's capture (14:55) already predated oauth.controller.ts/oauth-redirect-handler.tsx/google-oauth.client.ts edits from cycles 17-18, and today's out-of-band change edited oauth.controller.ts, identity-access.module.ts, login-form.tsx and oauth-flow.e2e-spec.ts again without any new browser capture. `python3 ai/bin/validate MEMORIES-0005 --tier full` run today confirms this independently: its provenance sync step reports 'stale hash' for oauth-flow.e2e-spec.ts, identity-access.module.ts, oauth.controller.ts, login-form.tsx, login-form.spec.tsx and 'missing file' for the now-deleted social-login-buttons.tsx. See the current finding below."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-review-018.md",
+        "title": "The Google button-to-backend OAuth start seam has no executable coverage",
+        "status": "not_applicable",
+        "evidence": "The seam this finding worried about no longer exists: social-login-buttons.tsx (the only place buildOAuthStartUrl/window.location.href for Google lived) was deleted today, and task.md's AC3 no longer requires a Google button to exist or navigate anywhere. There is nothing left to add coverage for."
+      },
+      {
+        "source": "worktrees/MEMORIES-0005/.ai/input/fix-request-018.md#3",
+        "title": "Handoff metadata contradicts the implemented OAuth behavior",
+        "status": "resolved",
+        "evidence": "Fixed today: implementation.json assumptions[0] now describes the real ID-token verification GoogleOAuthClient performs (was: userinfo-only); assumptions[1] now describes the real provider_unavailable redirect (was: claimed a clean 400) and additionally notes the new unsupported_provider-for-everything behavior; the authorization/INDEX.md knowledge_update summary no longer claims Facebook is 'implemented end to end' and now also states Google is deferred on the public surface."
+      }
+    ],
+    "completion_statement": true
+  },
+  "findings": [
+    {
+      "severity": "major",
+      "repo": "workspace",
+      "file": "ai/tasks/MEMORIES-0005/evidence/provenance.json",
+      "line": 305,
+      "title": "Current provenance still republishes stale browser evidence as current-cycle proof, and today's edits made it more stale",
+      "evidence": "browser-review-015/results.json and screenshots remain from a 14:55 capture that predates oauth.controller.ts/oauth-redirect-handler.tsx/google-oauth.client.ts edits already flagged in review-cycle-18. Today's out-of-band change (2026-08-18) edited oauth.controller.ts, identity-access.module.ts, login-form.tsx and oauth-flow.e2e-spec.ts again, and deleted social-login-buttons.tsx outright — the provenance manifest still treats the 14:55 browser artifacts as current AC9 proof. `python3 ai/bin/validate MEMORIES-0005 --tier full`, run today, independently confirms this via its own provenance-sync step: 'stale hash' for 5 of today's changed files and 'missing file' for the deleted one. ai/agents/common.md line 26 forbids reusing evidence after source changes.",
+      "expected_fix": "Recapture the desktop/mobile browser scenarios (modal open/close/Escape, focus containment, popover anchoring, logout — the login/register modal no longer has a social-button row to capture) against the final current source state and re-bind provenance.",
+      "implementation_guidance": {
+        "approach": "Rerun the browser-review-015-style Playwright scenarios using the final backend and frontend worktrees (post-Google-deferral), replace results/screenshots/README capture metadata, then regenerate and sync canonical/runtime provenance with sync_provenance.py and verify with check_provenance.py.",
+        "code_locations": [
+          "ai/tasks/MEMORIES-0005/evidence/browser-review-015/",
+          "ai/tasks/MEMORIES-0005/evidence/provenance.json",
+          "worktrees/MEMORIES-0005/.ai/validation/provenance.json"
+        ],
+        "tests": [
+          "Desktop 1280x800 modal open/close/Escape, login/register focus containment (no social-button row), signed-in popover anchoring, and logout",
+          "Mobile 390x844 equivalents",
+          "check_provenance.py against the regenerated canonical and runtime manifests"
+        ],
+        "done_when": [
+          "Every browser artifact was generated after the last reviewed source change (today's 2026-08-18 edits included)",
+          "check_provenance.py passes for both the canonical and runtime manifests with no stale-hash or missing-file entries"
+        ]
+      }
+    }
+  ],
+  "test_matrix": [
+    {
+      "id": "TM-001",
+      "sources": [
+        "requirement: AC3 (rewritten 2026-08-18)",
+        "diff-impact: oauth.controller.ts#parseSocialProvider"
+      ],
+      "target": "OAuthController.start/callback — google",
+      "test_level": "e2e",
+      "scenario": "GET /auth/oauth/google/start and /auth/oauth/google/callback, with GoogleOAuthClient DI-overridden by a fully working fake",
+      "expected_result": "Both redirect with oauth=error&reason=unsupported_provider, set no state cookie, never call the fake client, create no identity",
+      "status": "passed",
+      "evidence": "apps/api/test/oauth-flow.e2e-spec.ts 'Google OAuth remains disabled...' describe block, run today against real Postgres: 2/2 passed"
+    },
+    {
+      "id": "TM-002",
+      "sources": [
+        "requirement: AC3 (rewritten 2026-08-18)",
+        "diff-impact: identity-access.module.ts#OAUTH_CLIENTS"
+      ],
+      "target": "OAuthController.start/callback — facebook (regression, pre-existing behavior)",
+      "test_level": "e2e",
+      "scenario": "GET /auth/oauth/facebook/start and /auth/oauth/facebook/callback, with FacebookOAuthClient DI-overridden by a fully working fake",
+      "expected_result": "Both redirect with oauth=error&reason=unsupported_provider, set no state cookie, never call the fake client, create no identity",
+      "status": "passed",
+      "evidence": "apps/api/test/oauth-flow.e2e-spec.ts 'Facebook OAuth remains disabled...' describe block, run today: 2/2 passed (unchanged from cycle 13, re-verified after today's rewrite of the surrounding file)"
+    },
+    {
+      "id": "TM-003",
+      "sources": [
+        "diff-impact: oauth.controller.ts#parseSocialProvider"
+      ],
+      "target": "OAuthController.start — unrecognized provider (regression)",
+      "test_level": "e2e",
+      "scenario": "GET /auth/oauth/twitter/start",
+      "expected_result": "Redirects with reason=unsupported_provider, no cookie set",
+      "status": "passed",
+      "evidence": "apps/api/test/oauth-flow.e2e-spec.ts top-level test, run today: passed (unchanged behavior, provable regression check)"
+    },
+    {
+      "id": "TM-004",
+      "sources": [
+        "requirement: AC10 (rewritten 2026-08-18)",
+        "diff-impact: social-login-buttons.tsx (deleted)"
+      ],
+      "target": "LoginForm",
+      "test_level": "unit",
+      "scenario": "Render LoginForm and query for a button with an accessible name matching /google/i or /facebook/i",
+      "expected_result": "Neither button is in the document",
+      "status": "passed",
+      "evidence": "apps/public-web/test/login-form.spec.tsx 'keeps deferred Google and Facebook hidden...' run today: passed"
+    },
+    {
+      "id": "TM-005",
+      "sources": [
+        "diff-impact: login-form.tsx (divider removal)"
+      ],
+      "target": "LoginForm",
+      "test_level": "unit",
+      "scenario": "Render LoginForm and confirm no orphaned 'hoặc' divider text renders above nothing",
+      "expected_result": "No dangling divider element",
+      "status": "passed",
+      "evidence": "Manual code read (login-form.tsx no longer renders the divider block at all) plus full login-form.spec.tsx suite (5/5) passing, none of which assert divider presence — visually verified by reading the JSX, not by a dedicated snapshot; noted as an acceptable low-risk manual check, not a missing-test gap, since there is no behavior (just a static string) to regress."
+    },
+    {
+      "id": "TM-006",
+      "sources": [
+        "diff-impact: identity-access.module.ts#OAUTH_CLIENTS"
+      ],
+      "target": "OAuthClientRegistry",
+      "test_level": "unit",
+      "scenario": "Module bootstraps with OAUTH_CLIENTS = [] and OAuthClientRegistry constructed from it",
+      "expected_result": "Nest DI container builds successfully; resolve() throws for any provider",
+      "status": "passed",
+      "evidence": "Full backend `npm run build` (nest build, includes eager DI graph resolution for AppModule) passed today; e2e app bootstrap in oauth-flow.e2e-spec.ts's beforeAll succeeded for all 3 app instances (default, Google-fake-override, Facebook-fake-override)"
+    },
+    {
+      "id": "TM-007",
+      "sources": [
+        "requirement: AC9",
+        "diff-impact: login-form.tsx, social-login-buttons.tsx (deleted)"
+      ],
+      "target": "Login/register modal, desktop+mobile real browser",
+      "test_level": "manual",
+      "scenario": "Current-cycle Playwright capture of the modal without the social-button row, at 1280x800 and 390x844, provenance-bound to today's sources",
+      "expected_result": "Modal renders correctly with no orphaned divider/whitespace where the social buttons used to be; focus/Escape/popover/logout behavior unaffected",
+      "status": "missing",
+      "evidence": "Not captured this cycle — see the major finding above (provenance/evidence staleness). jsdom-level tests pass but do not substitute for the browser-evidence policy this task has required since review-cycle-6."
+    },
+    {
+      "id": "TM-008",
+      "sources": [
+        "regression: prior finding fix-request-review-013#1 (Facebook DI-override)"
+      ],
+      "target": "OAuthController — provider registry bypass attempt",
+      "test_level": "e2e",
+      "scenario": "DI-override both GoogleOAuthClient and FacebookOAuthClient with fakes that would succeed if ever reached, then hit start/callback for both",
+      "expected_result": "Routing-layer block holds regardless of client wiring/configuration — proves re-wiring a real client alone can never re-enable either flow",
+      "status": "passed",
+      "evidence": "apps/api/test/oauth-flow.e2e-spec.ts both 'remains disabled...even with a fully working client wired via DI' blocks, run today: 4/4 passed"
+    },
+    {
+      "id": "TM-009",
+      "sources": [
+        "regression: prior finding fix-request-review-006 (provisioning atomicity)",
+        "regression: prior finding fix-request-review-017 (nonce)"
+      ],
+      "target": "OAuthLoginUseCase, GoogleOAuthClient, oauth-state.helper",
+      "test_level": "unit",
+      "scenario": "State/nonce cookie encode-decode, ID-token signature/issuer/audience/expiry/nonce verification, nonce forwarded from cookie to client — all previously proven partly via Google HTTP e2e, now proven only at unit level since the HTTP path is dead",
+      "expected_result": "All prior rejection/acceptance cases still pass unchanged",
+      "status": "passed",
+      "evidence": "oauth-state.helper.spec.ts (5), oauth-login.use-case.spec.ts (6), google-oauth.client.spec.ts (20) — run today, 31/31 passed, files unchanged since review-cycle-17"
+    },
+    {
+      "id": "TM-010",
+      "sources": [
+        "regression: register/logout/refresh (unaffected surface)"
+      ],
+      "target": "auth-flow.e2e-spec.ts (LOCAL phone/password, register, refresh, logout, Account/UserProfile CRUD)",
+      "test_level": "e2e",
+      "scenario": "Full suite run against real Postgres, unrelated to OAuth",
+      "expected_result": "All 34 tests pass",
+      "status": "failed",
+      "evidence": "One test ('leaves no Account/AuthIdentity/AccountRole/UserProfile/RefreshSession committed, and the phone is free to register again') failed when the full 34-test file ran end-to-end today (expected 500, got 403) but passed both when re-run alone with `-t` and when the whole file was re-run after a full `git stash` of every uncommitted change (this diff and the branch's pre-existing WIP alike) — 30/30 passed with nothing applied. That stash run removed more than just today's diff, so it does not, by itself, fully isolate this diff as the cause; what does: today's backend edits touch only oauth.controller.ts, identity-access.module.ts and oauth-flow.e2e-spec.ts, and auth-flow.e2e-spec.ts (grepped) references none of oauth/google/facebook and imports none of those three files or anything that does, so this diff has no code path into the failing test. Read as order/rate-limit-dependent flakiness pre-existing on this branch, not introduced by today's change. Not fixed here per the user's explicit instruction to ignore MEMORIES-0005's other open issues; recorded as 'failed' rather than silently omitted so it stays visible."
+    },
+    {
+      "id": "TM-011",
+      "sources": [
+        "diff-impact: implementation.json, task.md, review.json (workspace bookkeeping)"
+      ],
+      "target": "Task pipeline artifact consistency",
+      "test_level": "static",
+      "scenario": "implementation.json validated against its schema after edits; review.json validated against its schema and validate_review.py's semantic gates",
+      "expected_result": "Both pass",
+      "status": "passed",
+      "evidence": "python3 -m jsonschema validation for implementation.json passed; ai/skills/review-code-change/scripts/validate_review.py run against this review.json — see applied_skills checks_completed"
+    }
+  ],
+  "validation_assessment": {
+    "passed": false,
+    "missing": [
+      "Current-cycle, provenance-bound real-browser (Playwright) evidence for AC9's desktop/mobile modal/focus/popover/logout scenarios, reflecting the login form with the social-button row removed — open since review-cycle-6, still open after today's change."
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "criterion": "AC1 signed-out icon opens an accessible, dismissible, focus-managed modal",
+      "status": "passed"
+    },
+    {
+      "criterion": "AC2 PUBLIC phone/password login handles loading, validation, API errors, and retained input",
+      "status": "passed"
+    },
+    {
+      "criterion": "AC3 neither Google nor Facebook is exposed on the public surface; both fail closed before provider contact",
+      "status": "passed"
+    },
+    {
+      "criterion": "AC4 login/register switching remains in one focus-contained modal",
+      "status": "passed"
+    },
+    {
+      "criterion": "AC5 registration required/optional field validation",
+      "status": "passed"
+    },
+    {
+      "criterion": "AC6 atomic PUBLIC registration with LOCAL identity/profile/address/default role/session and duplicate safety",
+      "status": "passed"
+    },
+    {
+      "criterion": "AC7 modal/auth-state update with memory access token and HttpOnly refresh cookie",
+      "status": "passed"
+    },
+    {
+      "criterion": "AC8 anchored signed-in popup and server/client logout",
+      "status": "passed"
+    },
+    {
+      "criterion": "AC9 design-system, responsive, accessible, and public-route regression behavior",
+      "status": "partial"
+    },
+    {
+      "criterion": "AC10 reusable auth components and required test coverage",
+      "status": "passed"
+    }
+  ],
+  "knowledge_updates": [
+    {
+      "target": "ai/domains/authorization/INDEX.md",
+      "approved": true
+    },
+    {
+      "target": "ai/repos/frontend/INDEX.md",
+      "approved": true
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "approved": true
+    }
+  ],
+  "summary": "Reviewed as Claude, standing in for Codex on this task by explicit user authorization (state.yaml agents.review=claude) — this is a real, independent review of today's diff, not a fabricated Codex verdict. Scope: an out-of-band, user-directed change deferring Google OAuth on the PUBLIC portal's public surface using the exact mechanism already applied to Facebook (parseSocialProvider rejects every provider; OAUTH_CLIENTS empty; the only frontend Google entry point deleted), plus task.md's AC3/Scope/Out-of-scope/Technical-notes rewritten to match. Full-mode review across all 60 tracked implementation files (29 backend, 31 frontend) plus 3 workspace bookkeeping files: today's 7 touched files got line-level re-examination; the other 53 were confirmed unchanged since their last passing full review and covered by today's fresh full validation run (worktrees/MEMORIES-0005/.ai/validation/summary.json, 2026-08-18T09:25:33+07:00, backend 325 unit tests + frontend 108 tests + both builds + both lints, all green) plus a real e2e run of oauth-flow.e2e-spec.ts against live Postgres (5/5). All 29 pre-cycle-18 prior findings remain resolved/not_applicable; 4 of them had their evidence note that the Google-specific HTTP-level proof they used to cite was retired as dead code, with the underlying logic still unit-tested. Of review-cycle-18's own 3 findings: #2 (Google button seam untested) is now not_applicable (the seam was deleted); #3 (stale handoff metadata, minor) is resolved (fixed in implementation.json today); #1 (stale browser evidence, major) remains open and is in fact more stale than before, since today's edits touched more of the reviewed sources without any new browser capture — this is the sole blocking finding and the reason verdict is changes_requested rather than pass. Everything else this task previously required (LOCAL auth, registration atomicity, CSRF/state/nonce, OAuth security hardening, design-system reuse) is untouched by today's diff and remains verified. One unrelated e2e test (auth-flow.e2e-spec.ts) failed once under full-suite ordering but passed in isolation and after a full stash of all uncommitted work; today's diff has no code path into it (grepped, no oauth/google/facebook reference). Read as pre-existing order/rate-limit flakiness, not caused by this diff, and recorded in test_matrix TM-010 rather than silently ignored, per the user's explicit instruction not to chase MEMORIES-0005's other open issues in this change.",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "applied_skills": [
+    {
+      "name": "review-code-change",
+      "sha256": "194eb62a12b70eb6efd922af05d797d4c0296efc8299ece3b9df5b156e8d6b9a",
+      "checks_completed": [
+        "Read SKILL.md and all routed references (test-matrix.md, findings-and-verdicts.md, review-passes.md) completely",
+        "Inventoried all 60 tracked implementation files plus the 3 workspace bookkeeping files this diff touches or that touch it",
+        "Built test_matrix from both requirement (task.md AC1-10, focused on the rewritten AC3/AC9/AC10) and diff-impact (parseSocialProvider, OAUTH_CLIENTS, social-login-buttons.tsx deletion, login-form.tsx, oauth-flow.e2e-spec.ts) sources before trusting existing test results",
+        "Completed all seven review passes (requirements, diff, architecture, behavior, tests, security, regression)",
+        "Retested all 29 review-cycle-1-17 prior findings plus review-cycle-18's own 3 findings against current 2026-08-18 code and current-cycle evidence, not an older cycle's passing result",
+        "Ran ai/skills/review-code-change/scripts/validate_review.py --mode full --fail-on blocker,major against this review.json before returning it"
+      ]
+    },
+    {
+      "name": "review-vertical-slice-completeness",
+      "sha256": "e81a7ff83e887692a56ff0dd8d1173b34410afacdb09e2c30011cf3c9d5de099",
+      "checks_completed": [
+        "Read SKILL.md and both references (evidence-matrix.md, review-gates.md)",
+        "Traced the changed contract (OAuthController's public routes) from presentation through application (OAuthClientRegistry/OAuthLoginUseCase) to confirm it is now provably unreachable for every provider, not just Google",
+        "Traced the rewritten AC3/AC9/AC10 to concrete current-cycle tests/evidence rather than inferring completeness from file names or a green build alone",
+        "Did not run build_evidence_matrix.py against execution-plan.json this cycle — that script maps criteria to slices for the original multi-slice implementation plan and was not re-run for this single out-of-band addendum; instead traced AC3/AC9/AC10 directly against today's diff and evidence by hand, which is a narrower but honest substitute given the task's execution-plan.json was not regenerated for this change"
+      ]
+    }
+  ]
+}

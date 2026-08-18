@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, time
+import argparse, subprocess, time
 from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -79,6 +79,45 @@ def main() -> None:
         write_json(validation_dir / f"{repo}.json", summary)
         repo_summaries.append(summary)
     write_json(validation_dir / "summary.json", {"task_id":args.task_id,"generated_at":now_iso(),"implementation_cycle":implementation_cycle,"change_cycle":change_cycle,"passed":overall,"repositories":repo_summaries,"dry_run":args.dry_run,"tier":args.tier})
+
+    # Full validation rewrites these JSON artifacts on every run (timestamps and
+    # durations included). Rebind only those outputs immediately after producing
+    # them, then publish provenance when every independently maintained input and
+    # artifact is also current. This prevents validate -> review from invalidating
+    # its own evidence without concealing stale source/input hashes.
+    if overall and not args.dry_run and args.tier == "full":
+        provenance_script = AI_ROOT / "skills" / "validate-evidence-provenance" / "scripts"
+        refresh = subprocess.run(
+            [
+                sys.executable,
+                str(provenance_script / "refresh_validation_artifacts.py"),
+                str(td),
+                str(validation_dir),
+            ],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+        print(refresh.stdout, end="")
+        if refresh.returncode == 0:
+            sync = subprocess.run(
+                [
+                    sys.executable,
+                    str(provenance_script / "sync_provenance.py"),
+                    str(td),
+                    str(validation_dir),
+                ],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                check=False,
+            )
+            print(sync.stdout, end="")
+            if sync.returncode != 0:
+                print("Validation passed, but provenance still has non-validation stale entries; update those before review.")
+        else:
+            print("Validation passed, but automatic validation-artifact provenance refresh failed.")
 
     state = read_yaml(td / "state.yaml")
     state["status"] = "reviewing" if overall and not args.dry_run else ("prepared" if args.dry_run else "failed")

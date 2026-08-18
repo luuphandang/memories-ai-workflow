@@ -1,0 +1,74 @@
+{
+  "desktop_modal_open_visible": true,
+  "desktop_modal_closes_on_escape": true,
+  "desktop_after_to_register": {
+    "tag": "H2",
+    "role": null,
+    "text": "Tạo tài khoản mới",
+    "insideDialog": true,
+    "isBody": false
+  },
+  "desktop_after_forward_tab_from_register_title": {
+    "tag": "INPUT",
+    "role": null,
+    "text": "",
+    "insideDialog": true,
+    "isBody": false
+  },
+  "desktop_after_shift_tab_wraps": {
+    "tag": "BUTTON",
+    "role": null,
+    "text": "Đăng nhập",
+    "insideDialog": true,
+    "isBody": false
+  },
+  "desktop_after_to_login": {
+    "tag": "H2",
+    "role": null,
+    "text": "Đăng nhập",
+    "insideDialog": true,
+    "isBody": false
+  },
+  "desktop_modal_closes_on_close_button": true,
+  "mobile_modal_open_visible": true,
+  "mobile_modal_closes_on_escape": true,
+  "mobile_after_to_register": {
+    "tag": "H2",
+    "role": null,
+    "text": "Tạo tài khoản mới",
+    "insideDialog": true,
+    "isBody": false
+  },
+  "mobile_after_forward_tab_from_register_title": {
+    "tag": "INPUT",
+    "role": null,
+    "text": "",
+    "insideDialog": true,
+    "isBody": false
+  },
+  "mobile_after_shift_tab_wraps": {
+    "tag": "BUTTON",
+    "role": null,
+    "text": "Đăng nhập",
+    "insideDialog": true,
+    "isBody": false
+  },
+  "mobile_after_to_login": {
+    "tag": "H2",
+    "role": null,
+    "text": "Đăng nhập",
+    "insideDialog": true,
+    "isBody": false
+  },
+  "mobile_modal_closes_on_close_button": true,
+  "desktop_signed_in_trigger_visible": true,
+  "desktop_popover_within_viewport": true,
+  "desktop_popover_anchored_near_trigger": true,
+  "desktop_logout_returns_to_signed_out": true,
+  "mobile_register_top_visible_full_name": true,
+  "mobile_register_submit_reachable": true,
+  "mobile_signed_in_trigger_visible": true,
+  "mobile_popover_within_viewport": true,
+  "mobile_popover_anchored_near_trigger": true,
+  "mobile_logout_returns_to_signed_out": true
+}

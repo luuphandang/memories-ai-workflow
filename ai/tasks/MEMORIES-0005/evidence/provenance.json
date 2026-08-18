@@ -2,8 +2,8 @@
   "task_id": "MEMORIES-0005",
   "implementation_cycle": 1,
   "change_cycle": 0,
-  "generated_at": "2026-08-17T10:34:03+07:00",
-  "command": "./ai/bin/ai task validate-code MEMORIES-0005 --tier full (rerun outside the filesystem sandbox so backend socket-based tests could execute); frontend regression verifies Google remains visible and deferred Facebook is absent; stale pre-deferral browser captures are intentionally excluded",
+  "generated_at": "2026-08-18T09:25:33+07:00",
+  "command": "./ai/bin/ai task validate-code MEMORIES-0005 --tier full (shared local-dev Postgres/Redis/MinIO); npm run test:e2e (backend, against the same stack); review-cycle-17 fix pass: implemented Google OIDC ID-token verification with nonce binding (GoogleOAuthClient now requests/verifies a signed id_token — signature via Google's published JWKS using Node's built-in crypto, issuer, audience, expiry, and a nonce bound 1:1 with state in the same cookie) closing the previously-unimplemented state/nonce security requirement; OAuthController.callback now allowlists only access_denied as user cancellation, mapping every other provider error to a stable provider_error reason instead of misreporting it as cancellation; OAuthRedirectHandler now only acts on the literal success/error statuses (an unrecognized oauth= value is ignored instead of being treated as an implicit success) and maps provider_error to a distinct safe message",
   "preconditions": [
     {
       "name": "backend worktree dependencies installed (npm install)",
@@ -29,15 +29,15 @@
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/backend/apps/api/test/oauth-flow.e2e-spec.ts",
-      "sha256": "1b5e234d51864930b6247c23b606291e9a9d111647266ca9b793a5f4ef44c070"
+      "sha256": "00f825cca31a8c7ea1c38b41f3202aaa764e7aa975636c23ad78c874ad156510"
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/src/application/ports/oauth-client.port.ts",
-      "sha256": "d40bad251a4039947e872701d5b3feaf710a6fb4357ea5b4e367465cc70bf60b"
+      "sha256": "6546f2ef54036257bbc342d57aa0d3937940e27042181c7e1c29926bd2a802ea"
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/src/application/use-cases/oauth-login.use-case.ts",
-      "sha256": "fc0bba419cce869040454e375d2de2362a52e7cefb827bb458128d997762ecfa"
+      "sha256": "b48b9e85666527c34b43a4e07e2925eb8a0f89d7d9857b2d764718ae8a32a06f"
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/src/application/use-cases/refresh-session.use-case.ts",
@@ -48,8 +48,12 @@
       "sha256": "3aef841e33dd3fc2fd662c53a643c560cfd3d71dd498e6b7b9dfc1cbbf7ce627"
     },
     {
+      "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/src/application/use-cases/seed-roles-and-permissions.use-case.ts",
+      "sha256": "4b9f18510ffba0e8f1a2a0686b1643431b0d7153c9c4a49cfb6ce8e729354bfa"
+    },
+    {
       "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/src/identity-access.module.ts",
-      "sha256": "ef36e8298d4abc143a2ccec7794b3d1f9bb2ab856ed2f6a9666f134228a39e2d"
+      "sha256": "3571efa6d1fe5b989fddeaafd462c982412746620eeaa7c318264fbb7250ab91"
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/src/infrastructure/persistence/typeorm-auth-identity.repository.ts",
@@ -57,11 +61,11 @@
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/src/infrastructure/security/facebook-oauth.client.ts",
-      "sha256": "735a16f79dfeb7d554e0edb5d2e3a2efc7fb839ea7a32dcf8aff17e9c7cf0b83"
+      "sha256": "d880659fae2dd9cf350c871039f60ea600606e34ea47013303d921e1d367d84f"
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/src/infrastructure/security/google-oauth.client.ts",
-      "sha256": "1efea01bfd0eccc130305a3487e23f430b41fc6722dcb2d59829281c3b986913"
+      "sha256": "fc7cc78ddd06f23e1d5cadbcf08c620fd6f7bb62e642311f812ff687a7dc4bf9"
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/src/presentation/http/auth.controller.ts",
@@ -69,11 +73,11 @@
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/src/presentation/http/oauth-state.helper.ts",
-      "sha256": "2e74ae26504d0bab6b50517f2937ce8fbe06577eceb9fbd15e9ebefe57eef747"
+      "sha256": "ce104e85cfeeb9995b35026c49fb26120e5ca55d5519f406e33ed84a023fa3fe"
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/src/presentation/http/oauth.controller.ts",
-      "sha256": "9fa90b503c7a6783f51d93c0777a2894325f75a722e0d0902cb73e2e6b193b06"
+      "sha256": "b31de238bb15801cb78cdab205760416e8a04e698a8672f144e3cae8e6037d54"
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/src/presentation/http/register.dto.ts",
@@ -84,40 +88,20 @@
       "sha256": "c772a176453c89b9da9d660430e5616ca68d2372412a9e6ab1589af435176dfd"
     },
     {
-      "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/test/facebook-oauth.client.contract.spec.ts",
-      "sha256": "8bd459c2ba6fe3cceff17dc36e9adc9f2be3e0970d0943688c2594d401cb7183"
-    },
-    {
       "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/test/facebook-oauth.client.spec.ts",
-      "sha256": "c36fc745ed2c6d1ccc7596f0da6f7e7af46288f15822f285b055f277a60bcf38"
-    },
-    {
-      "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/test/fixtures/facebook-graph-api-contract/Client.php",
-      "sha256": "a628be8a9216d406e56cb690f9814bb55ead1e1fdb1dbc63dd96cf82565e72ba"
-    },
-    {
-      "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/test/fixtures/facebook-graph-api-contract/GraphUser.php",
-      "sha256": "b475ec71ddb86f77c99d22bfdcc52fac36d6405965045213e7a109085a3698fc"
-    },
-    {
-      "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/test/fixtures/facebook-graph-api-contract/OAuth2Client.php",
-      "sha256": "9b4f6166e3692e9661641058f82b85ea5fd45d2a1617133f6a81b8969367b882"
-    },
-    {
-      "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/test/fixtures/facebook-graph-api-contract/manifest.json",
-      "sha256": "18bea039ab1fbf5d65d1c564a2ebeaa8559e0780ed89b28f4a9a9dacf738c502"
+      "sha256": "009d86c3e2a7ceeed35e4d4ab109f69a22b782f847fd359ddeabf37f8342594e"
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/test/google-oauth.client.spec.ts",
-      "sha256": "e00e084a22f008fbf0bbe7e9b8ea6b793bde8c4e6d87d4be6fc0d209672a45bd"
+      "sha256": "22ea6cd47747d7b3cf8f38949e4abdc213c875fe40b25035fbdbc1007827cb4a"
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/test/oauth-login.use-case.spec.ts",
-      "sha256": "29cc3dcdf7d10ebb308ad7bbaa2ab26ad6645a125e570bd53f78cc547c0e8fa1"
+      "sha256": "d37eac85120d147118f3ee4f0bd9708aa8a798bc7207b7cf0bad92c7c09921f9"
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/test/oauth-state.helper.spec.ts",
-      "sha256": "3ec2d141d02152eec14153a66c27bd9de072f5d9413797e988f3ffffbdf7f582"
+      "sha256": "4f4cb1a2d9787208af3d3b7acd4d95a56d368358d5ba39b8f3fd03bb274edd7a"
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/backend/libs/modules/identity-access/test/register.use-case.spec.ts",
@@ -134,6 +118,14 @@
     {
       "path": "../../../../worktrees/MEMORIES-0005/backend/libs/platform/configuration/src/schemas/env.schema.ts",
       "sha256": "42eaef75a8c030f0e283ce3bdf1b87d7a668d78a1968d748b4663a6c66a8cc4e"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0005/backend/libs/platform/database/src/migrations/1786791535416-CreateIdentityAccessSchema.ts",
+      "sha256": "855acd38efc3cdffa572ea5ca56fac5c4856710b51ccd7f7d47331a9a282d449"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0005/backend/libs/platform/database/src/migrations/1786791535417-CreateUserProfilesSchema.ts",
+      "sha256": "2eda3241152cf012df0d18a09324e0cf85d5054d63e6559a5894980e14b89575"
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/backend/libs/platform/database/src/typeorm-unit-of-work.ts",
@@ -169,7 +161,7 @@
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/frontend/apps/public-web/components/auth/auth-modal.tsx",
-      "sha256": "b23a7642a367d6bd31b06fc63cbbd220ca29702e17c0f64d492116d0423b6613"
+      "sha256": "43780e248ccf6083caaffa857a26884f0781335f59a49891a897e884e245e667"
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/frontend/apps/public-web/components/auth/login-form.tsx",
@@ -177,7 +169,7 @@
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/frontend/apps/public-web/components/auth/oauth-redirect-handler.tsx",
-      "sha256": "20b09122efd85bbc5b1b3eca66d08d076f5407425291904ec4d3d5f0fa69410d"
+      "sha256": "9a5678d63196702b951f4d9824fe92deebd5eb8550778aa78412372f3218ff74"
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/frontend/apps/public-web/components/auth/register-form.tsx",
@@ -205,7 +197,7 @@
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/frontend/apps/public-web/test/auth-modal.spec.tsx",
-      "sha256": "5037400abe420a8dcf53ccc061d104d97bde9921f9b6275069fcd11c1d37f34b"
+      "sha256": "0c91f908aaf13b31fa2e7ecd006e5078d9f7ea75afc3fcd0a68c98ed5e86bc5b"
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/frontend/apps/public-web/test/auth-provider.spec.tsx",
@@ -225,7 +217,7 @@
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/frontend/apps/public-web/test/oauth-redirect-handler.spec.tsx",
-      "sha256": "8df394d92db974a10fc03c7de236ee2d5b5a0565f0746fe4b892202835071d84"
+      "sha256": "d43ff465540f79f5dc0a31ada35737db66a9ad21859cab1fe41571cbe6168f41"
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/frontend/apps/public-web/test/register-form.spec.tsx",
@@ -257,7 +249,7 @@
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/frontend/packages/ui/src/components/dialog.tsx",
-      "sha256": "49ff0a55f9182806fb09cb79603a30edc5d6dee8b6ce2b1aa1ff6ac78e37326d"
+      "sha256": "dd4f805a73cbaef163155175c43b9ed90ef93df126ae7dfc40fe6e4030173d53"
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/frontend/packages/ui/src/components/popover.tsx",
@@ -287,23 +279,105 @@
   "artifacts": [
     {
       "path": "backend-validation.log",
-      "sha256": "a9f3fbd32f26344713f98682d7f8faf520e7a33ac7deee184881cee58d80337e"
+      "sha256": "ecced3d1000a9cd5e5d10347ea0c6379115d2bcda88c148f691f574083453d26"
     },
     {
       "path": "backend-e2e.log",
-      "sha256": "b63dfcc7f7a7b8a658192aa00e66b46b48f6aba4294f71b7252a8bd4430bb332"
+      "sha256": "48ab34d46c2c99fb19fe8dcffe500360291d191a501fa57dd1e95319e369aa7d"
+    },
+    {
+      "path": "frontend-validation.log",
+      "sha256": "588e0d6d865d5c0a514a7bdc5d727ca55fd08cdd43cd11906b2e28c83dafffbc"
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/.ai/validation/backend.json",
-      "sha256": "38ea4c157cac77aa47d9932aacd715ac5dd979cb916f17dcb4540f90d1a33d0e"
+      "sha256": "471c6fc30245469b8eb277c0d2a60548d6c5102bb63a054a9f148c0a5e68367e"
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/.ai/validation/frontend.json",
-      "sha256": "50f9568d610ecd0846957e5b36913cd7e8304b45fc8003e44ab9a27a74af875b"
+      "sha256": "3add48f60dd01fe6f9dab3ab6976f6b9fed9bb46cd11f2b661493d5b58f578dc"
     },
     {
       "path": "../../../../worktrees/MEMORIES-0005/.ai/validation/summary.json",
-      "sha256": "306c9f327fb2a392e73de9e829a4785348efb141f67cabb528aa6ddb7a01783f"
+      "sha256": "d2d44698be5d31dc2d92f11df86361528dc1f61555053036b43c1d2006665e16"
+    },
+    {
+      "path": "browser-review-015/results.json",
+      "sha256": "fd5f28419e2ab57c2d614ab1ae3667cc34114c6a115520476bf292532cb147b2"
+    },
+    {
+      "path": "browser-review-015/desktop-modal-open.png",
+      "sha256": "57e5c6a3b8979823be9622fa7ca82e8ff3cf2501f6e5e9170e217dfef01baf85"
+    },
+    {
+      "path": "browser-review-015/desktop-after-switch-to-register.png",
+      "sha256": "9b7985b139584cf861cd2d7fc3a370ee375394a5d2d817eeb46a6507f4599dcf"
+    },
+    {
+      "path": "browser-review-015/desktop-after-switch-back-to-login.png",
+      "sha256": "5929142cc6ba531fbf3a609aa692883a1347564cae82ed5ba1e0c1d8f1b5b565"
+    },
+    {
+      "path": "browser-review-015/desktop-signed-in-popover.png",
+      "sha256": "9bf7caf0813775786c867d466895519dd084864d628c98080e64496e8a55e105"
+    },
+    {
+      "path": "browser-review-015/desktop-after-logout.png",
+      "sha256": "d6053c008c5f1413a4f8af6bde4172794591d7d8a672e96bb4a1c92c29d3259c"
+    },
+    {
+      "path": "browser-review-015/mobile-modal-open.png",
+      "sha256": "d37c0ba1d0c08d33f611c687457a22a588e3d5e31e58affa7614df6c13ab06f0"
+    },
+    {
+      "path": "browser-review-015/mobile-after-switch-to-register.png",
+      "sha256": "90f6135cd9024b44e4f5302e196b4cfc37e1a3a6b4533525f74a95f012455976"
+    },
+    {
+      "path": "browser-review-015/mobile-after-switch-back-to-login.png",
+      "sha256": "740b9aae868069c8f5aa99bf1f92e50c80ec318846a69f558c15b92db5134c30"
+    },
+    {
+      "path": "browser-review-015/mobile-register-top.png",
+      "sha256": "d00a4f3ec14dd1b4d2b80837b4e5e067d36c9859360674b3595ca48cad39018e"
+    },
+    {
+      "path": "browser-review-015/mobile-register-scrolled-to-submit.png",
+      "sha256": "d00a4f3ec14dd1b4d2b80837b4e5e067d36c9859360674b3595ca48cad39018e"
+    },
+    {
+      "path": "browser-review-015/mobile-signed-in-popover.png",
+      "sha256": "e4efef62bb185a9eaaa32a47fccf64158405a68e560933adf097336264336905"
+    },
+    {
+      "path": "browser-review-015/mobile-after-logout.png",
+      "sha256": "e1eea19ee852f483180cd19ccb8f1311de30698a326d672da9be8d44e4eda821"
     }
-  ]
+  ],
+  "source_state": {
+    "backend": {
+      "head": "e70db3207463b8742a92162b050f52dd45a6e477",
+      "branch": "feature/MEMORIES-0005-public-authorization",
+      "base_ref": "master@e70db3207463b8742a92162b050f52dd45a6e477",
+      "dirty_entry_count": 29,
+      "dirty_inventory_sha256": "b669382530aba7c6842af9e22b06675431f27cd204d0daff37614e79468e02d2"
+    },
+    "frontend": {
+      "head": "a98a3dbcf468ca08e6ec96fe171cf4c4db93778b",
+      "branch": "feature/MEMORIES-0005-public-authorization",
+      "base_ref": "master@a98a3dbcf468ca08e6ec96fe171cf4c4db93778b",
+      "dirty_entry_count": 32,
+      "dirty_inventory_sha256": "21c4e697fe91dab1328096cd44db1af53e294fd17b499f46af6e9f1ca96a0487"
+    },
+    "note": "dirty_inventory_sha256 is sha256 of the sorted `git status --porcelain=v1 -uall` line list (tracked modifications + untracked files, path+status only) at generation time — recomputable by any reviewer with the same worktree to detect drift; base_ref proves HEAD has not diverged from master (base == head for both repos)."
+  },
+  "validation_artifact_refresh": {
+    "command": "./ai/bin/ai task validate-code MEMORIES-0005 --tier full",
+    "generated_at": "2026-08-18T09:25:33+07:00",
+    "artifacts": [
+      "backend.json",
+      "frontend.json",
+      "summary.json"
+    ]
+  }
 }

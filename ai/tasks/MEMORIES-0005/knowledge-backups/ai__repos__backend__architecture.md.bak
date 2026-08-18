@@ -26,15 +26,3 @@ Use case publish job qua port `BackgroundJobPublisher` (không import `bullmq` t
 ## Application composition roots
 
 Mọi process import `BUSINESS_MODULES` (`api`, `worker`, `scheduler`, `cli`, và process mới sau này) phải đăng ký đầy đủ platform dependency mà các module đó cần, ví dụ `SecurityModule.register()` khi có `JwtAuthGuard`. Khi thêm dependency cross-cutting, rà toàn bộ `apps/*/src/app.module.ts`; không giả định dependency của API tự có trong process khác. Provider cần được inject ngoài module khai báo phải được export tường minh.
-
-## TypeOrmUnitOfWork reentrant
-
-`TypeOrmUnitOfWork.withTransaction` giờ reentrant: nếu gọi trong lúc đã có transaction đang mở trên async context hiện tại (`TypeOrmQueryRunnerContext`), nó join transaction đó (chỉ chạy callback) thay vì mở connection/transaction thứ hai. Nhờ vậy một use case gọi use case khác cũng transactional (ví dụ `RegisterUseCase` bọc `CreateAccountUseCase`) tự động có 1 transaction atomic chung chỉ bằng cách bọc toàn bộ flow trong `withTransaction` ở ngoài cùng — use case bên trong không cần đổi gì. Mọi repository đều resolve query runner qua cùng `TypeOrmQueryRunnerContext` nên cơ chế này compose xuyên module boundary.
-
-## e2e gotcha: supertest + cookie Domain
-
-Cookie backend phát ra (OAuth state cookie, refresh cookie) có `Domain` tường minh (`AUTH_REFRESH_COOKIE_DOMAIN`, là `localhost` ở mọi env local/test). `supertest`'s server-object form (`request(app.getHttpServer())`) luôn gửi request tới `127.0.0.1` bất kể server thật sự listen ở đâu — nên `request.agent(...)` (cookie jar thật, có domain matching đúng) sẽ không bao giờ tự động resend lại cookie `Domain=localhost` cho request `127.0.0.1`. Test cần cookie-jar/Set-Cookie semantics thật (chứ không chỉ forward tay 1 cookie string) phải tạo agent với base URL tường minh dạng string — `request.agent(\`http://localhost:${port}\`)`, `port` lấy từ `httpServer.address()` sau khi app đã listen — không dùng `request.agent(app.getHttpServer())`.
-
-## Verify OIDC ID token bằng node:crypto có sẵn
-
-Verify chữ ký + issuer/audience/expiry/nonce của ID token OIDC bên thứ ba KHÔNG cần thêm dependency JWT/JWKS — `node:crypto` (Node 20+) đã đủ: `crypto.createPublicKey({key: jwk, format: 'jwk'})` nhận thẳng JWK key từ JWKS endpoint của provider (không cần convert PEM), và `crypto.verify(algorithm, data, key, signature)` verify chữ ký RS256 mà không cần `jsonwebtoken`/`jose`/`jwks-rsa`. Xem `GoogleOAuthClient.verifyIdToken` (`libs/modules/identity-access/src/infrastructure/security/google-oauth.client.ts`) làm reference: base64url-decode 3 segment JWT, match `kid` với JWKS đã cache, verify chữ ký trên `${header}.${payload}`, rồi so sánh `iss`/`aud`/`exp`/`nonce`.

@@ -1,4 +1,47 @@
 {
   "task_id": "MEMORIES-0005",
-  "updates": []
+  "updates": [
+    {
+      "target": "ai/domains/authorization/INDEX.md",
+      "type": "append",
+      "summary": "Google and Facebook OAuth are both implemented end to end at the provider-client/use-case level (authorization-code flow, profile exchange, account linking by (provider, providerSubject)) but as of 2026-08-18 BOTH are deliberately deferred/disabled on the PUBLIC portal's public HTTP surface — OAuthController fails every provider closed before contacting OAuthClientRegistry, regardless of env config. Only LOCAL phone/password is live on the public surface today. Link/create rule: an AuthIdentity resolves an Account strictly by (provider, providerSubject) — provider-supplied email is never used to cross-link to an existing LOCAL or other-provider Account. Apple remains contract-only/unimplemented.",
+      "content": "## Trạng thái hiện tại (2026-08-18)\n\nGoogle và Facebook OAuth đã được cài đặt đầy đủ ở tầng provider-client/use-case (authorization-code flow, verify ID token OIDC, exchange profile, gắn `Account` theo `(provider, providerSubject)` — email do provider cung cấp không bao giờ dùng để cross-link sang `Account` LOCAL hoặc provider khác) nhưng **cả hai đều đang bị vô hiệu hóa** trên public surface của `identity-access`: `OAuthController.parseSocialProvider` reject mọi provider trước khi chạm `OAuthClientRegistry`, nên `/auth/oauth/:provider/start|callback` fail closed bất kể cấu hình env. Google bị hoãn vì đang chờ thông tin OAuth client id/secret thật từ Google (chưa có credential production); Facebook bị hoãn vì provider contract chưa được xác minh độc lập. Mã của cả hai được giữ lại làm deferred code (đăng ký DI nhưng không nằm trong `OAUTH_CLIENTS` đang hoạt động) để bật lại khi có đủ thông tin. Apple vẫn chỉ ở mức contract, chưa triển khai.",
+      "approved": true
+    },
+    {
+      "target": "ai/repos/frontend/INDEX.md",
+      "type": "append",
+      "summary": "packages/auth's AuthContextValue gained loginWithPhone(phone, password, portal)/registerLocal(input) alongside the pre-existing login(email, password) (kept only for apps/admin-web, whose real backend contract mismatch is a separate pre-existing issue out of this task's scope). isAuthenticated is now derived from access-token presence alone, not a `user` object — neither /auth/login, /auth/register nor /auth/refresh's real response includes one.",
+      "content": "## AuthProvider (packages/auth)\n\n`AuthContextValue` có `loginWithPhone(phone, password, portal)` và `registerLocal(input)` bên cạnh `login(email, password)` cũ (giữ lại chỉ cho `apps/admin-web`, vốn có sự lệch hợp đồng backend riêng, ngoài phạm vi sửa của MEMORIES-0005). `isAuthenticated` được suy ra từ việc có access token hay không, không dựa vào object `user` — response thật của `/auth/login`, `/auth/register`, `/auth/refresh` đều không trả `user`.",
+      "approved": true
+    },
+    {
+      "target": "ai/repos/frontend/INDEX.md",
+      "type": "append",
+      "summary": "New packages/ui primitive: Popover/PopoverItem — a lightweight, non-portaled anchored menu (position:relative parent required), for cases like an account menu where <Dialog>'s full-screen portal/overlay is the wrong shape.",
+      "content": "## packages/ui: Popover/PopoverItem\n\nPrimitive menu neo (anchored), không portal full-screen như `Dialog` — dùng khi cần menu nhỏ đặt cạnh trigger (ví dụ account menu) thay vì overlay toàn màn hình. Parent bắt buộc phải có `position: relative`.",
+      "approved": true
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "append",
+      "summary": "TypeOrmUnitOfWork.withTransaction is now reentrant: if called while a transaction is already active on the current async context (TypeOrmQueryRunnerContext), it joins that transaction (just runs the callback) instead of opening a second, independent connection/transaction. This lets a use case that calls another transactional use case (e.g. RegisterUseCase wrapping CreateAccountUseCase) get one atomic operation for free by wrapping the whole flow in its own outer withTransaction — the inner use case's own withTransaction call needs no change. Every repository already resolves its query runner through the same TypeOrmQueryRunnerContext, so this composes transparently across module boundaries.",
+      "content": "## TypeOrmUnitOfWork reentrant\n\n`TypeOrmUnitOfWork.withTransaction` giờ reentrant: nếu gọi trong lúc đã có transaction đang mở trên async context hiện tại (`TypeOrmQueryRunnerContext`), nó join transaction đó (chỉ chạy callback) thay vì mở connection/transaction thứ hai. Nhờ vậy một use case gọi use case khác cũng transactional (ví dụ `RegisterUseCase` bọc `CreateAccountUseCase`) tự động có 1 transaction atomic chung chỉ bằng cách bọc toàn bộ flow trong `withTransaction` ở ngoài cùng — use case bên trong không cần đổi gì. Mọi repository đều resolve query runner qua cùng `TypeOrmQueryRunnerContext` nên cơ chế này compose xuyên module boundary.",
+      "approved": true
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "append",
+      "summary": "e2e testing gotcha: this backend's cookies (e.g. the OAuth state cookie, the refresh cookie) are issued with an explicit `Domain` attribute (AUTH_REFRESH_COOKIE_DOMAIN, 'localhost' in every local/test env). `supertest`'s server-object request form (`request(app.getHttpServer())`) always issues requests against the literal `127.0.0.1`, regardless of what address the server actually listens on — so a real `request.agent(...)` cookie jar (which does correct domain matching, unlike the common `.set('Cookie', ...)` header-injection pattern used throughout this suite) will silently never resend a `Domain=localhost` cookie back to a `127.0.0.1` request. A cookie-jar-based e2e test that needs real Set-Cookie/domain semantics (e.g. proving one request's response does or doesn't affect a later request's cookie, as opposed to manually forwarding a captured cookie string) must construct the agent against an explicit string base URL — `request.agent(`http://localhost:${port}`)`, with `port` read from the already-listening `httpServer.address()` — not `request.agent(app.getHttpServer())`. See apps/api/test/oauth-flow.e2e-spec.ts's 'rejects forged and unsupported-provider callbacks on the same browser session ...' test (review-cycle-16 #1).",
+      "content": "## e2e gotcha: supertest + cookie Domain\n\nCookie backend phát ra (OAuth state cookie, refresh cookie) có `Domain` tường minh (`AUTH_REFRESH_COOKIE_DOMAIN`, là `localhost` ở mọi env local/test). `supertest`'s server-object form (`request(app.getHttpServer())`) luôn gửi request tới `127.0.0.1` bất kể server thật sự listen ở đâu — nên `request.agent(...)` (cookie jar thật, có domain matching đúng) sẽ không bao giờ tự động resend lại cookie `Domain=localhost` cho request `127.0.0.1`. Test cần cookie-jar/Set-Cookie semantics thật (chứ không chỉ forward tay 1 cookie string) phải tạo agent với base URL tường minh dạng string — `request.agent(\\`http://localhost:${port}\\`)`, `port` lấy từ `httpServer.address()` sau khi app đã listen — không dùng `request.agent(app.getHttpServer())`.",
+      "approved": true
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "append",
+      "summary": "Verifying a third-party OIDC ID token (signature + issuer/audience/expiry/nonce claims) does not require adding a JWT/JWKS dependency to this backend: Node 20's built-in `node:crypto` already covers it end to end — `crypto.createPublicKey({key: jwk, format:'jwk'})` accepts a provider's published JWKS key object directly (no PEM conversion needed), and the one-shot `crypto.verify(algorithm, data, key, signature)` checks an RS256 signature without `jsonwebtoken`/`jose`/`jwks-rsa`. See GoogleOAuthClient.verifyIdToken (libs/modules/identity-access/src/infrastructure/security/google-oauth.client.ts) for the reference implementation: base64url-decode the three JWT segments, match `kid` against a cached JWKS fetch, verify the signature over `${header}.${payload}`, then check `iss`/`aud`/`exp`/`nonce` as plain claim comparisons.",
+      "content": "## Verify OIDC ID token bằng node:crypto có sẵn\n\nVerify chữ ký + issuer/audience/expiry/nonce của ID token OIDC bên thứ ba KHÔNG cần thêm dependency JWT/JWKS — `node:crypto` (Node 20+) đã đủ: `crypto.createPublicKey({key: jwk, format: 'jwk'})` nhận thẳng JWK key từ JWKS endpoint của provider (không cần convert PEM), và `crypto.verify(algorithm, data, key, signature)` verify chữ ký RS256 mà không cần `jsonwebtoken`/`jose`/`jwks-rsa`. Xem `GoogleOAuthClient.verifyIdToken` (`libs/modules/identity-access/src/infrastructure/security/google-oauth.client.ts`) làm reference: base64url-decode 3 segment JWT, match `kid` với JWKS đã cache, verify chữ ký trên `${header}.${payload}`, rồi so sánh `iss`/`aud`/`exp`/`nonce`.",
+      "approved": true
+    }
+  ]
 }

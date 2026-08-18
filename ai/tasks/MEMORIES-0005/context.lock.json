@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-17T11:10:28+07:00",
+  "generated_at": "2026-08-17T21:05:08+07:00",
   "task_id": "MEMORIES-0005",
   "implementation_cycle": 1,
   "change_cycle": 0,
@@ -125,7 +125,7 @@
       "head_sha": "e70db3207463b8742a92162b050f52dd45a6e477",
       "branch": "feature/MEMORIES-0005-public-authorization",
       "registered_branch": "feature/MEMORIES-0005-public-authorization",
-      "status": "M .env.example\n M apps/api/test/auth-flow.e2e-spec.ts\n M libs/modules/identity-access/src/application/use-cases/refresh-session.use-case.ts\n M libs/modules/identity-access/src/application/use-cases/register.use-case.ts\n M libs/modules/identity-access/src/identity-access.module.ts\n M libs/modules/identity-access/src/infrastructure/persistence/typeorm-auth-identity.repository.ts\n M libs/modules/identity-access/src/presentation/http/auth.controller.ts\n M libs/modules/identity-access/src/presentation/http/register.dto.ts\n M libs/modules/identity-access/src/public-api.ts\n M libs/modules/identity-access/test/register.use-case.spec.ts\n M libs/platform/configuration/src/config/auth.config.ts\n M libs/platform/configuration/src/public-api.ts\n M libs/platform/configuration/src/schemas/env.schema.ts\n M libs/platform/database/src/typeorm-unit-of-work.ts\n M libs/platform/database/test/typeorm-unit-of-work.spec.ts\n M libs/platform/observability/src/logger.module.ts\n M package.json\n?? apps/api/test/oauth-flow.e2e-spec.ts\n?? libs/modules/identity-access/src/application/ports/oauth-client.port.ts\n?? libs/modules/identity-access/src/application/use-cases/oauth-login.use-case.ts\n?? libs/modules/identity-access/src/infrastructure/security/facebook-oauth.client.ts\n?? libs/modules/identity-access/src/infrastructure/security/google-oauth.client.ts\n?? libs/modules/identity-access/src/presentation/http/oauth-state.helper.ts\n?? libs/modules/identity-access/src/presentation/http/oauth.controller.ts\n?? libs/modules/identity-access/test/facebook-oauth.client.contract.spec.ts\n?? libs/modules/identity-access/test/facebook-oauth.client.spec.ts\n?? libs/modules/identity-access/test/fixtures/\n?? libs/modules/identity-access/test/google-oauth.client.spec.ts\n?? libs/modules/identity-access/test/oauth-login.use-case.spec.ts\n?? libs/modules/identity-access/test/oauth-state.helper.spec.ts\n?? libs/platform/observability/test/logger.module.spec.ts"
+      "status": "M .env.example\n M apps/api/test/auth-flow.e2e-spec.ts\n M libs/modules/identity-access/src/application/use-cases/refresh-session.use-case.ts\n M libs/modules/identity-access/src/application/use-cases/register.use-case.ts\n M libs/modules/identity-access/src/identity-access.module.ts\n M libs/modules/identity-access/src/infrastructure/persistence/typeorm-auth-identity.repository.ts\n M libs/modules/identity-access/src/presentation/http/auth.controller.ts\n M libs/modules/identity-access/src/presentation/http/register.dto.ts\n M libs/modules/identity-access/src/public-api.ts\n M libs/modules/identity-access/test/register.use-case.spec.ts\n M libs/platform/configuration/src/config/auth.config.ts\n M libs/platform/configuration/src/public-api.ts\n M libs/platform/configuration/src/schemas/env.schema.ts\n M libs/platform/database/src/typeorm-unit-of-work.ts\n M libs/platform/database/test/typeorm-unit-of-work.spec.ts\n M libs/platform/observability/src/logger.module.ts\n M package.json\n?? apps/api/test/oauth-flow.e2e-spec.ts\n?? libs/modules/identity-access/src/application/ports/oauth-client.port.ts\n?? libs/modules/identity-access/src/application/use-cases/oauth-login.use-case.ts\n?? libs/modules/identity-access/src/infrastructure/security/facebook-oauth.client.ts\n?? libs/modules/identity-access/src/infrastructure/security/google-oauth.client.ts\n?? libs/modules/identity-access/src/presentation/http/oauth-state.helper.ts\n?? libs/modules/identity-access/src/presentation/http/oauth.controller.ts\n?? libs/modules/identity-access/test/facebook-oauth.client.spec.ts\n?? libs/modules/identity-access/test/google-oauth.client.spec.ts\n?? libs/modules/identity-access/test/oauth-login.use-case.spec.ts\n?? libs/modules/identity-access/test/oauth-state.helper.spec.ts\n?? libs/platform/observability/test/logger.module.spec.ts"
     },
     "frontend": {
       "path": "worktrees/MEMORIES-0005/frontend",
@@ -146,7 +146,7 @@
         "indexed": true,
         "ready": true,
         "command": "/Users/cmc/.local/bin/codegraph",
-        "status_text": "CodeGraph Status\n\nProject: /Users/cmc/Documents/Memories/worktrees/MEMORIES-0005/backend\n\nIndex Statistics:\n  Files:     433\n  Nodes:     3,965\n  Edges:     9,652\n  DB Size:   14.10 MB\n  Backend:   node:sqlite — built-in (full WAL)\n  Journal:   wal\n\nNodes by Kind:\n  import          1,606\n  method          653\n  file            428\n  property        406\n  class           251\n  constant        191\n  interface       173\n  function        153\n  enum_member     43\n  route           28\n  enum            13\n  type_alias      9\n  field           8\n  namespace       3\n\nFiles by Language:\n  typescript      420\n  javascript      5\n  yaml            5\n  php             3\n\n✓ Index is up to date"
+        "status_text": "CodeGraph Status\n\nProject: /Users/cmc/Documents/Memories/worktrees/MEMORIES-0005/backend\n\nIndex Statistics:\n  Files:     429\n  Nodes:     3,895\n  Edges:     9,679\n  DB Size:   14.15 MB\n  Backend:   node:sqlite — built-in (full WAL)\n  Journal:   wal\n\nNodes by Kind:\n  import          1,592\n  method          624\n  file            424\n  property        407\n  class           248\n  constant        178\n  interface       175\n  function        154\n  enum_member     43\n  route           28\n  enum            13\n  type_alias      9\n\nFiles by Language:\n  typescript      419\n  javascript      5\n  yaml            5\n\n✓ Index is up to date"
       },
       "frontend": {
         "mode": "optional",
@@ -155,7 +155,7 @@
         "indexed": true,
         "ready": true,
         "command": "/Users/cmc/.local/bin/codegraph",
-        "status_text": "CodeGraph Status\n\nProject: /Users/cmc/Documents/Memories/worktrees/MEMORIES-0005/frontend\n\nIndex Statistics:\n  Files:     272\n  Nodes:     1,623\n  Edges:     3,581\n  DB Size:   5.01 MB\n  Backend:   node:sqlite — built-in (full WAL)\n  Journal:   wal\n\nNodes by Kind:\n  import          689\n  file            267\n  function        250\n  constant        156\n  interface       103\n  type_alias      58\n  route           42\n  method          25\n  component       14\n  variable        9\n  class           6\n  property        4\n\nFiles by Language:\n  tsx             147\n  typescript      105\n  javascript      15\n  yaml            5\n\n✓ Index is up to date"
+        "status_text": "CodeGraph Status\n\nProject: /Users/cmc/Documents/Memories/worktrees/MEMORIES-0005/frontend\n\nIndex Statistics:\n  Files:     272\n  Nodes:     1,623\n  Edges:     3,585\n  DB Size:   5.13 MB\n  Backend:   node:sqlite — built-in (full WAL)\n  Journal:   wal\n\nNodes by Kind:\n  import          689\n  file            267\n  function        249\n  constant        156\n  interface       103\n  type_alias      58\n  route           42\n  method          25\n  component       15\n  variable        9\n  class           6\n  property        4\n\nFiles by Language:\n  tsx             147\n  typescript      105\n  javascript      15\n  yaml            5\n\n✓ Index is up to date"
       }
     }
   },
@@ -419,7 +419,7 @@
       },
       "validate-evidence-provenance": {
         "path": "ai/skills/validate-evidence-provenance/SKILL.md",
-        "sha256": "fefea84ca94f1c7376c4aec81079d1d1951c86b034ccafdba1303eb94f66bf8a",
+        "sha256": "c52ff8bf85051c7b87ff758d3c0222d3816f3e02eaced48dd42a13bcc42b215c",
         "files": [
           {
             "path": "ai/skills/validate-evidence-provenance/SKILL.md",
@@ -436,6 +436,10 @@
           {
             "path": "ai/skills/validate-evidence-provenance/scripts/check_provenance.py",
             "sha256": "ea3ce99b19e8d3c049a05b2809f2061d37ab869f887b7a223f7004a8a8903887"
+          },
+          {
+            "path": "ai/skills/validate-evidence-provenance/scripts/refresh_validation_artifacts.py",
+            "sha256": "2015a63a5a0c9fd40a0ee4d108cc734a860eee896aacfdb563394f6c3a4b5d21"
           },
           {
             "path": "ai/skills/validate-evidence-provenance/scripts/sync_provenance.py",

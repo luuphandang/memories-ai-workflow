@@ -6,7 +6,7 @@ jira:
   parent_id: null
   epic_id: MEMORIES-0005
 priority: medium
-status: ready
+status: changes_requested_by_codex
 children: []
 worktrees:
 - repo: backend
@@ -38,7 +38,7 @@ skills:
 scope:
   execution_plan_required: true
 review:
-  max_cycles: 15
+  max_cycles: 20
   fail_on:
   - blocker
   - major

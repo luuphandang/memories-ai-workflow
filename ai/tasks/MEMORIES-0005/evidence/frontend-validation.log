@@ -1,3 +1,24 @@
+=== npm run typecheck (all workspaces) ===
+npm notice run @memories/frontend@0.1.0 typecheck
+npm notice run npm run typecheck --workspaces --if-present
+npm notice run @memories/admin-web@0.1.0 typecheck
+npm notice run tsc --noEmit
+npm notice run @memories/public-web@0.1.0 typecheck
+npm notice run @memories/analytics@0.1.0 typecheck
+npm notice run @memories/api-client@0.1.0 typecheck
+npm notice run @memories/auth@0.1.0 typecheck
+npm notice run @memories/config@0.1.0 typecheck
+npm notice run @memories/design-system@0.1.0 typecheck
+npm notice run @memories/editor-core@0.1.0 typecheck
+npm notice run @memories/forms@0.1.0 typecheck
+npm notice run @memories/i18n@0.1.0 typecheck
+npm notice run @memories/observability@0.1.0 typecheck
+npm notice run @memories/query@0.1.0 typecheck
+npm notice run @memories/seo@0.1.0 typecheck
+npm notice run @memories/types@0.1.0 typecheck
+npm notice run @memories/ui@0.1.0 typecheck
+npm notice run @memories/utilities@0.1.0 typecheck
+npm notice run @memories/validation@0.1.0 typecheck
 === npm run lint (all workspaces) ===
 npm notice run @memories/frontend@0.1.0 lint
 npm notice run npm run lint --workspaces --if-present
@@ -22,28 +43,9 @@ npm notice run @memories/types@0.1.0 lint
 npm notice run @memories/ui@0.1.0 lint
 npm notice run @memories/utilities@0.1.0 lint
 npm notice run @memories/validation@0.1.0 lint
-=== npm run typecheck (all workspaces) ===
-npm notice run @memories/frontend@0.1.0 typecheck
-npm notice run npm run typecheck --workspaces --if-present
-npm notice run @memories/admin-web@0.1.0 typecheck
-npm notice run tsc --noEmit
-npm notice run @memories/public-web@0.1.0 typecheck
-npm notice run @memories/analytics@0.1.0 typecheck
-npm notice run @memories/api-client@0.1.0 typecheck
-npm notice run @memories/auth@0.1.0 typecheck
-npm notice run @memories/config@0.1.0 typecheck
-npm notice run @memories/design-system@0.1.0 typecheck
-npm notice run @memories/editor-core@0.1.0 typecheck
-npm notice run @memories/forms@0.1.0 typecheck
-npm notice run @memories/i18n@0.1.0 typecheck
-npm notice run @memories/observability@0.1.0 typecheck
-npm notice run @memories/query@0.1.0 typecheck
-npm notice run @memories/seo@0.1.0 typecheck
-npm notice run @memories/types@0.1.0 typecheck
-npm notice run @memories/ui@0.1.0 typecheck
-npm notice run @memories/utilities@0.1.0 typecheck
-npm notice run @memories/validation@0.1.0 typecheck
 === npm run test (all workspaces) ===
+npm notice run @memories/frontend@0.1.0 test
+npm notice run npm run test --workspaces --if-present
 npm notice run @memories/admin-web@0.1.0 test
 npm notice run vitest run
 [33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
@@ -54,42 +56,39 @@ npm notice run vitest run
 
  Test Files  1 passed (1)
       Tests  2 passed (2)
-   Start at  09:37:58
-   Duration  1.08s (transform 66ms, setup 62ms, collect 128ms, tests 18ms, environment 344ms, prepare 69ms)
+   Start at  20:26:09
+   Duration  955ms (transform 63ms, setup 54ms, collect 117ms, tests 18ms, environment 287ms, prepare 73ms)
 
 npm notice run @memories/public-web@0.1.0 test
 [33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
 
  RUN  v2.1.9 /Users/cmc/Documents/Memories/worktrees/MEMORIES-0005/frontend/apps/public-web
 
- ✓ test/auth-provider.spec.tsx (5 tests) 153ms
- ✓ test/auth-modal.spec.tsx (9 tests) 512ms
- ✓ test/login-form.spec.tsx (5 tests) 569ms
- ✓ test/editor-view.spec.tsx (5 tests) 667ms
- ✓ test/user-menu-trigger.spec.tsx (4 tests) 237ms
- ✓ test/register-form.spec.tsx (6 tests) 1382ms
-   ✓ RegisterForm > blocks submit and shows a field error when the confirm-password does not match 332ms
-   ✓ RegisterForm > shows the API error (e.g. duplicate phone) without losing entered values 315ms
- ✓ test/oauth-redirect-handler.spec.tsx (4 tests) 226ms
- ✓ test/card-catalog.spec.tsx (13 tests) 1695ms
-   ✓ CardCatalog filter/empty-state/preview (backed by the real API contract) > shows an empty state with a working "clear filters" action when search matches nothing 687ms
- ✓ test/login-page.spec.tsx (4 tests) 762ms
-   ✓ LoginPage > submits phone/password with portal PUBLIC and navigates to /profile on success — never the legacy email login method 311ms
-   ✓ LoginPage > registers via registerLocal (not the legacy email login method) and navigates to /profile on success 306ms
- ✓ test/routes.spec.tsx (6 tests) 416ms
- ✓ test/gift-catalog.spec.tsx (25 tests) 2408ms
-   ✓ GiftCatalog filter/empty-state (backed by the real API contract) > shows an empty state with a working "clear filters" action when search matches nothing 749ms
- ✓ test/cart-item-personalization.spec.tsx (3 tests) 601ms
-   ✓ CartItemRow wrap/gift-card picker modals and personalization edit > opens the wrap picker modal and updates the selected wrap 334ms
- ✓ test/site-header.spec.tsx (4 tests) 195ms
- ✓ test/mobile-bottom-nav.spec.tsx (3 tests) 101ms
- ✓ test/cart-view.spec.tsx (2 tests) 376ms
- ✓ test/custom-order-form.spec.tsx (2 tests) 352ms
+ ✓ test/auth-provider.spec.tsx (5 tests) 158ms
+ ✓ test/oauth-redirect-handler.spec.tsx (8 tests) 428ms
+ ✓ test/editor-view.spec.tsx (5 tests) 559ms
+ ✓ test/auth-modal.spec.tsx (13 tests) 608ms
+ ✓ test/register-form.spec.tsx (6 tests) 1230ms
+   ✓ RegisterForm > blocks submit and shows a field error when the confirm-password does not match 329ms
+ ✓ test/login-form.spec.tsx (5 tests) 541ms
+ ✓ test/user-menu-trigger.spec.tsx (4 tests) 220ms
+ ✓ test/card-catalog.spec.tsx (13 tests) 1343ms
+   ✓ CardCatalog filter/empty-state/preview (backed by the real API contract) > shows an empty state with a working "clear filters" action when search matches nothing 655ms
+ ✓ test/login-page.spec.tsx (4 tests) 514ms
+ ✓ test/routes.spec.tsx (6 tests) 313ms
+ ✓ test/gift-catalog.spec.tsx (25 tests) 2068ms
+   ✓ GiftCatalog filter/empty-state (backed by the real API contract) > shows an empty state with a working "clear filters" action when search matches nothing 786ms
+ ✓ test/site-header.spec.tsx (4 tests) 333ms
+ ✓ test/cart-item-personalization.spec.tsx (3 tests) 594ms
+   ✓ CartItemRow wrap/gift-card picker modals and personalization edit > opens the wrap picker modal and updates the selected wrap 375ms
+ ✓ test/cart-view.spec.tsx (2 tests) 403ms
+ ✓ test/custom-order-form.spec.tsx (2 tests) 411ms
+ ✓ test/mobile-bottom-nav.spec.tsx (3 tests) 105ms
 
  Test Files  16 passed (16)
-      Tests  100 passed (100)
-   Start at  09:37:59
-   Duration  4.74s (transform 1.42s, setup 785ms, collect 6.35s, tests 10.65s, environment 6.31s, prepare 1.19s)
+      Tests  108 passed (108)
+   Start at  20:26:11
+   Duration  4.18s (transform 1.30s, setup 834ms, collect 6.05s, tests 9.83s, environment 5.92s, prepare 847ms)
 
 npm notice run @memories/analytics@0.1.0 test
 
@@ -99,46 +98,46 @@ npm notice run @memories/analytics@0.1.0 test
 
  Test Files  1 passed (1)
       Tests  2 passed (2)
-   Start at  09:38:05
-   Duration  327ms (transform 41ms, setup 0ms, collect 34ms, tests 2ms, environment 0ms, prepare 65ms)
+   Start at  20:26:15
+   Duration  316ms (transform 41ms, setup 0ms, collect 37ms, tests 2ms, environment 0ms, prepare 62ms)
 
 npm notice run @memories/api-client@0.1.0 test
 
  RUN  v2.1.9 /Users/cmc/Documents/Memories/worktrees/MEMORIES-0005/frontend/packages/api-client
 
  ✓ test/register-dto-contract.spec.ts (1 test) 1ms
- ✓ test/query-serialization.spec.ts (4 tests) 5ms
- ✓ test/media-client.spec.ts (3 tests) 7ms
- ✓ test/catalog-resource-clients.spec.ts (3 tests) 9ms
- ✓ test/http-client.spec.ts (3 tests) 7ms
+ ✓ test/query-serialization.spec.ts (4 tests) 4ms
+ ✓ test/http-client.spec.ts (3 tests) 5ms
+ ✓ test/media-client.spec.ts (3 tests) 4ms
+ ✓ test/catalog-resource-clients.spec.ts (3 tests) 4ms
 
  Test Files  5 passed (5)
       Tests  14 passed (14)
-   Start at  09:38:05
-   Duration  392ms (transform 173ms, setup 0ms, collect 240ms, tests 29ms, environment 1ms, prepare 282ms)
+   Start at  20:26:16
+   Duration  379ms (transform 136ms, setup 0ms, collect 198ms, tests 19ms, environment 1ms, prepare 259ms)
 
 npm notice run @memories/auth@0.1.0 test
 
  RUN  v2.1.9 /Users/cmc/Documents/Memories/worktrees/MEMORIES-0005/frontend/packages/auth
 
- ✓ test/permissions.spec.ts (4 tests) 2ms
- ✓ test/token-store.spec.ts (2 tests) 4ms
+ ✓ test/permissions.spec.ts (4 tests) 1ms
+ ✓ test/token-store.spec.ts (2 tests) 2ms
 
  Test Files  2 passed (2)
       Tests  6 passed (6)
-   Start at  09:38:06
-   Duration  365ms (transform 87ms, setup 0ms, collect 101ms, tests 6ms, environment 0ms, prepare 127ms)
+   Start at  20:26:17
+   Duration  337ms (transform 75ms, setup 0ms, collect 69ms, tests 4ms, environment 0ms, prepare 141ms)
 
 npm notice run @memories/config@0.1.0 test
 
  RUN  v2.1.9 /Users/cmc/Documents/Memories/worktrees/MEMORIES-0005/frontend/packages/config
 
- ✓ test/env.spec.ts (3 tests) 6ms
+ ✓ test/env.spec.ts (3 tests) 4ms
 
  Test Files  1 passed (1)
       Tests  3 passed (3)
-   Start at  09:38:07
-   Duration  369ms (transform 53ms, setup 0ms, collect 50ms, tests 6ms, environment 0ms, prepare 78ms)
+   Start at  20:26:18
+   Duration  354ms (transform 38ms, setup 0ms, collect 37ms, tests 4ms, environment 0ms, prepare 62ms)
 
 npm notice run @memories/editor-core@0.1.0 test
 
@@ -148,8 +147,8 @@ npm notice run @memories/editor-core@0.1.0 test
 
  Test Files  1 passed (1)
       Tests  2 passed (2)
-   Start at  09:38:08
-   Duration  335ms (transform 46ms, setup 0ms, collect 44ms, tests 2ms, environment 0ms, prepare 65ms)
+   Start at  20:26:19
+   Duration  346ms (transform 36ms, setup 0ms, collect 30ms, tests 2ms, environment 0ms, prepare 62ms)
 
 npm notice run @memories/forms@0.1.0 test
 
@@ -159,8 +158,8 @@ npm notice run @memories/forms@0.1.0 test
 
  Test Files  1 passed (1)
       Tests  3 passed (3)
-   Start at  09:38:08
-   Duration  355ms (transform 62ms, setup 0ms, collect 62ms, tests 2ms, environment 0ms, prepare 66ms)
+   Start at  20:26:20
+   Duration  346ms (transform 50ms, setup 0ms, collect 51ms, tests 2ms, environment 0ms, prepare 53ms)
 
 npm notice run @memories/i18n@0.1.0 test
 
@@ -170,8 +169,8 @@ npm notice run @memories/i18n@0.1.0 test
 
  Test Files  1 passed (1)
       Tests  2 passed (2)
-   Start at  09:38:09
-   Duration  355ms (transform 39ms, setup 0ms, collect 39ms, tests 1ms, environment 0ms, prepare 46ms)
+   Start at  20:26:21
+   Duration  313ms (transform 43ms, setup 0ms, collect 40ms, tests 1ms, environment 0ms, prepare 61ms)
 
 npm notice run @memories/observability@0.1.0 test
 
@@ -181,51 +180,51 @@ npm notice run @memories/observability@0.1.0 test
 
  Test Files  1 passed (1)
       Tests  1 passed (1)
-   Start at  09:38:10
-   Duration  340ms (transform 47ms, setup 0ms, collect 34ms, tests 2ms, environment 0ms, prepare 70ms)
+   Start at  20:26:21
+   Duration  317ms (transform 35ms, setup 0ms, collect 29ms, tests 2ms, environment 0ms, prepare 57ms)
 
 npm notice run @memories/query@0.1.0 test
 
  RUN  v2.1.9 /Users/cmc/Documents/Memories/worktrees/MEMORIES-0005/frontend/packages/query
 
- ✓ test/query-key-factory.spec.ts (1 test) 1ms
+ ✓ test/query-key-factory.spec.ts (1 test) 2ms
 
  Test Files  1 passed (1)
       Tests  1 passed (1)
-   Start at  09:38:11
-   Duration  469ms (transform 34ms, setup 0ms, collect 32ms, tests 1ms, environment 0ms, prepare 64ms)
+   Start at  20:26:22
+   Duration  377ms (transform 35ms, setup 0ms, collect 30ms, tests 2ms, environment 0ms, prepare 62ms)
 
 npm notice run @memories/seo@0.1.0 test
 
  RUN  v2.1.9 /Users/cmc/Documents/Memories/worktrees/MEMORIES-0005/frontend/packages/seo
 
- ✓ test/json-ld.spec.ts (1 test) 2ms
+ ✓ test/json-ld.spec.ts (1 test) 1ms
 
  Test Files  1 passed (1)
       Tests  1 passed (1)
-   Start at  09:38:12
-   Duration  377ms (transform 90ms, setup 0ms, collect 76ms, tests 2ms, environment 0ms, prepare 81ms)
+   Start at  20:26:23
+   Duration  394ms (transform 35ms, setup 0ms, collect 31ms, tests 1ms, environment 0ms, prepare 73ms)
 
 npm notice run @memories/ui@0.1.0 test
 [33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
 
  RUN  v2.1.9 /Users/cmc/Documents/Memories/worktrees/MEMORIES-0005/frontend/packages/ui
 
- ✓ test/form-field.spec.tsx (2 tests) 73ms
- ✓ test/drawer.spec.tsx (3 tests) 108ms
- ✓ test/dialog.spec.tsx (4 tests) 106ms
- ✓ test/quantity-input.spec.tsx (3 tests) 144ms
- ✓ test/carousel.spec.tsx (3 tests) 176ms
- ✓ test/tabs.spec.tsx (4 tests) 191ms
- ✓ test/popover.spec.tsx (10 tests) 375ms
- ✓ test/badge.spec.tsx (3 tests) 18ms
- ✓ test/icon-button.spec.tsx (3 tests) 59ms
- ✓ test/select.spec.tsx (2 tests) 66ms
+ ✓ test/drawer.spec.tsx (3 tests) 135ms
+ ✓ test/dialog.spec.tsx (4 tests) 166ms
+ ✓ test/quantity-input.spec.tsx (3 tests) 197ms
+ ✓ test/form-field.spec.tsx (2 tests) 171ms
+ ✓ test/tabs.spec.tsx (4 tests) 221ms
+ ✓ test/carousel.spec.tsx (3 tests) 254ms
+ ✓ test/popover.spec.tsx (10 tests) 349ms
+ ✓ test/badge.spec.tsx (3 tests) 22ms
+ ✓ test/icon-button.spec.tsx (3 tests) 86ms
+ ✓ test/select.spec.tsx (2 tests) 87ms
 
  Test Files  10 passed (10)
       Tests  37 passed (37)
-   Start at  09:38:12
-   Duration  2.07s (transform 251ms, setup 849ms, collect 1.33s, tests 1.31s, environment 4.68s, prepare 725ms)
+   Start at  20:26:24
+   Duration  1.81s (transform 218ms, setup 432ms, collect 1.14s, tests 1.69s, environment 3.33s, prepare 651ms)
 
 npm notice run @memories/utilities@0.1.0 test
 
@@ -235,8 +234,8 @@ npm notice run @memories/utilities@0.1.0 test
 
  Test Files  1 passed (1)
       Tests  2 passed (2)
-   Start at  09:38:15
-   Duration  356ms (transform 31ms, setup 0ms, collect 29ms, tests 3ms, environment 0ms, prepare 69ms)
+   Start at  20:26:26
+   Duration  338ms (transform 39ms, setup 0ms, collect 32ms, tests 3ms, environment 0ms, prepare 70ms)
 
 npm notice run @memories/validation@0.1.0 test
 
@@ -246,10 +245,12 @@ npm notice run @memories/validation@0.1.0 test
 
  Test Files  1 passed (1)
       Tests  12 passed (12)
-   Start at  09:38:16
-   Duration  349ms (transform 59ms, setup 0ms, collect 69ms, tests 3ms, environment 0ms, prepare 57ms)
+   Start at  20:26:27
+   Duration  330ms (transform 46ms, setup 0ms, collect 46ms, tests 3ms, environment 0ms, prepare 60ms)
 
-=== npm run build public-web ===
+=== npm run build --workspace=@memories/public-web ===
+npm notice run @memories/frontend@0.1.0 build:public
+npm notice run npm run build --workspace=@memories/public-web
 npm notice run @memories/public-web@0.1.0 build
 npm notice run next build
   ▲ Next.js 14.2.35
@@ -300,7 +301,9 @@ Route (app)                              Size     First Load JS
 ○  (Static)   prerendered as static content
 ƒ  (Dynamic)  server-rendered on demand
 
-=== npm run build admin-web ===
+=== npm run build --workspace=@memories/admin-web ===
+npm notice run @memories/frontend@0.1.0 build:admin
+npm notice run npm run build --workspace=@memories/admin-web
 npm notice run @memories/admin-web@0.1.0 build
 npm notice run next build
   ▲ Next.js 14.2.35
@@ -318,29 +321,29 @@ npm notice run next build
    Collecting build traces ...
 
 Route (app)                              Size     First Load JS
-┌ ○ /                                    196 B          87.5 kB
-├ ○ /_not-found                          196 B          87.5 kB
+┌ ○ /                                    195 B          87.5 kB
+├ ○ /_not-found                          195 B          87.5 kB
 ├ ○ /card-catalog                        196 B          87.5 kB
-├ ○ /card-templates                      196 B          87.5 kB
-├ ○ /content                             196 B          87.5 kB
-├ ○ /custom-orders                       196 B          87.5 kB
-├ ○ /customers                           196 B          87.5 kB
-├ ○ /design-assets                       196 B          87.5 kB
-├ ○ /inventory                           196 B          87.5 kB
+├ ○ /card-templates                      194 B          87.5 kB
+├ ○ /content                             195 B          87.5 kB
+├ ○ /custom-orders                       195 B          87.5 kB
+├ ○ /customers                           195 B          87.5 kB
+├ ○ /design-assets                       195 B          87.5 kB
+├ ○ /inventory                           195 B          87.5 kB
 ├ ○ /login                               13.9 kB         136 kB
-├ ○ /notifications                       196 B          87.5 kB
+├ ○ /notifications                       195 B          87.5 kB
 ├ ○ /orders                              196 B          87.5 kB
-├ ○ /overview                            196 B          87.5 kB
-├ ○ /product-categories                  196 B          87.5 kB
-├ ○ /product-options                     196 B          87.5 kB
+├ ○ /overview                            195 B          87.5 kB
+├ ○ /product-categories                  195 B          87.5 kB
+├ ○ /product-options                     195 B          87.5 kB
 ├ ○ /production                          196 B          87.5 kB
-├ ○ /products                            196 B          87.5 kB
+├ ○ /products                            195 B          87.5 kB
 ├ ○ /promotions                          196 B          87.5 kB
-├ ○ /reports                             196 B          87.5 kB
-├ ○ /reviews                             196 B          87.5 kB
-├ ○ /settings                            196 B          87.5 kB
-├ ○ /staff                               196 B          87.5 kB
-└ ○ /support                             192 B          87.5 kB
+├ ○ /reports                             195 B          87.5 kB
+├ ○ /reviews                             195 B          87.5 kB
+├ ○ /settings                            195 B          87.5 kB
+├ ○ /staff                               195 B          87.5 kB
+└ ○ /support                             195 B          87.5 kB
 + First Load JS shared by all            87.3 kB
   ├ chunks/1dd3208c-706386b4942e52d7.js  53.6 kB
   ├ chunks/528-6886e093decad7b2.js       31.7 kB
