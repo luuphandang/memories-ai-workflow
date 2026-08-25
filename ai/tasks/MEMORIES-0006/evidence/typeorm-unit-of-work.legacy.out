@@ -1,0 +1,22 @@
+npm notice run @memories/backend@0.1.0 npx
+npm notice run 'jest' libs/platform/database/test/typeorm-unit-of-work.spec.ts
+PASS libs/platform/database/test/typeorm-unit-of-work.spec.ts
+  TypeOrmQueryRunnerContext
+    ✓ returns undefined outside of any withTransaction call (1 ms)
+    ✓ isolates concurrent transactions — one never sees the other's QueryRunner (21 ms)
+    ✓ restores the previous QueryRunner after a nested run() returns (fix-request-review-008 finding #1)
+    ✓ restores the previous QueryRunner after a nested run() throws (fix-request-review-008 finding #1) (19 ms)
+  TypeOrmUnitOfWork
+    ✓ commits and makes the QueryRunner available to work() via the context (2 ms)
+    ✓ rolls back and still releases the connection when work() throws (1 ms)
+    ✓ still releases the connection when startTransaction() itself fails, instead of leaking it from the pool (1 ms)
+    ✓ joins an already-active transaction instead of opening a second connection, and lets the outer call own commit/rollback
+    ✓ rolls back the single outer transaction when a nested withTransaction call throws (1 ms)
+    ✓ works with no active parent CLS context (opens a temporary root, cleans up after) (1 ms)
+    ✓ preserves correlation/request sibling namespaces of an active parent CLS context, and restores the previous database slice after
+
+Test Suites: 1 passed, 1 total
+Tests:       11 passed, 11 total
+Snapshots:   0 total
+Time:        1.998 s
+Ran all test suites matching /libs\/platform\/database\/test\/typeorm-unit-of-work.spec.ts/i.

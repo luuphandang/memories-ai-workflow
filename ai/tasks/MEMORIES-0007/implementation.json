@@ -1,0 +1,130 @@
+{
+  "task_id": "MEMORIES-0007",
+  "status": "implemented",
+  "summary": "Added a single shared, type-safe TypeORM repository-resolution primitive, TypeOrmRepositoryResolver<Entity>, at libs/platform/database/src/typeorm-repository-resolver.ts (exported via public-api.ts). It replaces the context.get() -> queryRunner.manager.getRepository(entityTarget) -> fallback algorithm that every TypeORM persistence adapter used to reimplement as a private repositoryFor()/variantRepositoryFor()/linkRepositoryFor() method. Grep for `queryRunnerContext.get()`, `manager.getRepository`, and `TypeOrmQueryRunnerContext` injection across libs (cross-checked with CodeGraph) confirmed exactly the 13 baseline occurrences named in task.md and no additional equivalent occurrence: TypeOrmOutboxRepository, TypeOrmCatalogTermRepository, TypeOrmProductRepository (3 entities: product/variant/link), TypeOrmAuthIdentityRepository, TypeOrmAccountRepository, TypeOrmRolePermissionRepository, TypeOrmAccountRoleRepository, TypeOrmRefreshSessionRepository, TypeOrmPermissionRepository, TypeOrmRoleRepository, TypeOrmCardTemplateRepository (2 entities: template/link), TypeOrmUserProfileRepository, TypeOrmMediaAssetRepository. A hit in seed-products.use-case.ts was only a code comment naming the old private methods (updated, not a duplicate implementation). All 13 were migrated: each adapter now holds one TypeOrmRepositoryResolver per ORM entity it owns (one for single-entity adapters, two or three for the product/card-template multi-entity adapters), constructed once from the adapter's existing @InjectRepository fallback and TypeOrmQueryRunnerContext, with every call site (`this.repositoryFor()` etc.) replaced by `this.<name>Resolver.get()`. The resolver holds no mutable resolution state — entityTarget/fallback/context reference are fixed at construction, but the QueryRunner/repository lookup itself is redone on every get() call — so a value from one transaction/request can never leak into a later call on the same (singleton) adapter instance. Two intentional non-migrations were preserved exactly as-is because they predate and are unrelated to this refactor: TypeOrmOutboxRepository.listUnpublished/markPublished/recordFailure call this.repository directly (never via repositoryFor()) because they are meant to run against the default connection outside any transaction, and this repository-resolution refactor does not change that behavior. All specific query/mapping/soft-delete/conditional-update/upsert/raw-SQL/aggregate-persistence logic in every adapter is unchanged; only the resolution of which TypeORM Repository instance backs each call was extracted. Added libs/platform/database/test/typeorm-repository-resolver.spec.ts (fallback path, active-runner path, correct entity target with two resolvers sharing one QueryRunner, re-resolution across transaction boundaries, no reuse of the transactional repository after the transaction's callback ends, and concurrent-transaction isolation for the same resolver instance). Added characterization tests for one single-entity adapter (typeorm-catalog-term.repository.spec.ts) and both multi-entity adapters explicitly named in AC4 (typeorm-product.repository.spec.ts, typeorm-card-template.repository.spec.ts), each proving fallback-vs-transactional routing per entity in and out of transaction. No domain repository interface, use-case/controller contract, API contract, or database schema/migration changed. lint, typecheck, test (70 suites / 338 tests, including the existing TypeOrmUnitOfWork/TypeOrmQueryRunnerContext concurrency and rollback tests unmodified), test:architecture (dependency-cruiser, 0 violations) and build all pass on the current worktree state.",
+  "applied_skills": [
+    {
+      "name": "decompose-implementation-task",
+      "sha256": "0d8e89a94111bd5679c8c5ef6c8f5ce250621909f51704bf676af966f2fd4673",
+      "checks_completed": [
+        "Reused the existing single-slice execution-plan.json (task-requirements) prepared for this task; no new slice needed since the whole epic maps to one infrastructure-only vertical slice",
+        "Ran ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py ai/tasks/MEMORIES-0007/execution-plan.json -> 'Execution plan PASSED: 1 slices'"
+      ]
+    },
+    {
+      "name": "verify-implementation-handoff",
+      "sha256": "570af30068f0ef579bd0538cb88368138530aa99852f3f0d0d531e082ce548a5",
+      "checks_completed": [
+        "Generated repositories[].changed_files from `git status --porcelain=v1 --untracked-files=all` in worktrees/MEMORIES-0007/backend, not from memory",
+        "Ran ai/skills/verify-implementation-handoff/scripts/check_handoff.py ai/tasks/MEMORIES-0007 -> 'Implementation handoff PASSED: 20 exact paths'"
+      ]
+    },
+    {
+      "name": "validate-evidence-provenance",
+      "sha256": "c52ff8bf85051c7b87ff758d3c0222d3816f3e02eaced48dd42a13bcc42b215c",
+      "checks_completed": [
+        "Recorded ai/tasks/MEMORIES-0007/evidence/provenance.json hashing all 20 changed source/test files as inputs and the fresh lint+typecheck+test+test:architecture+build+migration:run+db:seed+test:e2e log as the artifact",
+        "Review cycle 1 fix request required current-cycle npm run test:e2e evidence against real PostgreSQL/Redis/MinIO: brought up a throwaway docker compose stack (project memories-0007-e2e, remapped host ports 25432/26379/29000-29001 since the default 5432/6379/9000 were already held by other concurrent sessions' containers), ran migration:run + db:seed against it, then re-ran the full backend validation set including test:e2e (16 suites / 130 tests, incl. product/card-template aggregate rollback, register-transaction-rollback, media-upload-flow) with zero mocked infrastructure",
+        "Ran ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0007 worktrees/MEMORIES-0007/.ai/validation -> 'Provenance sync PASSED: published 20 inputs and 1 artifacts'",
+        "Ran ai/skills/validate-evidence-provenance/scripts/check_provenance.py worktrees/MEMORIES-0007/.ai/validation/provenance.json -> 'Evidence provenance PASSED: 20 inputs, 1 artifacts'"
+      ]
+    }
+  ],
+  "repositories": [
+    {
+      "name": "backend",
+      "changed_files": [
+        "libs/modules/card-catalog/src/infrastructure/persistence/typeorm-card-template.repository.ts",
+        "libs/modules/card-catalog/test/typeorm-card-template.repository.spec.ts",
+        "libs/modules/catalog/src/infrastructure/persistence/typeorm-catalog-term.repository.ts",
+        "libs/modules/catalog/test/typeorm-catalog-term.repository.spec.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/typeorm-account-role.repository.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/typeorm-account.repository.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/typeorm-auth-identity.repository.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/typeorm-permission.repository.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/typeorm-refresh-session.repository.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/typeorm-role-permission.repository.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/typeorm-role.repository.ts",
+        "libs/modules/media/src/infrastructure/persistence/typeorm-media-asset.repository.ts",
+        "libs/modules/product-catalog/src/application/use-cases/seed-products.use-case.ts",
+        "libs/modules/product-catalog/src/infrastructure/persistence/typeorm-product.repository.ts",
+        "libs/modules/product-catalog/test/typeorm-product.repository.spec.ts",
+        "libs/modules/user-profiles/src/infrastructure/persistence/typeorm-user-profile.repository.ts",
+        "libs/platform/database/src/public-api.ts",
+        "libs/platform/database/src/typeorm-repository-resolver.ts",
+        "libs/platform/database/test/typeorm-repository-resolver.spec.ts",
+        "libs/platform/queue/src/outbox/typeorm-outbox.repository.ts"
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "One small resolver class, TypeOrmRepositoryResolver<Entity>, rather than a shared generic base repository class or an inheritance hierarchy.",
+      "reason": "task.md's technical notes explicitly prefer a resolver/composition primitive over inheritance, and AC9 forbids a generic CRUD base class that would force every domain repository into the same shape. A resolver instance is constructed once per (adapter, entity) pair from the adapter's own @InjectRepository fallback + TypeOrmQueryRunnerContext, and exposes only `get(): Repository<Entity>` — every adapter keeps its own query/mapping/soft-delete/upsert/raw-SQL logic untouched, only the repository-selection line changes."
+    },
+    {
+      "decision": "Multi-entity adapters (TypeOrmProductRepository, TypeOrmCardTemplateRepository) hold one resolver instance per ORM entity (e.g. repositoryResolver/variantRepositoryResolver/linkRepositoryResolver) instead of one resolver taking an entity-target parameter per call.",
+      "reason": "AC4 requires that a repository with several ORM entities always resolve the correct entity target and the correct corresponding fallback, and never confuse aggregate/variant/link repositories. Binding the entity target and fallback into the resolver at construction time (one resolver per entity) makes that mix-up a compile-time-shaped impossibility rather than something a per-call argument could get wrong; it is also the same fix that AC10's 'không reuse transactional repository sau khi callback kết thúc' test verifies for the shared primitive itself."
+    },
+    {
+      "decision": "The resolver stores no cached repository or QueryRunner; `get()` always re-reads TypeOrmQueryRunnerContext.get() and calls queryRunner.manager.getRepository(entityTarget) fresh.",
+      "reason": "AC2 explicitly forbids caching a resolved transactional repository in mutable singleton state, since NestJS providers (and therefore these resolvers, constructed once per adapter instance) are shared across concurrent requests/jobs; caching would let one transaction's repository leak into a later call after commit/rollback or into a concurrent request. Verified directly by the resolver's own re-resolution, no-reuse-after-transaction-end, and concurrent-isolation unit tests."
+    },
+    {
+      "decision": "TypeOrmOutboxRepository.listUnpublished/markPublished/recordFailure keep calling `this.repository` directly instead of the new resolver, exactly as they did before this refactor (only `enqueue()` used repositoryFor() and now uses the resolver).",
+      "reason": "This is an intentional pre-existing behavior difference within the same file, not duplicate resolution logic left over from an incomplete migration: those three methods are meant to always run against the default connection (outbox draining) rather than join an ambient transaction, and rewriting them to route through the resolver would change observable transaction-join behavior, which is out of scope and forbidden by task.md ('Refactor phải giữ nguyên toàn bộ observable behavior... transaction semantics')."
+    }
+  ],
+  "assumptions": [
+    "The 13 baseline persistence implementations named in task.md, verified 1:1 by grepping `queryRunnerContext.get()`, `manager.getRepository`, and `TypeOrmQueryRunnerContext` constructor injection across the whole backend worktree (cross-checked with CodeGraph's blast-radius view of TypeOrmQueryRunnerContext, which reports the same 13 files as callers), are the complete set of equivalent occurrences in the current worktree; the only other textual hit (`repositoryFor()` inside a comment in seed-products.use-case.ts) is not a duplicate implementation and was updated to reflect the new resolver-based design instead of migrated as code.",
+    "Domain repository interfaces, use-case/controller contracts and database schema/migrations were not touched, per AC8 and task.md's out-of-scope list; only the private repository-selection implementation detail inside each infrastructure-layer class changed."
+  ],
+  "validation_commands": [
+    {
+      "repo": "backend",
+      "command": "npm run lint",
+      "result": "pass"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run typecheck",
+      "result": "pass"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run test",
+      "result": "pass (70 suites, 338 tests)"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run test:architecture",
+      "result": "pass (0 dependency-cruiser violations, 466 modules / 1739 dependencies cruised)"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run build",
+      "result": "pass"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run migration:run && npm run db:seed && npm run test:e2e",
+      "result": "pass (16 suites, 130 tests, real throwaway PostgreSQL/Redis/MinIO via docker compose -p memories-0007-e2e, remapped ports 25432/26379/29000-29001; includes product-aggregate-transaction-rollback, card-template-aggregate-transaction-rollback, register-transaction-rollback and media-upload-flow.e2e-spec.ts)"
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "criterion": "slice:task-requirements",
+      "status": "passed",
+      "evidence": "libs/platform/database/src/typeorm-repository-resolver.ts (shared AC1/AC2/AC9 primitive); libs/platform/database/test/typeorm-repository-resolver.spec.ts (AC10: fallback path, active-runner path, correct entity target across two resolvers, re-resolution, no reuse after transaction end, concurrent-transaction isolation); libs/modules/catalog/test/typeorm-catalog-term.repository.spec.ts, libs/modules/product-catalog/test/typeorm-product.repository.spec.ts, libs/modules/card-catalog/test/typeorm-card-template.repository.spec.ts (AC4/AC11: single- and multi-entity adapter characterization, in and out of transaction); libs/platform/database/test/typeorm-unit-of-work.spec.ts unmodified and still passing plus a full real-infrastructure npm run test:e2e run (16 suites/130 tests against a throwaway docker-compose PostgreSQL/Redis/MinIO stack: apps/api/test/product-aggregate-transaction-rollback.e2e-spec.ts, card-template-aggregate-transaction-rollback.e2e-spec.ts, register-transaction-rollback.e2e-spec.ts and media-upload-flow.e2e-spec.ts all passed with zero mocked infrastructure) (AC7/AC12); all 13 baseline adapters migrated per repositories[0].changed_files (AC3, AC5, AC6); ai/tasks/MEMORIES-0007/evidence/provenance.json + worktrees/MEMORIES-0007/.ai/validation/provenance.json (synced, both check_provenance.py PASSED) recording the npm run lint/typecheck/test/test:architecture/build/migration:run/db:seed/test:e2e log (AC13); this handoff's summary/decisions/repositories fields (AC14)."
+    }
+  ],
+  "knowledge_updates": [
+    {
+      "target": "ai/repos/backend/conventions.md",
+      "type": "proposal",
+      "summary": "Consider documenting the new convention: a TypeORM persistence adapter that needs to participate in TypeOrmUnitOfWork transactions should construct one TypeOrmRepositoryResolver<Entity> per ORM entity it owns (from libs/platform/database) instead of writing its own repositoryFor()-style method, so future adapters follow the shared primitive introduced by MEMORIES-0007 instead of reintroducing the duplicated pattern."
+    }
+  ],
+  "implementation_cycle": 1,
+  "change_cycle": 0
+}

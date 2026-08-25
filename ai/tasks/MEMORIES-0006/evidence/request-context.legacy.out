@@ -1,0 +1,31 @@
+npm notice run @memories/backend@0.1.0 npx
+npm notice run 'jest' libs/platform/security/test/request-context.spec.ts
+PASS libs/platform/security/test/request-context.spec.ts
+  RequestContext
+    ✓ get() / currentActorId() outside any context (1 ms)
+    ✓ anonymous actor: accountId null, isSystemActor false => currentActorId() is null (1 ms)
+    ✓ authenticated actor: currentActorId() is the accountId
+    ✓ system actor: currentActorId() is SYSTEM_ACTOR_ID even with no accountId
+    ✓ run(): does not leak the store outside the callback
+    nested run()
+      ✓ does not mutate the parent request object and restores the parent after success
+      ✓ restores the parent after the nested callback throws (8 ms)
+    runAsSystem()
+      ✓ currentActorId() is SYSTEM_ACTOR_ID inside the callback (1 ms)
+      ✓ does not leak isSystemActor to the parent request, and restores parent state after
+      ✓ restores parent state after the callback throws
+    mutable-reference isolation (MEMORIES-0006 fix-request review #4 finding #1, review #6 finding #2)
+      ✓ nesting run() with the parent's own active store reference does not leak child mutations on success (1 ms)
+      ✓ nesting run() with the parent's own active store reference does not leak child mutations after a throw
+      ✓ a shallow copy that aliases the parent roles/permissions arrays does not leak mutations back (1 ms)
+      ✓ nesting run() with the parent's own active store reference does not leak requestedAt mutations on success
+      ✓ nesting run() with the parent's own active store reference does not leak requestedAt mutations after a throw
+      ✓ a shallow copy whose requestedAt still aliases the parent Date does not leak mutations back
+    sibling namespace preservation
+      ✓ a nested request override does not disturb the correlation/database namespaces of the active root (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       17 passed, 17 total
+Snapshots:   0 total
+Time:        1.681 s
+Ran all test suites matching /libs\/platform\/security\/test\/request-context.spec.ts/i.

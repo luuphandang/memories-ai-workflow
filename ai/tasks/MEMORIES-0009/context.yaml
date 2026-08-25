@@ -1,0 +1,102 @@
+version: 1
+mandatory:
+- path: ai/shared/policies/security.md
+  reason: Security boundaries
+  load: initial
+- path: ai/shared/policies/git-policy.md
+  reason: Git restrictions
+  load: initial
+- path: ai/shared/policies/worktree-policy.md
+  reason: Worktree restrictions
+  load: initial
+- path: ai/shared/quality/definition-of-done.md
+  reason: Completion criteria
+  load: initial
+- path: ai/shared/workflows/requirement-change.md
+  reason: Requirement precedence and change-cycle rules
+  load: initial
+- path: ai/shared/workflows/user-acceptance.md
+  reason: User acceptance gate
+  load: initial
+repositories:
+  frontend:
+  - path: ai/repos/frontend/INDEX.md
+    reason: Repository knowledge index
+    load: initial
+  - path: ai/repos/frontend/architecture.md
+    reason: Architecture and module boundaries
+    load: on-demand
+  - path: ai/repos/frontend/conventions.md
+    reason: Repository conventions
+    load: on-demand
+  - path: ai/repos/frontend/testing.md
+    reason: Vitest and Testing Library conventions
+    load: initial
+  - path: ai/repos/frontend/source-map.md
+    reason: Source navigation map
+    load: on-demand
+  - path: ai/repos/frontend/ui-rules.md
+    reason: Design-system, responsive and accessibility conventions
+    load: initial
+  - path: prototype/index/index.html
+    reason: Canonical source for homepage elements, styling, responsive behavior and interactions
+    load: initial
+  - path: prototype/index/assets/logo.png
+    reason: Canonical light-background logo reference
+    load: on-demand
+  - path: prototype/index/assets/logo-white.png
+    reason: Canonical dark-background logo reference
+    load: on-demand
+  - path: worktrees/MEMORIES-0009/frontend/apps/public-web/app/(marketing)/page.tsx
+    reason: Current homepage composition and entry point
+    load: initial
+  - path: worktrees/MEMORIES-0009/frontend/apps/public-web/app/(marketing)/layout.tsx
+    reason: Shared marketing shell containing header, main, footer and mobile navigation
+    load: initial
+  - path: worktrees/MEMORIES-0009/frontend/apps/public-web/components/home
+    reason: Existing reduced homepage components to inventory, reuse and expand
+    load: initial
+  - path: worktrees/MEMORIES-0009/frontend/apps/public-web/components/site-header.tsx
+    reason: Current in-flow search causing header height and page layout shift
+    load: initial
+  - path: worktrees/MEMORIES-0009/frontend/apps/public-web/components/site-footer.tsx
+    reason: Shared footer and newsletter behavior that must remain complete
+    load: initial
+  - path: worktrees/MEMORIES-0009/frontend/apps/public-web/components/mobile-bottom-nav.tsx
+    reason: Responsive public navigation that must not regress
+    load: on-demand
+  - path: worktrees/MEMORIES-0009/frontend/apps/public-web/lib/routes.ts
+    reason: Existing destinations for homepage CTAs and search submit
+    load: initial
+  - path: worktrees/MEMORIES-0009/frontend/apps/public-web/lib/store/shop-store.tsx
+    reason: Shared cart and favorite state required for homepage controls
+    load: initial
+  - path: worktrees/MEMORIES-0009/frontend/apps/public-web/lib/mock/card-templates.ts
+    reason: Existing template content and stable IDs to reuse
+    load: on-demand
+  - path: worktrees/MEMORIES-0009/frontend/apps/public-web/lib/mock/gift-products.ts
+    reason: Existing gift content and stable IDs to reuse
+    load: on-demand
+  - path: worktrees/MEMORIES-0009/frontend/apps/public-web/lib/mock/reviews.ts
+    reason: Existing testimonial content for stories slider
+    load: on-demand
+  - path: worktrees/MEMORIES-0009/frontend/apps/public-web/test/site-header.spec.tsx
+    reason: Header suite to extend for overlay geometry, focus, dismiss and submit
+    load: initial
+  - path: worktrees/MEMORIES-0009/frontend/apps/public-web/test/routes.spec.tsx
+    reason: Route smoke tests to extend for homepage completeness
+    load: on-demand
+  - path: worktrees/MEMORIES-0009/frontend/docs/prototype-inventory.md
+    reason: Historical reduced inventory to correct after full-fidelity completion
+    load: on-demand
+domains: []
+exclude:
+- ai/runtime/**
+- ai/tasks/*/changes/*/baseline/**
+- ai/tasks/*/final-report.md
+- ai/tasks/*/review.json
+- '**/node_modules/**'
+- '**/dist/**'
+- '**/build/**'
+- '**/.env*'
+- '**/secrets/**'

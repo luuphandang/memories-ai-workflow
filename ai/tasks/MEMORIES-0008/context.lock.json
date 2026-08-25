@@ -1,0 +1,321 @@
+{
+  "generated_at": "2026-08-23T05:27:22+07:00",
+  "task_id": "MEMORIES-0008",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "active_change": null,
+  "requirement_precedence": "task.md then unconsolidated requirement addenda by ascending cycle (addenda from cycles at or below requirements_consolidated_through_cycle are already folded into task.md and excluded here); newest active unconsolidated addendum wins only for explicit conflicts",
+  "files": [
+    {
+      "path": "ai/shared/policies/security.md",
+      "sha256": "03b2bc8a21431383667f5d39127d23ce509cb47cdac767344e4f6805e13d2619",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/shared/policies/git-policy.md",
+      "sha256": "b2a34262a04fdf1e593db7980edbba4d0480b01d481c760e55e9a3503eaf99d3",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/shared/policies/worktree-policy.md",
+      "sha256": "dbf6a2a5a4666e7e7dcf990ec9afc3d29a423ac5332a0f88d927aaa17dc12416",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/shared/quality/definition-of-done.md",
+      "sha256": "42f4f66c4e9aa8a16fedef512280f3ef2f45ab3a5be75e4bbcc3c64bc05de2fe",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/shared/workflows/requirement-change.md",
+      "sha256": "88b06544caa84e0544a6142ef1cfcd36f0eb7ed02daee5ff6a4f4d644dc5c254",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/shared/workflows/user-acceptance.md",
+      "sha256": "81fcf1017b1677e7c9ccc5023a96cffbce496617d1ce57873f5286b19cc8e249",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/backend/INDEX.md",
+      "sha256": "b70684673e92c48cbd67598908d450de69a0094314e3823d3f13a85d87217363",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/backend/architecture.md",
+      "sha256": "e98c83ad4bbfbd8443574331d7c1ded2f8cbb1d5e9f5906e5513ed9e1b3d0ad9",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/backend/conventions.md",
+      "sha256": "9da99b3736b78c2cc16b7a2b4b4bd7289710d06b0d4581b8f4dbc221679d528c",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/backend/testing.md",
+      "sha256": "8d7d80be4107605ceeb0790a4678a6636360538f2ccea0568492c7d10a4761c3",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/backend/source-map.md",
+      "sha256": "a75d9ef01a6a31c6a223d0bc0737d590ebfd00cd68ff6c7e5ea555ef4c4595dd",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0008/backend/libs/shared/kernel/src/aggregates/aggregate-root.ts",
+      "sha256": "5eb38c871f89b045925be680efd22a86c457ecc5911f2cfb2c362913ee1dcff1",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0008/backend/libs/shared/kernel/src/entities/auditable-props.ts",
+      "sha256": "a2bb1e2a6467f172cd1d086887e815775f62a566d14a9eb107db4fd5dc2f1031",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0008/backend/libs/shared/kernel/src/repositories/repository.ts",
+      "sha256": "ec32d3801a89f25fbc60110a16fdec5ed9d40e5b7995ef88807dffe2cde4aef0",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0008/backend/libs/platform/database/src/audit.orm-entity.ts",
+      "sha256": "000a719a1bde00759e0dc3e0513522ed8cd30425f01f4dd95132682e04023f60",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/domain/accounts/account.ts",
+      "sha256": "37bbca06a59c2a2ac7d4346900923e93911b5c67de140c6e38d80c6517ff216a",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/domain/auth-identities/auth-identity.ts",
+      "sha256": "6188bf6a4ce9aa7552b18fa89d6b48a9b91456c588dbe73dcbe163d49d6f58ef",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0008/backend/libs/modules/user-profiles/src/domain/user-profile.ts",
+      "sha256": "57cb8f904578ccf790eda49dcddf76cdecbe9b2566f42beb39a424039b6ba7f2",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/domain/accounts/account.repository.ts",
+      "sha256": "b5160793b4c4476c4dcc8354e355afb557798983e811c7e7a6d5c9e405c60ee6",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/infrastructure/persistence/typeorm-account.repository.ts",
+      "sha256": "1c8a6a2427e47037c8c81c0e235fa5fbb0264b714c0e654ad44fb9bd9d918cc5",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0008/backend/libs/modules/user-profiles/src/infrastructure/persistence/typeorm-user-profile.repository.ts",
+      "sha256": "f788e39d05a067a6ccca84ca43971d7fef0125d1da62e87b224e41950a832f79",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/tasks/MEMORIES-0008/task.md",
+      "sha256": "b4c6579f5d4b7c715607d26de43835f6310b2a0f8f93bb0c8c2f12252ca5c990",
+      "load": "initial",
+      "category": "requirement"
+    }
+  ],
+  "requirements": [
+    "ai/tasks/MEMORIES-0008/task.md"
+  ],
+  "repositories": {
+    "backend": {
+      "path": "worktrees/MEMORIES-0008/backend",
+      "base_ref": "origin/master",
+      "head_sha": "c8ca980672459e9eccbb03396a9c246448d1ead6",
+      "branch": "feature/MEMORIES-0008-improve-aggregate-root-structure",
+      "registered_branch": "feature/MEMORIES-0008-improve-aggregate-root-structure",
+      "status": ""
+    }
+  },
+  "codegraph": {
+    "mode": "optional",
+    "repositories": {
+      "backend": {
+        "mode": "optional",
+        "path": "/Users/cmc/Documents/Memories/worktrees/MEMORIES-0008/backend",
+        "available": true,
+        "indexed": true,
+        "ready": true,
+        "command": "/Users/cmc/.local/bin/codegraph",
+        "status_text": "CodeGraph Status\n\nProject: /Users/cmc/Documents/Memories/worktrees/MEMORIES-0008/backend\n\nIndex Statistics:\n  Files:     429\n  Nodes:     3,885\n  Edges:     9,576\n  DB Size:   13.54 MB\n  Backend:   node:sqlite — built-in (full WAL)\n  Journal:   wal\n\nNodes by Kind:\n  import          1,588\n  method          624\n  file            424\n  property        407\n  class           248\n  constant        178\n  interface       175\n  function        148\n  enum_member     43\n  route           28\n  enum            13\n  type_alias      9\n\nFiles by Language:\n  typescript      419\n  javascript      5\n  yaml            5\n\n✓ Index is up to date"
+      }
+    }
+  },
+  "skills": {
+    "required": {
+      "implement": [
+        "decompose-implementation-task",
+        "verify-implementation-handoff",
+        "validate-evidence-provenance"
+      ],
+      "review": [
+        "review-code-change",
+        "review-vertical-slice-completeness"
+      ]
+    },
+    "locked": {
+      "decompose-implementation-task": {
+        "path": "ai/skills/decompose-implementation-task/SKILL.md",
+        "sha256": "0d8e89a94111bd5679c8c5ef6c8f5ce250621909f51704bf676af966f2fd4673",
+        "files": [
+          {
+            "path": "ai/skills/decompose-implementation-task/SKILL.md",
+            "sha256": "e76360df532bcd2ca38cde438c7626d17330561e5299343400c0a6b746d152e3"
+          },
+          {
+            "path": "ai/skills/decompose-implementation-task/agents/openai.yaml",
+            "sha256": "c7bf833bcb990adf03cabfaddf25b463ad652bc6c69a385f094c4ab3d67a5d3f"
+          },
+          {
+            "path": "ai/skills/decompose-implementation-task/references/scope-thresholds.md",
+            "sha256": "b913b844e0371b7916c27e112a1e0c4d3a645dbc5659916bfdd6d6309107fe54"
+          },
+          {
+            "path": "ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py",
+            "sha256": "e7aee9f8bbd374ee7ccd909f09cb3a91adb963fb0fe4a40d974201cec867833c"
+          }
+        ]
+      },
+      "review-code-change": {
+        "path": "ai/skills/review-code-change/SKILL.md",
+        "sha256": "194eb62a12b70eb6efd922af05d797d4c0296efc8299ece3b9df5b156e8d6b9a",
+        "files": [
+          {
+            "path": "ai/skills/review-code-change/SKILL.md",
+            "sha256": "f914780e510e59951b32bbd8ec9c87002c27882be553698db38ae456294716b5"
+          },
+          {
+            "path": "ai/skills/review-code-change/agents/openai.yaml",
+            "sha256": "89bf0eb8d7d8c4c46768a8ef8a7ff6e0b884d138b6827faf6b20235f7f6da239"
+          },
+          {
+            "path": "ai/skills/review-code-change/references/findings-and-verdicts.md",
+            "sha256": "92eee3f8b1e985b6797915799e731f2ab6b3475a5619239d33a04eeb23efdd20"
+          },
+          {
+            "path": "ai/skills/review-code-change/references/review-passes.md",
+            "sha256": "32d7a4272ca4b27f6dcf82e610001d2df3da7a178d218feac826e3f6f2ce33c2"
+          },
+          {
+            "path": "ai/skills/review-code-change/references/test-matrix.md",
+            "sha256": "0e5113c2fd032589d08075564c1ce2b8e50775a4759a447cf8422a85bc3bd166"
+          },
+          {
+            "path": "ai/skills/review-code-change/scripts/validate_review.py",
+            "sha256": "9bc1889616268eaf6c099a3144215ecb31cbe4bc5540d07c658cd1b7c5b9a79d"
+          }
+        ]
+      },
+      "review-vertical-slice-completeness": {
+        "path": "ai/skills/review-vertical-slice-completeness/SKILL.md",
+        "sha256": "e81a7ff83e887692a56ff0dd8d1173b34410afacdb09e2c30011cf3c9d5de099",
+        "files": [
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/SKILL.md",
+            "sha256": "93eec980619cb1aa3834b189bac7af43abb448231c2339ca598e9a028fe9fead"
+          },
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/agents/openai.yaml",
+            "sha256": "e196bf2320746ec34429ae876a64884421aae76b9aae46369b016ea4e7744742"
+          },
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/references/evidence-matrix.md",
+            "sha256": "94c10689d431deb1d20bbfcebfeddf9479f1b28517ce2ccb653f71987614bf16"
+          },
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/references/review-gates.md",
+            "sha256": "49b2ec8c1b41687890f0434088b635e108d23765dd5dbf3bada9e3efd529c467"
+          },
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/scripts/build_evidence_matrix.py",
+            "sha256": "ddf9624d7b7ae57603a14a6c2cd1fcd62e2ab8eccf89d15fa641370a3ab7a95b"
+          }
+        ]
+      },
+      "validate-evidence-provenance": {
+        "path": "ai/skills/validate-evidence-provenance/SKILL.md",
+        "sha256": "c52ff8bf85051c7b87ff758d3c0222d3816f3e02eaced48dd42a13bcc42b215c",
+        "files": [
+          {
+            "path": "ai/skills/validate-evidence-provenance/SKILL.md",
+            "sha256": "4b3c8734b043753630396547d22cb2d00152f36a198ff011e188f2fa6b4e7a62"
+          },
+          {
+            "path": "ai/skills/validate-evidence-provenance/agents/openai.yaml",
+            "sha256": "84e0d62d27ea824ba63a3ec2aaece7e19de2f89b700b95181eedd2c5c8fbe139"
+          },
+          {
+            "path": "ai/skills/validate-evidence-provenance/references/manifest.md",
+            "sha256": "72a44180f3f92a131cad7f3f5b233b84c9b34a1d2e7632e5a5fed9dcdef7eeef"
+          },
+          {
+            "path": "ai/skills/validate-evidence-provenance/scripts/check_provenance.py",
+            "sha256": "ea3ce99b19e8d3c049a05b2809f2061d37ab869f887b7a223f7004a8a8903887"
+          },
+          {
+            "path": "ai/skills/validate-evidence-provenance/scripts/refresh_validation_artifacts.py",
+            "sha256": "2015a63a5a0c9fd40a0ee4d108cc734a860eee896aacfdb563394f6c3a4b5d21"
+          },
+          {
+            "path": "ai/skills/validate-evidence-provenance/scripts/sync_provenance.py",
+            "sha256": "8c7b222814185768ddde989d061f77034d4910d1ea51bdc22a1c807f828d1259"
+          }
+        ]
+      },
+      "verify-implementation-handoff": {
+        "path": "ai/skills/verify-implementation-handoff/SKILL.md",
+        "sha256": "570af30068f0ef579bd0538cb88368138530aa99852f3f0d0d531e082ce548a5",
+        "files": [
+          {
+            "path": "ai/skills/verify-implementation-handoff/SKILL.md",
+            "sha256": "e1d26530d15ad4e723ba68d980128aeb281845aa5ce45ef38e083364ac4e9916"
+          },
+          {
+            "path": "ai/skills/verify-implementation-handoff/agents/openai.yaml",
+            "sha256": "762a6330b1443adf98cc3e7098e81b9d42e44deae1252e9b6424f03130e7e2a2"
+          },
+          {
+            "path": "ai/skills/verify-implementation-handoff/scripts/check_handoff.py",
+            "sha256": "acb2f5152715741f18421cb54508b16ddf98c90f5d8566a90ab468664d1430c2"
+          }
+        ]
+      }
+    }
+  },
+  "execution_plan": "ai/tasks/MEMORIES-0008/execution-plan.json",
+  "scope_assessment": {
+    "acceptance_items": 54,
+    "risk_dimensions": [
+      "api",
+      "database",
+      "security",
+      "ui"
+    ],
+    "large": true
+  }
+}

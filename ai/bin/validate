@@ -85,6 +85,7 @@ def main() -> None:
     # them, then publish provenance when every independently maintained input and
     # artifact is also current. This prevents validate -> review from invalidating
     # its own evidence without concealing stale source/input hashes.
+    provenance_ok = True
     if overall and not args.dry_run and args.tier == "full":
         provenance_script = AI_ROOT / "skills" / "validate-evidence-provenance" / "scripts"
         refresh = subprocess.run(
@@ -115,16 +116,21 @@ def main() -> None:
             )
             print(sync.stdout, end="")
             if sync.returncode != 0:
+                provenance_ok = False
                 print("Validation passed, but provenance still has non-validation stale entries; update those before review.")
         else:
+            provenance_ok = False
             print("Validation passed, but automatic validation-artifact provenance refresh failed.")
 
     state = read_yaml(td / "state.yaml")
-    state["status"] = "reviewing" if overall and not args.dry_run else ("prepared" if args.dry_run else "failed")
+    ready_for_review = overall and provenance_ok and not args.dry_run
+    state["status"] = "reviewing" if ready_for_review else ("prepared" if overall else "failed")
     state.setdefault("timestamps", {})["validation_finished_at"] = now_iso()
     if not overall: state["last_error"] = "One or more required validations failed"
+    elif not provenance_ok:
+        state["last_error"] = "Validation commands passed, but evidence provenance is stale"
     write_yaml(td / "state.yaml", state)
     print(f"Validation {'PASSED' if overall else 'FAILED'}; see {validation_dir / 'summary.json'}")
-    if not overall and not args.dry_run: raise SystemExit(1)
+    if (not overall or not provenance_ok) and not args.dry_run: raise SystemExit(1)
 
 if __name__ == "__main__": main()

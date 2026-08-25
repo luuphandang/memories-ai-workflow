@@ -18,8 +18,8 @@ def invoke(args: list[str]) -> int:
     return result.returncode
 
 
-def repository_fingerprint(task: dict) -> str:
-    """Hash tracked diffs and untracked contents across registered worktrees."""
+def repository_fingerprint(task: dict, task_dir: Path | None = None) -> str:
+    """Hash implementation progress across worktrees and task-owned handoff artifacts."""
     digest = hashlib.sha256()
     for item in sorted(task.get("worktrees", []), key=lambda value: value.get("repo", "")):
         repo = ROOT / item["path"]
@@ -44,11 +44,49 @@ def repository_fingerprint(task: dict) -> str:
             path = repo / raw_path.decode("utf-8", errors="surrogateescape")
             if path.is_file():
                 digest.update(path.read_bytes())
+    if task_dir is not None:
+        for name in ("implementation.json", "implementation-progress.json", "knowledge-updates.json"):
+            path = task_dir / name
+            digest.update(name.encode())
+            if path.is_file():
+                digest.update(path.read_bytes())
     return digest.hexdigest()
 
 
 def is_no_progress_failure(code: int, status: str | None, before: str, after: str) -> bool:
     return (code != 0 or status == "failed") and before == after
+
+
+def can_resume_after_implementation(task: dict, task_dir: Path, state: dict) -> bool:
+    """Return whether orchestration can continue without calling Claude again."""
+    if state.get("status") != "prepared":
+        return False
+
+    handoff_path = task_dir / "implementation.json"
+    if not handoff_path.is_file():
+        return False
+    try:
+        handoff = read_json(handoff_path)
+    except (OSError, ValueError, json.JSONDecodeError):
+        return False
+    if handoff.get("status") != "implemented":
+        return False
+    if handoff.get("implementation_cycle") != state.get("implementation_cycle"):
+        return False
+    if handoff.get("change_cycle") != state.get("change_cycle"):
+        return False
+
+    if task.get("scope", {}).get("execution_plan_required", False):
+        plan_path = task_dir / "execution-plan.json"
+        if not plan_path.is_file():
+            return False
+        try:
+            slices = read_json(plan_path).get("slices", [])
+        except (OSError, ValueError, json.JSONDecodeError):
+            return False
+        if not slices or not all(item.get("status") == "completed" for item in slices):
+            return False
+    return True
 
 
 def validation_fix_request(task_id: str, attempt: int) -> Path:
@@ -130,6 +168,7 @@ def main() -> None:
 
     state["automation"] = {"status": "running", "started_at": now_iso(), "max_attempts": max_attempts, "attempts": 0}
     write_yaml(td / "state.yaml", state)
+    resume_after_implementation = can_resume_after_implementation(task, td, state)
     interrupted_retries = 0
     attempt = 0
     while attempt < max_attempts:
@@ -138,27 +177,37 @@ def main() -> None:
         state["automation"]["attempts"] = attempt
         write_yaml(td / "state.yaml", state)
 
-        before_fingerprint = repository_fingerprint(task)
-        code = invoke([str(AI_ROOT / "bin" / "run-claude"), args.task_id])
-        after_fingerprint = repository_fingerprint(task)
-        state = read_yaml(td / "state.yaml")
-        if state.get("status") == "interrupted":
-            if args.resume_interrupted and interrupted_retries < args.max_interrupted_retries:
-                interrupted_retries += 1
-                attempt -= 1
-                continue
-            state["automation"].update({"status": "interrupted", "finished_at": now_iso()})
-            write_yaml(td / "state.yaml", state)
-            raise SystemExit(code or 1)
-        if is_no_progress_failure(code, state.get("status"), before_fingerprint, after_fingerprint):
-            state["status"] = "blocked"
-            state["last_error"] = (
-                "Implementation attempt made no code changes; automation stopped to prevent "
-                "a no-progress retry loop"
+        if resume_after_implementation:
+            resume_after_implementation = False
+            code = 0
+            print(
+                "Implementation handoff is already prepared for the current cycle; "
+                "resuming at validation without another implementer session."
             )
-            state.setdefault("automation", {}).update({"status": "blocked", "finished_at": now_iso()})
-            write_yaml(td / "state.yaml", state)
-            raise SystemExit(state["last_error"])
+        else:
+            before_fingerprint = repository_fingerprint(task, td)
+            code = invoke([str(AI_ROOT / "bin" / "run-claude"), args.task_id])
+            after_fingerprint = repository_fingerprint(task, td)
+            state = read_yaml(td / "state.yaml")
+            if state.get("status") == "interrupted":
+                if args.resume_interrupted and interrupted_retries < args.max_interrupted_retries:
+                    interrupted_retries += 1
+                    attempt -= 1
+                    continue
+                state["automation"].update({"status": "interrupted", "finished_at": now_iso()})
+                write_yaml(td / "state.yaml", state)
+                raise SystemExit(code or 1)
+            if is_no_progress_failure(code, state.get("status"), before_fingerprint, after_fingerprint):
+                state["status"] = "blocked"
+                state["last_error"] = (
+                    "Implementation attempt made no code changes; automation stopped to prevent "
+                    "a no-progress retry loop"
+                )
+                state.setdefault("automation", {}).update({"status": "blocked", "finished_at": now_iso()})
+                write_yaml(td / "state.yaml", state)
+                raise SystemExit(state["last_error"])
+
+        state = read_yaml(td / "state.yaml")
         if (
             (code != 0 or state.get("status") == "failed")
             and str(state.get("last_error", "")).startswith("Required skill checks failed:")

@@ -1,0 +1,34 @@
+npm notice run @memories/backend@0.1.0 npx
+npm notice run 'jest' libs/platform/observability/test/correlation-context.spec.ts
+PASS libs/platform/observability/test/correlation-context.spec.ts
+  CorrelationContext
+    ✓ exposes the correlation id set for the current async context only (1 ms)
+    ✓ preserves traceId when present, and current() returns undefined outside any context
+    nested run()
+      ✓ restores the parent correlation value after a nested override succeeds
+      ✓ restores the parent correlation value after a nested override throws (8 ms)
+      ✓ restores the parent traceId after a nested override succeeds (MEMORIES-0006 fix-request review #5)
+      ✓ restores the parent traceId after a nested override throws (MEMORIES-0006 fix-request review #5) (1 ms)
+      ✓ preserves sibling request/database namespaces of the active root
+    mutable-reference isolation (MEMORIES-0006 fix-request review #4 finding #1)
+      ✓ nesting run() with the parent's own active store reference does not leak child mutations on success
+      ✓ nesting run() with the parent's own active store reference does not leak child mutations after a throw
+    concurrent isolation
+      ✓ two concurrent correlation scopes never observe each other (20 ms)
+      ✓ two concurrent correlation scopes never observe each other's traceId (MEMORIES-0006 fix-request review #5) (20 ms)
+    seedActiveRoot()
+      ✓ seeds the already-active root in place (no nested frame — sibling mutations by next() persist to the caller) (1 ms)
+      ✓ opens a root itself when none is active yet
+    resolveRequestId() (MEMORIES-0006 fix request #2 finding #2)
+      ✓ prefers the active CLS value over everything else, including a conflicting header
+      ✓ outside any active context, reuses an id already resolved onto req.id by whichever caller ran first — never re-derives from the header
+      ✓ outside any active context with no req.id yet, honors the incoming x-request-id header instead of discarding it
+      ✓ takes the first value of a repeated x-request-id header
+      ✓ generates a fresh id only as a last resort — no active context, no req.id, no header (1 ms)
+      ✓ treats an empty-string header the same as a missing header (falls through to generation)
+
+Test Suites: 1 passed, 1 total
+Tests:       19 passed, 19 total
+Snapshots:   0 total
+Time:        2.489 s
+Ran all test suites matching /libs\/platform\/observability\/test\/correlation-context.spec.ts/i.

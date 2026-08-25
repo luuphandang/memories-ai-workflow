@@ -1,0 +1,15 @@
+npm notice run @memories/backend@0.1.0 build:api
+npm notice run nest build api
+webpack 5.97.1 compiled [1m[32msuccessfully[39m[22m in 3757 ms
+npm notice run @memories/backend@0.1.0 build:worker
+npm notice run nest build worker
+webpack 5.97.1 compiled [1m[32msuccessfully[39m[22m in 3082 ms
+npm notice run @memories/backend@0.1.0 build:cli
+npm notice run nest build cli
+webpack 5.97.1 compiled [1m[32msuccessfully[39m[22m in 3964 ms
+npm notice run @memories/backend@0.1.0 build:scheduler
+npm notice run nest build scheduler
+webpack 5.97.1 compiled [1m[32msuccessfully[39m[22m in 3133 ms
+npm notice run @memories/backend@0.1.0 build:realtime
+npm notice run nest build realtime
+webpack 5.97.1 compiled [1m[32msuccessfully[39m[22m in 2602 ms

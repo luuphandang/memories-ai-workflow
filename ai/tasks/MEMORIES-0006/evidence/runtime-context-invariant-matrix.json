@@ -1,0 +1,62 @@
+{
+  "invariants": [
+    {
+      "invariant": "TypeOrmUnitOfWork.withTransaction() reentrancy: a nested withTransaction() call joins the already-active QueryRunner instead of opening a second connection/transaction.",
+      "enforcement": "TypeOrmQueryRunnerContext.get() check at the top of withTransaction() before creating a QueryRunner (libs/platform/database/src/typeorm-unit-of-work.ts)",
+      "cases": [
+        {
+          "operation": "nested withTransaction() inside an active outer transaction, success",
+          "expected": "createQueryRunner called exactly once; single commit; single release",
+          "test": "libs/platform/database/test/typeorm-unit-of-work.spec.ts > 'joins an already-active transaction instead of opening a second connection, and lets the outer call own commit/rollback'"
+        },
+        {
+          "operation": "nested withTransaction() throws",
+          "expected": "single rollback on the outer QueryRunner; no independent inner rollback/commit",
+          "test": "libs/platform/database/test/typeorm-unit-of-work.spec.ts > 'rolls back the single outer transaction when a nested withTransaction call throws'"
+        }
+      ]
+    },
+    {
+      "invariant": "Database contextual state (active QueryRunner) is scoped per root/nested runtime context and cleaned up exception-safely; it never leaks across concurrent executions or past the transaction.",
+      "enforcement": "TypeOrmQueryRunnerContext.run() opens a runtimeContext.runNested({ifNested:'inherit'}) scope around the callback (libs/platform/database/src/typeorm-unit-of-work.ts); RuntimeContextService.runNested/runRoot always open a genuinely separate AsyncLocalStorage frame (libs/platform/context/src/runtime-context.service.ts)",
+      "cases": [
+        {
+          "operation": "withTransaction() success",
+          "expected": "TypeOrmQueryRunnerContext.get() returns undefined again once withTransaction() resolves",
+          "test": "libs/platform/database/test/typeorm-unit-of-work.spec.ts > 'commits and makes the QueryRunner available to work() via the context'"
+        },
+        {
+          "operation": "withTransaction() with no active parent CLS context",
+          "expected": "a temporary root context is opened for the duration of the transaction and closed after",
+          "test": "libs/platform/database/test/typeorm-unit-of-work.spec.ts > 'works with no active parent CLS context (opens a temporary root, cleans up after)'"
+        },
+        {
+          "operation": "withTransaction() with an active parent CLS context carrying correlation/request state",
+          "expected": "correlation/request sibling namespaces stay visible inside the transaction, and the previous (unset) database slice is restored after, with no leaked QueryRunner",
+          "test": "libs/platform/database/test/typeorm-unit-of-work.spec.ts > 'preserves correlation/request sibling namespaces of an active parent CLS context, and restores the previous database slice after'"
+        },
+        {
+          "operation": "two concurrent TypeOrmQueryRunnerContext.run() calls with different QueryRunners",
+          "expected": "each execution observes only its own QueryRunner throughout, including after an await",
+          "test": "libs/platform/database/test/typeorm-unit-of-work.spec.ts > 'isolates concurrent transactions — one never sees the other's QueryRunner'"
+        }
+      ]
+    },
+    {
+      "invariant": "Generic runtime-context nested scope: a scoped override never mutates the parent-owned object for the slice it replaces, and always restores the parent's own value after the callback settles (success or throw).",
+      "enforcement": "RuntimeContextService.runNested() always opens a new AsyncLocalStorage frame (via ClsService.run with an explicit ifNested policy) rather than mutating the currently active store in place (libs/platform/context/src/runtime-context.service.ts)",
+      "cases": [
+        {
+          "operation": "nested scoped override replaces a namespace, then the callback returns normally",
+          "expected": "parent's own object reference for that namespace is unchanged; sibling namespaces preserved",
+          "test": "libs/platform/context/test/runtime-context.service.spec.ts > 'inherit: preserves sibling namespaces and restores the parent's own value after success'"
+        },
+        {
+          "operation": "nested scoped override replaces a namespace, then the callback throws",
+          "expected": "parent's own object reference for that namespace is unchanged after the throw propagates",
+          "test": "libs/platform/context/test/runtime-context.service.spec.ts > 'inherit: restores the parent value after the callback throws'"
+        }
+      ]
+    }
+  ]
+}

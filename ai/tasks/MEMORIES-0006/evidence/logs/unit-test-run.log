@@ -1,0 +1,641 @@
+npm notice run @memories/backend@0.1.0 test
+npm notice run jest --runInBand
+PASS apps/cli/test/reprocess-job.command.spec.ts
+[Nest] 92374  - 08/25/2026, 12:13:50 PM     LOG [ReprocessJobCommand] reprocess requested mediaAssetId=asset-1 jobId=media-generate-thumbnail-v1-asset-1-reprocess-123
+PASS libs/platform/health/test/health.controller.spec.ts
+PASS libs/modules/product-catalog/test/list-products.use-case.spec.ts
+PASS libs/modules/media/test/generate-thumbnail.handler.spec.ts
+PASS libs/platform/queue/test/bullmq.worker.correlation.spec.ts
+[Nest] 92374  - 08/25/2026, 12:13:52 PM    WARN [BullMqWorkerRunner] handleFinalFailure attempt 1 failed for job name=media.generate-thumbnail.v1 id=job-1, retrying: db down
+[Nest] 92374  - 08/25/2026, 12:13:52 PM    WARN [BullMqWorkerRunner] handleFinalFailure attempt 2 failed for job name=media.generate-thumbnail.v1 id=job-1, retrying: db down
+[Nest] 92374  - 08/25/2026, 12:13:52 PM    WARN [BullMqWorkerRunner] handleFinalFailure attempt 1 failed for job name=media.generate-thumbnail.v1 id=job-1, retrying: db down
+[Nest] 92374  - 08/25/2026, 12:13:52 PM    WARN [BullMqWorkerRunner] handleFinalFailure attempt 2 failed for job name=media.generate-thumbnail.v1 id=job-1, retrying: db down
+[Nest] 92374  - 08/25/2026, 12:13:53 PM   ERROR [BullMqWorkerRunner] handleFinalFailure permanently failed after 3 attempts for job name=media.generate-thumbnail.v1 id=job-1: db down
+[Nest] 92374  - 08/25/2026, 12:13:53 PM   ERROR [BullMqWorkerRunner] handleFinalFailure skipped — no handler registered for job name=stale.renamed-job.v1 id=job-1: no handler registered for job name
+PASS libs/platform/queue/test/bullmq.worker.retries.spec.ts
+[Nest] 92374  - 08/25/2026, 12:13:53 PM    WARN [BullMqWorkerRunner] worker(s) did not reach quiescence within 30ms shutdown timeout — force-closing
+[Nest] 92374  - 08/25/2026, 12:13:53 PM    WARN [BullMqWorkerRunner] worker(s) did not reach quiescence within 30ms shutdown timeout — force-closing
+[Nest] 92374  - 08/25/2026, 12:13:53 PM    WARN [BullMqWorkerRunner] worker close did not finish within the 30ms shutdown timeout — proceeding with shutdown anyway
+[Nest] 92374  - 08/25/2026, 12:13:53 PM    WARN [BullMqWorkerRunner] 1 pending final-failure write(s) did not finish within 30ms shutdown timeout — proceeding with shutdown anyway
+[Nest] 92374  - 08/25/2026, 12:13:53 PM    WARN [BullMqWorkerRunner] worker pause(true) failed during shutdown: connection reset
+PASS libs/modules/user-profiles/test/create-user-profile.use-case.spec.ts
+PASS libs/modules/identity-access/test/register.use-case.spec.ts
+PASS libs/modules/media/test/reprocess-media-asset.use-case.spec.ts
+PASS libs/modules/identity-access/test/change-account-password.use-case.spec.ts
+PASS libs/platform/observability/test/logger.module.spec.ts
+PASS libs/modules/identity-access/test/oauth-login.use-case.spec.ts
+PASS libs/modules/media/test/confirm-media-upload.use-case.spec.ts
+PASS libs/modules/identity-access/test/login.use-case.spec.ts
+PASS libs/modules/identity-access/test/seed-roles-and-permissions.use-case.spec.ts
+PASS libs/modules/identity-access/test/create-account.use-case.spec.ts
+PASS libs/modules/identity-access/test/scrypt-password-hasher.spec.ts
+PASS libs/platform/queue/test/bullmq.publisher.spec.ts
+PASS libs/platform/database/test/typeorm-unit-of-work.spec.ts
+PASS libs/platform/context/test/runtime-context.service.spec.ts
+PASS apps/worker/test/worker-metrics.server.spec.ts
+[Nest] 92374  - 08/25/2026, 12:13:56 PM   ERROR [CliRunnerService] Unknown command "does-not-exist". Available: 
+[Nest] 92374  - 08/25/2026, 12:13:56 PM     LOG [WorkerMetricsServer] worker metrics listening on port 0
+[Nest] 92374  - 08/25/2026, 12:13:56 PM     LOG [WorkerMetricsServer] worker metrics listening on port 0
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [WorkerMetricsServer] metrics server close() did not finish within 30ms shutdown timeout — force-closing remaining connections
+PASS apps/cli/test/cli-runner.service.spec.ts
+PASS libs/platform/queue/test/bullmq.events.spec.ts
+[Nest] 92374  - 08/25/2026, 12:13:56 PM   ERROR [FailureReconciliationService] reconciliation sweep failed for queue=broken: redis unavailable
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [BullMqMetricsCollector] queue metrics collection did not finish within 30ms shutdown timeout — proceeding with shutdown anyway
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-0: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-1: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-2: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-3: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-4: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-5: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-6: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-7: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-8: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-9: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-10: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-11: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-12: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-13: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-14: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-15: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-16: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-17: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-18: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-19: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-20: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-21: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-22: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-23: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-24: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-25: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-26: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-27: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-28: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-29: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-30: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-31: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-32: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-33: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-34: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-35: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-36: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-37: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-38: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-39: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-40: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-41: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-42: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-43: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-44: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-45: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-46: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-47: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-48: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-49: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-50: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-51: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-52: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-53: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-54: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-55: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-56: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-57: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-58: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-59: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-60: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-61: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-62: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-63: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-64: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-65: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-66: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-67: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-68: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-69: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-70: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-71: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-72: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-73: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-74: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-75: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-76: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-77: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-78: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-79: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-80: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-81: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-82: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-83: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-84: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-85: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-86: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-87: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-88: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-89: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-90: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-91: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-92: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-93: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-94: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-95: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-96: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-97: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-98: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-99: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-100: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-101: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-102: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-103: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-104: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-105: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-106: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-107: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-108: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-109: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-110: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-111: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-112: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-113: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-114: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-115: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-116: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-117: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-118: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-119: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-120: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-121: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-122: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-123: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-124: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-125: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-126: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-127: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-128: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-129: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-130: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-131: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-132: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-133: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-134: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-135: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-136: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-137: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-138: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-139: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-140: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-141: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-142: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-143: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-144: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-145: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-146: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-147: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-148: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-149: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-150: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-151: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-152: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-153: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-154: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-155: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-156: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-157: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-158: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-159: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-160: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-161: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-162: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-163: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-164: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-165: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-166: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-167: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-168: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-169: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-170: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-171: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-172: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-173: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-174: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-175: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-176: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-177: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-178: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-179: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-180: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-181: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-182: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-183: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-184: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-185: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-186: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-187: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-188: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-189: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-190: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-191: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-192: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-193: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-194: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-195: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-196: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-197: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-198: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-199: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-200: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-201: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-202: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-203: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-204: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-205: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-206: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-207: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-208: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-209: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-210: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-211: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-212: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-213: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-214: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-215: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-216: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-217: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-218: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-219: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-220: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-221: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-222: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-223: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-224: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-225: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-226: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-227: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-228: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-229: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-230: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-231: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-232: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-233: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-234: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-235: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-236: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-237: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-238: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-239: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-240: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-241: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-242: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-243: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-244: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-245: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-246: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-247: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-248: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-249: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-250: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-251: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-252: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-253: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-254: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-255: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-256: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-257: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-258: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-259: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-260: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-261: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-262: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-263: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-264: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-265: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-266: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-267: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-268: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-269: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-270: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-271: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-272: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-273: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-274: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-275: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-276: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-277: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-278: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-279: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-280: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-281: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-282: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-283: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-284: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-285: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-286: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-287: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-288: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-289: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-290: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-291: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-292: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-293: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-294: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-295: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-296: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-297: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-298: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-299: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-300: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-301: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-302: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-303: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-304: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-305: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-306: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-307: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-308: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-309: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-310: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-311: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-312: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-313: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-314: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-315: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-316: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-317: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-318: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-319: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-320: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-321: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-322: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-323: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-324: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-325: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-326: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-327: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-328: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-329: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-330: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-331: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-332: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-333: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-334: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-335: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-336: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-337: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-338: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-339: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-340: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-341: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-342: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-343: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-344: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-345: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-346: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-347: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-348: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-349: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-350: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-351: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-352: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-353: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-354: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-355: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-356: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-357: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-358: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-359: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-360: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-361: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-362: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-363: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-364: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-365: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-366: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-367: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-368: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-369: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-370: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-371: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-372: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-373: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-374: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-375: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-376: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-377: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-378: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-379: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-380: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-381: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-382: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-383: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-384: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-385: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-386: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-387: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-388: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-389: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-390: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-391: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-392: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-393: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-394: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-395: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-396: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-397: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-398: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-399: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-400: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-401: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-402: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-403: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-404: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-405: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-406: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-407: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-408: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-409: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-410: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-411: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-412: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-413: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-414: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-415: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-416: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-417: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-418: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-419: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-420: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-421: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-422: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-423: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-424: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-425: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-426: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-427: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-428: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-429: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-430: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-431: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-432: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-433: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-434: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-435: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-436: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-437: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-438: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-439: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-440: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-441: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-442: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-443: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-444: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-445: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-446: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-447: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-448: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-449: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-450: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-451: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-452: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-453: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-454: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-455: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-456: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-457: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-458: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-459: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-460: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-461: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-462: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-463: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-464: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-465: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-466: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-467: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-468: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-469: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-470: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-471: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-472: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-473: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-474: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-475: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-476: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-477: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-478: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-479: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-480: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-481: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-482: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-483: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-484: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-485: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-486: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-487: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-488: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-489: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-490: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-491: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-492: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-493: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-494: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-495: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-496: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-497: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-498: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=poison-499: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation handleFinalFailure failed for job name=media.generate-thumbnail.v1 id=job-1: db still down
+PASS libs/platform/queue/test/failure-reconciliation.service.spec.ts
+[Nest] 92374  - 08/25/2026, 12:13:56 PM   ERROR [OutboxRelay] outbox poll failed: connection reset
+[Nest] 92374  - 08/25/2026, 12:13:56 PM   ERROR [OutboxRelay] failed to record outbox failure for id=msg-1: db down
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [FailureReconciliationService] reconciliation sweep did not finish within 30ms shutdown timeout — proceeding with shutdown anyway
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=msg-1 jobName=media.generate-thumbnail.v1 attempts=1: redis unavailable
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=msg-1 jobName=x attempts=1: redis unavailable
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=poison-0 jobName=media.generate-thumbnail.v1 attempts=1: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=poison-1 jobName=media.generate-thumbnail.v1 attempts=1: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=poison-2 jobName=media.generate-thumbnail.v1 attempts=1: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=poison-3 jobName=media.generate-thumbnail.v1 attempts=1: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=poison-4 jobName=media.generate-thumbnail.v1 attempts=1: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=poison-5 jobName=media.generate-thumbnail.v1 attempts=1: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=poison-6 jobName=media.generate-thumbnail.v1 attempts=1: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=poison-7 jobName=media.generate-thumbnail.v1 attempts=1: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=poison-8 jobName=media.generate-thumbnail.v1 attempts=1: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=poison-9 jobName=media.generate-thumbnail.v1 attempts=1: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=poison-10 jobName=media.generate-thumbnail.v1 attempts=1: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=poison-11 jobName=media.generate-thumbnail.v1 attempts=1: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=poison-12 jobName=media.generate-thumbnail.v1 attempts=1: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=poison-13 jobName=media.generate-thumbnail.v1 attempts=1: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=poison-14 jobName=media.generate-thumbnail.v1 attempts=1: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=poison-15 jobName=media.generate-thumbnail.v1 attempts=1: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=poison-16 jobName=media.generate-thumbnail.v1 attempts=1: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=poison-17 jobName=media.generate-thumbnail.v1 attempts=1: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=poison-18 jobName=media.generate-thumbnail.v1 attempts=1: poison
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] failed to publish outbox message id=poison-19 jobName=media.generate-thumbnail.v1 attempts=1: poison
+PASS libs/platform/queue/test/outbox-relay.service.spec.ts
+[Nest] 92374  - 08/25/2026, 12:13:56 PM    WARN [OutboxRelay] outbox poll did not finish within 30ms shutdown timeout — proceeding with shutdown anyway
+PASS libs/platform/queue/test/bullmq-queue.factory.spec.ts
+[Nest] 92374  - 08/25/2026, 12:13:57 PM    WARN [BullMqQueueFactory] queue "media" close() did not finish within 30ms shutdown timeout — force-disconnecting
+[Nest] 92374  - 08/25/2026, 12:13:57 PM    WARN [BullMqQueueFactory] error closing queue "media": connection reset
+[Nest] 92374  - 08/25/2026, 12:13:57 PM    WARN [BullMqQueueFactory] queue "media" close() did not finish within 30ms shutdown timeout — force-disconnecting
+[Nest] 92374  - 08/25/2026, 12:13:57 PM    WARN [BullMqQueueFactory] error force-disconnecting queue "media": disconnect failed
+[Nest] 92374  - 08/25/2026, 12:13:57 PM    WARN [BullMqQueueFactory] error closing queue "media": connection reset
+PASS libs/platform/observability/test/correlation-context.spec.ts
+PASS libs/modules/identity-access/test/google-oauth.client.spec.ts
+PASS libs/platform/realtime/test/redis-io.adapter.connection.spec.ts
+PASS libs/platform/realtime/test/redis-emitter-client.shutdown.spec.ts
+[Nest] 92374  - 08/25/2026, 12:13:57 PM    WARN [RealtimeRedisClientShutdown] error closing realtime Redis connection: connection reset
+[Nest] 92374  - 08/25/2026, 12:13:57 PM    WARN [RealtimeRedisClientShutdown] realtime Redis quit() did not finish within 30ms shutdown timeout — falling back to disconnect()
+PASS libs/platform/security/test/request-context.spec.ts
+PASS libs/modules/media/test/create-media-asset.use-case.spec.ts
+[Nest] 92374  - 08/25/2026, 12:13:57 PM   ERROR [GlobalExceptionFilter] GET /orders/1 -> 404 order_not_found
+[Nest] 92374  - 08/25/2026, 12:13:57 PM   ERROR [GlobalExceptionFilter] GET /orders/1 -> 500 internal_error
+[Nest] 92374  - 08/25/2026, 12:13:57 PM   ERROR [GlobalExceptionFilter] GET /orders/1 -> 500 internal_error
+PASS libs/platform/security/test/global-exception.filter.spec.ts
+PASS libs/modules/media/test/generate-thumbnail.use-case.spec.ts
+[Nest] 92374  - 08/25/2026, 12:13:57 PM     LOG [GenerateThumbnailUseCase] generated thumbnail mediaAssetId=e2c4e242-27cc-45f5-b6db-dcce4db47d04 -> processed/owner-1/asset.png
+[Nest] 92374  - 08/25/2026, 12:13:57 PM     LOG [GenerateThumbnailUseCase] generated thumbnail mediaAssetId=73798a5c-fde3-4333-a567-042c2ac0c00f -> processed/owner-1/asset.png
+[Nest] 92374  - 08/25/2026, 12:13:57 PM     LOG [GenerateThumbnailUseCase] generated thumbnail mediaAssetId=7c7ff9bb-d050-4d14-84b1-671cce4c07da -> processed/owner-1/asset.png
+[Nest] 92374  - 08/25/2026, 12:13:57 PM     LOG [GenerateThumbnailUseCase] generated thumbnail mediaAssetId=364a8c2a-1066-402b-a5d1-024f1b80f016 -> processed/owner-1/asset.png
+[Nest] 92374  - 08/25/2026, 12:13:57 PM     LOG [GenerateThumbnailUseCase] generated thumbnail mediaAssetId=4aba0fd9-afdb-401e-afc4-e1054f8e626f -> processed/owner-1/asset.png
+PASS libs/platform/realtime/test/redis-io.adapter.close.spec.ts
+PASS libs/platform/queue/test/job-handler.registry.spec.ts
+[Nest] 92374  - 08/25/2026, 12:13:57 PM   ERROR [RedisRealtimePublisher] Realtime publish failed room=room-1 event=order.updated: redis unavailable
+PASS libs/platform/realtime/test/redis-realtime.publisher.spec.ts
+PASS libs/modules/identity-access/test/phone-normalizer.spec.ts
+PASS libs/platform/security/test/jwt-auth.guard.spec.ts
+PASS libs/platform/cache/test/redis-cache.adapter.spec.ts
+PASS libs/platform/queue/test/queue.registry.spec.ts
+[Nest] 92374  - 08/25/2026, 12:13:58 PM    WARN [RedisCacheAdapter] Cache get failed for key "anything": connection reset
+PASS libs/platform/security/test/portal.guard.spec.ts
+PASS libs/modules/media/test/get-media-asset.use-case.spec.ts
+PASS libs/platform/cache/test/redis-client.shutdown.spec.ts
+[Nest] 92374  - 08/25/2026, 12:13:58 PM    WARN [RedisClientShutdown] error closing Redis connection: connection reset
+[Nest] 92374  - 08/25/2026, 12:13:58 PM    WARN [RedisClientShutdown] Redis quit() did not finish within 30ms shutdown timeout — falling back to disconnect()
+PASS libs/platform/queue/test/bullmq.errors.spec.ts
+PASS libs/platform/security/test/origin.guard.spec.ts
+PASS libs/platform/realtime/test/redis-emitter.provider.spec.ts
+PASS libs/modules/card-catalog/test/list-card-templates.use-case.spec.ts
+PASS libs/modules/identity-access/test/facebook-oauth.client.spec.ts
+PASS libs/modules/identity-access/test/local-authentication.provider.spec.ts
+PASS libs/modules/user-profiles/test/user-profile.spec.ts
+PASS libs/modules/product-catalog/test/product-variant.spec.ts
+PASS libs/modules/catalog/test/list-catalog-terms.use-case.spec.ts
+PASS libs/modules/identity-access/test/permission-checker.service.spec.ts
+PASS libs/modules/identity-access/test/auth-identity.spec.ts
+PASS libs/platform/configuration/test/env.schema.spec.ts
+PASS libs/modules/card-catalog/test/card-template.spec.ts
+PASS libs/modules/catalog/test/catalog-term.spec.ts
+PASS libs/modules/product-catalog/test/product.spec.ts
+PASS libs/modules/identity-access/test/oauth-state.helper.spec.ts
+PASS libs/modules/identity-access/test/phone-number.spec.ts
+PASS libs/modules/identity-access/test/password-policy.spec.ts
+PASS libs/modules/identity-access/test/account.spec.ts
+PASS .github/test/workflow-security.spec.ts
+PASS libs/shared/kernel/test/result.spec.ts
+PASS libs/modules/media/test/media-asset.spec.ts
+PASS libs/platform/storage/test/upload-validation.spec.ts
+PASS libs/platform/database/test/typeorm-options.factory.spec.ts
+PASS libs/platform/queue/test/bullmq.config.spec.ts
+
+Test Suites: 69 passed, 69 total
+Tests:       448 passed, 448 total
+Snapshots:   0 total
+Time:        12.153 s, estimated 124 s
+Ran all test suites.

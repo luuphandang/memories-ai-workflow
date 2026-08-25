@@ -1,0 +1,160 @@
+{
+  "passed": true,
+  "rows": [
+    {
+      "criterion": "AC1",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": "RuntimeContextModule/Service/Seed implementation plus runtime-context.service.spec.ts closed-world isolation regressions; current validation and provenance are referenced by AC19.",
+      "coverage": "criterion"
+    },
+    {
+      "criterion": "AC2",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": ".dependency-cruiser.js enforces the context boundary; test:architecture evidence is referenced by AC19.",
+      "coverage": "criterion"
+    },
+    {
+      "criterion": "AC3",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": "All five app composition roots own explicit RuntimeContextModule.forRoot configuration; module-wiring gate passes.",
+      "coverage": "criterion"
+    },
+    {
+      "criterion": "AC4",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": "HTTP root ordering, request seeding, authenticated concurrency and cleanup are covered by http-context-lifecycle.e2e-spec.ts.",
+      "coverage": "criterion"
+    },
+    {
+      "criterion": "AC5",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": "RuntimeContextModule disables generateId/saveReq/saveRes/useEnterWith and mounts HTTP middleware only where required.",
+      "coverage": "criterion"
+    },
+    {
+      "criterion": "AC6",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": "Correlation middleware/logger header matrix verifies request/correlation ID compatibility and convergence.",
+      "coverage": "criterion"
+    },
+    {
+      "criterion": "AC7",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": "CorrelationContext nested/concurrent tests and retained legacy characterization verify compatibility.",
+      "coverage": "criterion"
+    },
+    {
+      "criterion": "AC8",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": "RequestContext and JwtAuthGuard tests cover anonymous, authenticated and system actor behavior.",
+      "coverage": "criterion"
+    },
+    {
+      "criterion": "AC9",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": "runNested inherit/override/reuse and owner facade success/throw restoration tests cover nested scopes.",
+      "coverage": "criterion"
+    },
+    {
+      "criterion": "AC10",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": "Mutable arrays/Dates, cross-seed graphs, Proxy, altered prototype and polluted built-in prototype regressions cover isolation.",
+      "coverage": "criterion"
+    },
+    {
+      "criterion": "AC11",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": "TypeOrmUnitOfWork unit and real PostgreSQL tests cover reentrancy, rollback, QueryRunner isolation and cleanup.",
+      "coverage": "criterion"
+    },
+    {
+      "criterion": "AC12",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": "Logger tests cover inactive/active CLS, header combinations, concurrency and OAuth query redaction.",
+      "coverage": "criterion"
+    },
+    {
+      "criterion": "AC13",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": "BullMQ publisher/worker unit tests and real Redis isolation E2E cover envelope compatibility and per-job roots.",
+      "coverage": "criterion"
+    },
+    {
+      "criterion": "AC14",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": "CLI runner unit and real PostgreSQL audit-persistence E2E cover system actor stamping and rollback.",
+      "coverage": "criterion"
+    },
+    {
+      "criterion": "AC15",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": "Scheduler/realtime composition roots were traced; no unsupported execution context consumer was introduced.",
+      "coverage": "criterion"
+    },
+    {
+      "criterion": "AC16",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": "Context library has no security/observability/database/TypeORM dependency; architecture gate enforces this.",
+      "coverage": "criterion"
+    },
+    {
+      "criterion": "AC17",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": "Owner store shapes and public facade behavior are preserved by migrated suites and legacy characterization.",
+      "coverage": "criterion"
+    },
+    {
+      "criterion": "AC18",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": "Post-correction legacy characterization harness and matching migrated suites are archived with provenance.",
+      "coverage": "criterion"
+    },
+    {
+      "criterion": "AC19",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": "Current full validation: [unit-tests: 69 suites / 448 tests], [baseline-unit-tests: 69 suites / 448 tests], [e2e-tests: 20 suites / 146 tests], [characterization-tests: 5 suites / 30 tests], [context-spec-cases: 59], [characterization-baseline: v9], [architecture: 474 modules / 1794 dependencies], [provenance-inventory: 56 inputs / 14 artifacts].",
+      "coverage": "criterion"
+    },
+    {
+      "criterion": "AC20",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": "Publisher/worker tests prove correlation propagation compatibility and actor metadata is not ambient authority.",
+      "coverage": "criterion"
+    },
+    {
+      "criterion": "AC21",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": "Audit/actor documentation distinguishes anonymous HTTP, CLI system actor and worker metadata semantics.",
+      "coverage": "criterion"
+    },
+    {
+      "criterion": "AC22",
+      "slice": "invariant",
+      "status": "passed",
+      "evidence": "Machine-checked handoff facts, current source inventory, validation artifacts and synchronized provenance establish feature-worktree-only integration state.",
+      "coverage": "criterion"
+    }
+  ],
+  "missing": []
+}

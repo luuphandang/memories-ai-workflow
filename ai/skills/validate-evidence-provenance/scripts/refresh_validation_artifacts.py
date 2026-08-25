@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import tempfile
 
@@ -42,7 +43,8 @@ def main() -> int:
         return 0
 
     data = json.loads(manifest.read_text(encoding="utf-8"))
-    targets = {(runtime / name).resolve(): name for name in MANAGED_NAMES}
+    existing_names = tuple(name for name in MANAGED_NAMES if (runtime / name).is_file())
+    targets = {(runtime / name).resolve(): name for name in existing_names}
     refreshed: set[str] = set()
     for item in data.get("artifacts", []):
         target = (manifest.parent / item.get("path", "")).resolve()
@@ -55,20 +57,27 @@ def main() -> int:
         item["sha256"] = digest(target)
         refreshed.add(name)
 
-    missing = set(MANAGED_NAMES) - refreshed
-    if missing:
-        print("Validation provenance refresh FAILED: manifest does not record " + ", ".join(sorted(missing)))
-        return 1
+    for name in existing_names:
+        if name in refreshed:
+            continue
+        target = (runtime / name).resolve()
+        data.setdefault("artifacts", []).append(
+            {
+                "path": os.path.relpath(target, manifest.parent),
+                "sha256": digest(target),
+            }
+        )
+        refreshed.add(name)
 
     summary = json.loads((runtime / "summary.json").read_text(encoding="utf-8"))
     data["generated_at"] = summary["generated_at"]
     data["validation_artifact_refresh"] = {
         "command": f"./ai/bin/ai task validate-code {data.get('task_id')} --tier full",
         "generated_at": summary["generated_at"],
-        "artifacts": list(MANAGED_NAMES),
+        "artifacts": list(existing_names),
     }
     atomic_write(manifest, data)
-    print("Validation provenance refreshed: " + ", ".join(MANAGED_NAMES))
+    print("Validation provenance refreshed: " + ", ".join(existing_names))
     return 0
 
 

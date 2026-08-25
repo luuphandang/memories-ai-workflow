@@ -1,0 +1,25 @@
+{
+  "task_id": "MEMORIES-0008",
+  "verdict": "blocked",
+  "reviewed_repositories": [],
+  "applied_skills": [],
+  "review_coverage": {
+    "review_passes": [],
+    "changed_files": [],
+    "risk_areas": [],
+    "prior_findings": [],
+    "completion_statement": false
+  },
+  "findings": [],
+  "validation_assessment": {
+    "passed": false,
+    "missing": [
+      "Review has not run"
+    ]
+  },
+  "acceptance_criteria": [],
+  "knowledge_updates": [],
+  "summary": "Review has not run.",
+  "implementation_cycle": 1,
+  "change_cycle": 0
+}

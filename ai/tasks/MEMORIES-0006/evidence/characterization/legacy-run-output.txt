@@ -1,0 +1,16 @@
+npm notice run @memories/backend@0.1.0 npx
+npm notice run 'jest' --config /Users/cmc/Documents/Memories/ai/tasks/MEMORIES-0006/evidence/characterization/jest.legacy-characterization.config.js --runInBand
+ts-jest[config] (WARN) 
+    The "ts-jest" config option "isolatedModules" is deprecated and will be removed in v30.0.0. Please use "isolatedModules: true" in /Users/cmc/Documents/Memories/worktrees/MEMORIES-0006/backend/tsconfig.json instead, see https://www.typescriptlang.org/tsconfig/#isolatedModules
+  
+PASS ../../../ai/tasks/MEMORIES-0006/evidence/characterization/legacy-spec/logger-header-matrix.legacy.spec.ts
+PASS ../../../ai/tasks/MEMORIES-0006/evidence/characterization/legacy-spec/typeorm-unit-of-work.legacy.spec.ts
+PASS ../../../ai/tasks/MEMORIES-0006/evidence/characterization/legacy-spec/bullmq-publisher-precedence.legacy.spec.ts
+PASS ../../../ai/tasks/MEMORIES-0006/evidence/characterization/legacy-spec/request-context.legacy.spec.ts
+PASS ../../../ai/tasks/MEMORIES-0006/evidence/characterization/legacy-spec/correlation-context.legacy.spec.ts
+
+Test Suites: 5 passed, 5 total
+Tests:       30 passed, 30 total
+Snapshots:   0 total
+Time:        1.3 s
+Ran all test suites.

@@ -213,6 +213,26 @@ def run_delivery_quality_gates(
         if missing:
             failures.append("acceptance-evidence")
 
+    if "review-vertical-slice-completeness" in task.get("skills", {}).get("review", []):
+        checker = AI_ROOT / "skills" / "review-vertical-slice-completeness" / "scripts" / "check_evidence_freshness.py"
+        backend = next((item for item in task.get("worktrees", []) if item.get("repo") == "backend"), None)
+        if backend:
+            result = run(
+                [
+                    __import__("sys").executable,
+                    str(checker),
+                    str(td / "implementation.json"),
+                    str(ROOT / backend["path"]),
+                    str(td / "evidence"),
+                ],
+                cwd=ROOT,
+                timeout=120,
+            )
+            check = {"name": "evidence-freshness", "passed": result.returncode == 0, "output": result.stdout[-4000:]}
+            checks.append(check)
+            if not check["passed"]:
+                failures.append("evidence-freshness")
+
     result = {"task_id": task_id, "generated_at": now_iso(), "passed": not failures, "checks": checks, "failures": failures}
     write_json(runtime_dir(task_id) / "validation" / "skills" / "delivery-gates.json", result)
     if failures:

@@ -1,0 +1,25 @@
+task_id: MEMORIES-0009
+status: ready
+implementation_cycle: 1
+review_cycle: 0
+review_cycles_total: 0
+change_cycle: 0
+active_change: null
+timestamps:
+  created_at: '2026-08-23T05:32:55+07:00'
+agents:
+  implementation: claude
+  review: codex
+repositories:
+  frontend:
+    path: worktrees/MEMORIES-0009/frontend
+    base_ref: origin/master
+    base_sha: 6fbf43e87ba9043800872fc15fc60a756bfb8be5
+    branch: feature/MEMORIES-0009-implement-index-page
+    registered_branch: feature/MEMORIES-0009-implement-index-page
+user_acceptance:
+  status: pending
+  accepted_at: null
+  accepted_by: null
+  accepted_change_cycle: null
+last_error: null

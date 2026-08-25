@@ -1,0 +1,216 @@
+{
+  "task_id": "MEMORIES-0008",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "status": "ready",
+  "slices": [
+    {
+      "id": "auditable-aggregate-abstraction",
+      "title": "Auditable aggregate abstraction",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Auditable aggregate abstraction"
+      ],
+      "requirement_details": {
+        "Auditable aggregate abstraction": [
+          "Tạo `AuditableAggregateRoot<TProps extends AuditableProps>` trong shared kernel, kế thừa",
+          "Cung cấp một implementation dùng chung cho `audit` read-only, `isDeleted`, protected",
+          "Không tạo `SoftDeletableAggregateRoot` hoặc hierarchy tương đương dành riêng cho soft delete.",
+          "Không inject `Clock`, `RequestContext` hoặc infrastructure dependency vào domain/shared",
+          "Soft delete lần hai dùng strict semantics: trả domain conflict và không ghi đè delete metadata",
+          "Giữ/cho phép override error code cụ thể hiện hữu nếu contract hiện tại phụ thuộc vào nó.",
+          "Không thêm `restore` khi chưa có use case nghiệp vụ."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "migrate-aggregate-hi-n-t-i",
+      "title": "Migrate aggregate hiện tại",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Migrate aggregate hiện tại"
+      ],
+      "requirement_details": {
+        "Migrate aggregate hiện tại": [
+          "Migrate `Account`, `AuthIdentity`, `UserProfile`, `Product`, `CardTemplate`, `Role`,",
+          "Xóa implementation trùng của `audit`, `isDeleted`, `touch`, `softDelete`; dùng `isDeleted`",
+          "Mutation đang cập nhật audit phải tiếp tục gọi `touch`; không tự động đổi behavior mutation",
+          "Giữ invariants, status transitions, token version, domain events và observable errors.",
+          "Không migrate `CatalogTerm`, `MediaAsset`, `RefreshSession` để làm hierarchy đồng đều."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "soft-delete-repository-query-contract",
+      "title": "Soft-delete repository query contract",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Soft-delete repository query contract"
+      ],
+      "requirement_details": {
+        "Soft-delete repository query contract": [
+          "Tạo shared options với semantics tương đương:",
+          "Khi options/property bị bỏ qua, mặc định là `exclude`.",
+          "`exclude` chỉ lấy `deleted_at IS NULL`; `include` không lọc `deleted_at`; `only` chỉ lấy",
+          "Chỉ áp dụng options cho repository quản lý auditable/soft-deletable aggregate; không ép",
+          "Áp dụng cho mọi method đọc liên quan: `findById`, custom `find/findAll`, business-key lookup,",
+          "Thay `findByIdIncludingDeleted` bằng `findById(id, { deleted: 'include' })` hoặc API tên cuối",
+          "Caller không truyền options phải giữ behavior hiện tại: không thấy và không đếm deleted rows.",
+          "Query có join áp dụng mode cho aggregate chính; joined records giữ business semantics hiện tại"
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "typeorm-helpers",
+      "title": "TypeORM helpers",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "TypeORM helpers"
+      ],
+      "requirement_details": {
+        "TypeORM helpers": [
+          "Tạo helper dùng chung tại platform database/infrastructure để chuyển deleted mode thành",
+          "Không lặp switch ba mode hoặc hard-code `IsNull()` khi helper dùng được.",
+          "Query-builder helper chỉ nhận alias do implementation kiểm soát; không ghép request input vào",
+          "Giữ transaction-aware repository resolution và query semantics hiện tại.",
+          "Không đưa TypeORM dependency vào shared kernel/domain."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "audit-mapper-helpers",
+      "title": "Audit mapper helpers",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Audit mapper helpers"
+      ],
+      "requirement_details": {
+        "Audit mapper helpers": [
+          "Tạo helper chung cho sáu audit fields theo hai chiều ORM → domain props và domain → ORM.",
+          "Migrate mapper trong scope khi không mất type safety/behavior chuyên biệt.",
+          "Helper không phụ thuộc concrete ORM entity của bounded context và round-trip đủ actor,"
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "physical-delete-naming",
+      "title": "Physical delete naming",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Physical delete naming"
+      ],
+      "requirement_details": {
+        "Physical delete naming": [
+          "Kiểm kê caller của `Repository.delete()` và xác nhận physical-delete semantics.",
+          "Ưu tiên đổi thành `hardDelete()` nếu migrate toàn bộ caller an toàn trong task.",
+          "Nếu đổi tên gây breaking scope không hợp lý, giữ `delete()` nhưng document rõ physical",
+          "Soft delete tiếp tục đi qua `aggregate.softDelete(...)` rồi `repository.save(aggregate)`."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "tests-and-documentation",
+      "title": "Tests and documentation",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Tests and documentation"
+      ],
+      "requirement_details": {
+        "Tests and documentation": [
+          "Unit test `AuditableAggregateRoot` qua concrete test aggregate.",
+          "Test helper/repository cho default và đủ ba deleted modes.",
+          "Regression test repository/use case đại diện và cascade xóa Account.",
+          "Cập nhật public exports và knowledge/convention nếu abstraction trở thành chuẩn bền vững.",
+          "AC1 — Có đúng một `AuditableAggregateRoot` dùng chung cho `audit`, `isDeleted`, `touch`,",
+          "AC2 — Bảy aggregate trong scope kế thừa abstraction mới và không còn implementation lặp.",
+          "AC3 — `MediaAsset`, `RefreshSession`, `CatalogTerm` giữ model/schema hiện tại.",
+          "AC4 — `audit` không cho caller mutate props; `touch` protected và cập nhật đúng update fields.",
+          "AC5 — Soft delete lần đầu ghi delete/update metadata cùng actor/thời điểm; lần hai conflict và",
+          "AC6 — Existing error codes và observable business behavior quan trọng không regression.",
+          "AC7 — Query options hỗ trợ `exclude`, `include`, `only`; omitted mặc định `exclude`.",
+          "AC8 — TypeORM find options và query builder đều thực thi đúng semantics ba mode.",
+          "AC9 — Mọi method đọc aggregate trong scope nhận/truyền mode nhất quán, gồm find, exists, list,",
+          "AC10 — Không còn `findByIdIncludingDeleted`; caller dùng options chung.",
+          "AC11 — Default callers không thấy/đếm deleted rows; `include` trả cả hai loại; `only` chỉ trả",
+          "AC12 — Audit mapper helpers round-trip đủ sáu fields và loại bỏ mapping lặp trong scope khi an",
+          "AC13 — Physical delete không đổi semantics ngầm và được đặt tên/document rõ.",
+          "AC14 — Không có TypeORM, request context hoặc clock dependency rò rỉ vào domain abstraction.",
+          "AC15 — Không đổi HTTP API, database schema/migration hoặc business behavior ngoài contract nội",
+          "AC16 — Tests bao phủ base behavior, ba modes/default, mapper round-trip, Account cascade, ít",
+          "AC17 — `lint`, `typecheck`, `test`, `test:architecture`, `build` đều pass.",
+          "AC18 — Handoff liệt kê inventory cuối, files/contracts đã migrate, quyết định"
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    }
+  ]
+}

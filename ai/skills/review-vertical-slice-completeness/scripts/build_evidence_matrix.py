@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 
 
@@ -15,6 +16,18 @@ def main() -> None:
     plan = json.loads(args.execution_plan.read_text(encoding="utf-8"))
     implementation = json.loads(args.implementation.read_text(encoding="utf-8"))
     handoff = {item["criterion"]: item for item in implementation.get("acceptance_criteria", [])}
+    planned_criteria = [
+        criterion
+        for slice_item in plan["slices"]
+        for criterion in slice_item["acceptance_criteria"]
+    ]
+    explicit = sorted({int(match.group(1)) for item in planned_criteria if (match := re.fullmatch(r"AC(\d+)", item))})
+    if explicit:
+        expected = list(range(1, max(explicit) + 1))
+        if explicit != expected or explicit[-1] != 22:
+            raise SystemExit("execution plan must represent every explicit criterion AC1 through AC22")
+    elif planned_criteria:
+        raise SystemExit("execution plan uses generic umbrella criteria instead of explicit AC1 through AC22")
     rows = []
     missing = []
     for slice_item in plan["slices"]:

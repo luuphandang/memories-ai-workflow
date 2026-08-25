@@ -1,0 +1,27 @@
+task_id: MEMORIES-0008
+status: prepared
+implementation_cycle: 1
+review_cycle: 0
+review_cycles_total: 0
+change_cycle: 0
+active_change: null
+timestamps:
+  created_at: '2026-08-23T04:23:51+07:00'
+  context_prepared_at: '2026-08-23T05:27:22+07:00'
+agents:
+  implementation: claude
+  review: codex
+repositories:
+  backend:
+    path: worktrees/MEMORIES-0008/backend
+    base_ref: origin/master
+    head_sha: c8ca980672459e9eccbb03396a9c246448d1ead6
+    branch: feature/MEMORIES-0008-improve-aggregate-root-structure
+    registered_branch: feature/MEMORIES-0008-improve-aggregate-root-structure
+    status: ''
+user_acceptance:
+  status: pending
+  accepted_at: null
+  accepted_by: null
+  accepted_change_cycle: null
+last_error: null

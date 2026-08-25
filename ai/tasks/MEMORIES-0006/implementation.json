@@ -1,0 +1,648 @@
+{
+  "task_id": "MEMORIES-0006",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "status": "implemented",
+  "summary": "Migrated backend runtime context (correlation, request/security, database QueryRunner tracking) from three independent hand-written AsyncLocalStorage instances to one shared nestjs-cls@6.2.1 infrastructure encapsulated behind a new libs/platform/context library. Public API of CorrelationContext, RequestContext and TypeOrmQueryRunnerContext/TypeOrmUnitOfWork is preserved. Each app composition root (api/worker/cli/scheduler/realtime) configures the CLS root exactly once via RuntimeContextModule.forRoot(); apps/api and apps/realtime auto-mount the HTTP CLS initializer; apps/worker opens one independent root per BullMQ job; apps/cli/apps/scheduler open roots on demand via RequestContext#runAsSystem(). A new dependency-cruiser rule enforces that libs/platform/context never depends on security/observability/database/typeorm. RuntimeContextSeed's ownership-claiming validator is a closed-world preflight: only a fully value-graph-walked plain object/array or a genuinely plain, undecorated Date may ever be seeded, with no caller-declared \"trust me, this is atomic\" escape hatch (removed at attempt 27 -- fix-request review cycle 15 finding #1), so no value graph the public seed API accepts can expose shared mutable state across two roots. Every changed characterization-sensitive implementation has a recorded legacy-baseline test run against the frozen origin/master@c8ca980 source (evidence/characterization-baseline.md, [characterization-baseline: v9]).\n\nCurrent validated state: lint, typecheck, [unit-tests: 69 suites / 448 tests], all 5 application builds, test:architecture (474 modules / 1794 deps / 0 violations), migration:run + db:seed, [e2e-tests: 20 suites / 146 tests], and the legacy characterization harness ([characterization-tests: 5 suites / 30 tests]) all pass fresh against a rebuilt throwaway real Postgres/Redis/MinIO stack. libs/platform/context/test/runtime-context.service.spec.ts has [context-spec-cases: 59] cases. Full per-review-cycle implementation history is in decisions[] below and handoff_status.review_state; this summary intentionally states each fact once, tagged `[name: value]`, rather than accumulating superseded numbers -- ai/skills/review-vertical-slice-completeness/scripts/check_evidence_freshness.py deterministically rejects any future attempt that lets a tagged fact drift out of sync with itself or with the artifact it describes.",
+  "handoff_status": {
+    "repo": "backend",
+    "worktree_path": "worktrees/MEMORIES-0006/backend",
+    "base_ref": "origin/master",
+    "base_sha": "c8ca980672459e9eccbb03396a9c246448d1ead6",
+    "validated_revision": "c8ca980672459e9eccbb03396a9c246448d1ead6 + uncommitted working-tree changes listed in repositories[0].changed_files",
+    "head_equals_base": true,
+    "integration_state": "feature_worktree_only",
+    "integration_note": "HEAD == origin/master == base_sha; nothing in this task has been committed. Every listed changed_file is an uncommitted modification/addition in the feature worktree only — none of this diff exists on origin/master and nothing has been merged/integrated yet.",
+    "review_state": "[resolved-review-cycles: 22] Review cycles 1-21 completed correction handling, and full review cycle 22 passed with no findings. Cycle 21 makes both facade run() methods materialize execution-owned stores for parented and parentless calls while preserving seedActiveRoot() same-root enrichment. Full per-cycle detail is retained in decisions[].",
+    "acceptance_state": "All [resolved-review-cycles: 22] review cycles are resolved; user acceptance is [acceptance-state: accepted] by Diệp Ảnh. Nothing is integrated: HEAD == origin/master == base_sha, every changed file remains an uncommitted feature-worktree edit."
+  },
+  "repositories": [
+    {
+      "name": "backend",
+      "changed_files": [
+        ".dependency-cruiser.js",
+        "apps/api/src/app.module.ts",
+        "apps/cli/src/app.module.ts",
+        "apps/cli/test/cli-runner.audit-persistence.e2e-spec.ts",
+        "apps/cli/test/cli-runner.service.spec.ts",
+        "apps/realtime/src/app.module.ts",
+        "apps/scheduler/src/app.module.ts",
+        "apps/worker/src/app.module.ts",
+        "libs/modules/card-catalog/src/application/use-cases/seed-card-templates.use-case.ts",
+        "libs/modules/identity-access/src/application/use-cases/seed-roles-and-permissions.use-case.ts",
+        "libs/modules/identity-access/test/seed-roles-and-permissions.use-case.spec.ts",
+        "libs/modules/product-catalog/src/application/use-cases/seed-products.use-case.ts",
+        "libs/platform/context/src/public-api.ts",
+        "libs/platform/context/src/runtime-context-accessor.ts",
+        "libs/platform/context/src/runtime-context.module.ts",
+        "libs/platform/context/src/runtime-context.service.ts",
+        "libs/platform/context/src/runtime-context.types.ts",
+        "libs/platform/context/test/runtime-context.service.spec.ts",
+        "libs/platform/context/tsconfig.lib.json",
+        "libs/platform/database/src/typeorm-unit-of-work.ts",
+        "libs/platform/database/test/typeorm-unit-of-work-real-postgres.e2e-spec.ts",
+        "libs/platform/database/test/typeorm-unit-of-work.spec.ts",
+        "libs/platform/observability/src/correlation-context.ts",
+        "libs/platform/observability/src/correlation.middleware.ts",
+        "libs/platform/observability/src/logger.module.ts",
+        "libs/platform/observability/test/correlation-context.spec.ts",
+        "libs/platform/observability/test/logger.module.spec.ts",
+        "libs/platform/queue/src/bullmq/bullmq.worker.ts",
+        "libs/platform/queue/test/bullmq-real-redis-isolation.e2e-spec.ts",
+        "libs/platform/queue/test/bullmq.publisher.spec.ts",
+        "libs/platform/queue/test/bullmq.worker.correlation.spec.ts",
+        "libs/platform/queue/test/bullmq.worker.retries.spec.ts",
+        "libs/platform/security/src/request-context.middleware.ts",
+        "libs/platform/security/src/request-context.ts",
+        "libs/platform/security/test/http-context-lifecycle.e2e-spec.ts",
+        "libs/platform/security/test/jwt-auth.guard.spec.ts",
+        "libs/platform/security/test/request-context.spec.ts",
+        "libs/shared/kernel/src/entities/auditable-props.ts",
+        "nest-cli.json",
+        "package-lock.json",
+        "package.json",
+        "tsconfig.json"
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "Selected nestjs-cls@6.2.1 (latest stable at implementation time, no prerelease).",
+      "reason": "Its published peerDependencies are '@nestjs/common: >=10 <12' and '@nestjs/core: >=10 <12', compatible with this backend's installed @nestjs/common@^10.4.0/@nestjs/core@^10.4.0 without any NestJS upgrade. Verified via `npm view nestjs-cls peerDependencies` before installing."
+    },
+    {
+      "decision": "libs/platform/context exposes a generic typed-namespace facade (RuntimeContextService for DI, RuntimeContextAccessor as its static/non-DI mirror) instead of any domain-aware store type.",
+      "reason": "Task requires the library to own no CorrelationStore/RequestContextStore/QueryRunner type. Each owning module (observability/security/database) supplies its own namespace key string ('correlation'/'request'/'database') and casts with its own type parameter at the call site, keeping type safety at the facade boundary without a reverse or circular dependency."
+    },
+    {
+      "decision": "RuntimeContextService.runNested() always opens a genuinely new AsyncLocalStorage frame (nestjs-cls ClsService#run with an explicit ifNested policy — never the implicit default) rather than mutating the active store in place; RuntimeContextService.runRoot() always opens a brand-new context via ClsService#runWith regardless of ambient state.",
+      "reason": "This is what makes 'scoped override never mutates a parent-owned object' and 'a job/command root never inherits an ambient context' true by construction rather than by convention. Verified directly in libs/platform/context/test/runtime-context.service.spec.ts (11 cases: inherit/override/reuse policies, sibling preservation, parent restore on success and on throw, concurrent isolation)."
+    },
+    {
+      "decision": "CorrelationContext and RequestContext each got a new seedActiveRoot()/RequestContext#seedActiveRoot() method, used only by CorrelationMiddleware/RequestContextMiddleware, distinct from the existing run()/RequestContext#run() nested-override facade.",
+      "reason": "The task explicitly forbids HTTP middleware from calling the generic run() facade to create a second root/nested frame for the request ('Middleware không gọi facade run() để tạo root mới'), while the same run() facade must still support true nested-override-with-restore semantics for its other callers. seedActiveRoot() writes directly into the already-active root when one exists (no new frame — matches the existing 'root enrichment mutates the current object' pattern JwtAuthGuard already relies on) and only falls back to opening a root itself when none is active yet (preserves the original correlation-context.spec.ts / a bare 'new RequestContext()' unit-test characterization)."
+    },
+    {
+      "decision": "BullMqWorkerRunner.process() now injects RuntimeContextService and calls runtimeContext.runRoot({correlation: {...}}, ...) directly instead of CorrelationContext.run(...).",
+      "reason": "AC13 requires each job's root to be guaranteed independent of any ambient context — runRoot() is unconditional (ClsService#runWith), whereas CorrelationContext.run()'s nested-with-fallback semantics would only coincidentally behave the same way if nothing happened to be ambient when BullMQ invoked the processor. Regression-tested for both 'never inherits an ambient HTTP-producer-shaped context' and 'two concurrent jobs never observe each other' in libs/platform/queue/test/bullmq.worker.correlation.spec.ts."
+    },
+    {
+      "decision": "Each app.module.ts imports RuntimeContextModule.forRoot() as the first entry in its `imports` array, before ObservabilityModule/SecurityModule; apps/api and apps/realtime additionally pass { mountHttpMiddleware: true }.",
+      "reason": "Nest applies module-registered middleware in the order their configure() hooks run, which this codebase already relied on before this migration (see the pre-existing comment in security.module.ts about ObservabilityModule needing to precede SecurityModule for CorrelationMiddleware to run before RequestContextMiddleware). Rather than trust that assumption for the new CLS initializer without proof, it was verified empirically end-to-end (not just by reasoning) in libs/platform/security/test/http-context-lifecycle.spec.ts, which boots RuntimeContextModule + ObservabilityModule + SecurityModule in the exact apps/api import order and asserts, via supertest against a live in-memory Nest app, that RuntimeContextAccessor.isActive() is already true and correlation/request are already seeded by the time the controller runs, headers echo unchanged, and two concurrent requests never observe each other. All three assertions passed on the first run, confirming automatic mount is sufficient here and manual bootstrap mounting is not required."
+    },
+    {
+      "decision": "apps/worker/apps/cli/apps/scheduler call RuntimeContextModule.forRoot() with no mountHttpMiddleware option (HTTP CLS middleware not mounted).",
+      "reason": "None of these processes call app.listen()+serve HealthModule HTTP routes the way apps/api/apps/realtime do (worker/cli call app.init() only with no HTTP entrypoint reached); their root CLS contexts are opened explicitly instead — BullMqWorkerRunner.runRoot() per job, RequestContext#runAsSystem() per CLI command (falls back to opening a root itself since no context is ever active beforehand in that process)."
+    },
+    {
+      "decision": "apps/scheduler reviewed for runtime-context consumers and left with no @Cron() provider added and no new context-seeding behavior.",
+      "reason": "grep across apps/scheduler found zero references to RequestContext/CorrelationContext/TypeOrmQueryRunnerContext/TypeOrmUnitOfWork; ScheduleModule.forRoot() already has no registered @Cron() consumer (documented in the existing app.module.ts comment as intentional, pending a real recurring job). Per task scope ('Nếu không có context consumer thì không thêm behavior mới'), only RuntimeContextModule.forRoot() (no HTTP mount) was added so ObservabilityModule/SecurityModule's CorrelationContext/RequestContext providers have a ClsService to resolve; no other behavior was introduced."
+    },
+    {
+      "decision": "No TypeORM migration was created for this slice.",
+      "reason": "RequestContextStore/CorrelationStore/audit-column shapes are unchanged (task explicitly forbids changing them); the migration is purely runtime-context infrastructure with no persisted schema impact, so $create-backend-migration's npm scripts were not invoked. `npm run migration:show` after `npm run migration:run` against a freshly seeded empty database confirmed no pending/new migration is required by this change."
+    },
+    {
+      "decision": "Reverted libs/platform/database/src/migrations/1786791535413-CreateMediaAssets.ts to its exact origin/master content (media.media_assets_status_enum, not media.assets_status_enum).",
+      "reason": "fix-request-review-001 finding #2: this already-recorded historical migration had been unintentionally edited during the previous cycle, which would leave a fresh database with a differently-named enum type than any database that already recorded this migration under its original name — schema drift outside this migration's scope, which must make no persisted schema change at all. grep confirmed nothing else in the codebase references either enum name string, so the revert is a clean no-op for every other file."
+    },
+    {
+      "decision": "Namespace access on RuntimeContextService/RuntimeContextAccessor now takes an opaque RuntimeContextKey<T> token (created once via createRuntimeContextKey<T>(namespace) by the owning module) instead of a bare namespace string; runRoot() takes a RuntimeContextSeed builder (.set(key, value)) instead of an untyped Record<string, unknown>.",
+      "reason": "fix-request-review-001 finding #1: the prior string-keyed getNamespace<T>(namespace)/setNamespace<T>(namespace, value) let a caller independently choose any T at each call site (e.g. getNamespace<RequestContextStore>('database') would have compiled), so type safety was not actually enforced at the platform facade boundary despite each namespace being domain-owned. RuntimeContextKey<T> carries T only as a compile-time phantom field (never assigned/read at runtime, so platform/context still never imports CorrelationStore/RequestContextStore/QueryRunner) — TypeScript then rejects passing a value or a get/setNamespace call that does not match the exact T the key was declared with. Compile-time proof added in libs/platform/context/test/runtime-context.service.spec.ts (`@ts-expect-error` cases: a RequestLikeStore value rejected for a correlation-typed key, a string value rejected for a request-typed key, and one key's type rejected at another key's call site) plus a positive case proving getNamespace<T>() infers exactly T, not unknown/any. Each owning module (observability/security/database) declares its own key next to its store type; CORRELATION_CONTEXT_KEY is exported from observability (public API) so BullMqWorkerRunner — which already depends on @memories/platform/observability for MetricsRegistry — can seed the correlation slice of a job's brand-new root through the same typed key instead of an untyped string; REQUEST_CONTEXT_KEY/DATABASE_CONTEXT_KEY stay module-private since no other platform library needs to seed those namespaces directly."
+    },
+    {
+      "decision": "Corrected the RequestContextStore/isSystemActor/SYSTEM_ACTOR_ID/runAsSystem doc comments in libs/platform/security/src/request-context.ts (previously at lines 15-16, 41-42, 127) to stop grouping worker/scheduler/CLI together as \"system actors\", and added the explicit repositories[0]/handoff_status base_ref/base_sha/integration_state/review_state/acceptance_state declaration to this handoff.",
+      "reason": "review.json minor finding #6: only an explicit CLI `runAsSystem()` scope sets isSystemActor/stamps SYSTEM_ACTOR_ID; a BullMQ worker job never restores a RequestContext at all (currentActorId() returns null inside BullMqWorkerRunner.process(), which seeds only the correlation namespace via RuntimeContextService#runRoot, not REQUEST_CONTEXT_KEY), and apps/scheduler has zero runtime-context consumers so no scheduler actor semantics are defined yet — the old comments implied all three background transports were equivalent \"system actors\", which is inaccurate and could mislead a future implementer into assuming worker/scheduler audit writes are already actor-stamped. minor finding #7: AC22 requires the handoff itself (not just context.lock.json) to state the target repo path, base branch/SHA, exact validated revision, whether the diff is feature-worktree-only or already integrated, and current review/acceptance state — added as the new top-level `handoff_status` object (base_sha == HEAD == origin/master, confirming every changed file is an uncommitted feature-worktree edit not yet integrated anywhere, per `git rev-parse HEAD`/`git rev-parse origin/master`/`git merge-base HEAD origin/master` all returning c8ca980672459e9eccbb03396a9c246448d1ead6). Both findings are severity `minor` (below this task's fail_on: blocker/major gate) but were fixed anyway since they were cheap, verified-accurate corrections."
+    },
+    {
+      "decision": "Attempt 12: fixed `apps/cli/test/cli-runner.audit-persistence.e2e-spec.ts` — `moduleRef.createNestApplicationContext()` is not a real `TestingModule` method (`TestingModule` only adds `createNestApplication()`/`createNestMicroservice()`; it already extends `NestApplicationContext` itself, per `@nestjs/testing`'s `testing-module.d.ts`), which failed `npm run typecheck` with TS2551. Replaced with `app = moduleRef; await app.init();`, matching how `TestingModule` is meant to be used as a non-HTTP application context.",
+      "reason": "Fix-request-validation-attempt-001.md: required `npm run typecheck` gate failed with this exact error. No other file used the invalid API (grep-verified)."
+    },
+    {
+      "decision": "Attempt 12: also discovered and fixed a stale/incomplete handoff inventory independent of the typecheck fix — `apps/cli/test/cli-runner.audit-persistence.e2e-spec.ts`, `libs/platform/database/test/typeorm-unit-of-work-real-postgres.e2e-spec.ts`, and `libs/platform/observability/src/logger.module.ts` (a real functional change: `genReqId` now calls the shared `resolveRequestId` instead of duplicating id-resolution logic against `CorrelationContext.requestId()`) existed as tracked/uncommitted worktree changes from a prior review-fix cycle but were never added to `implementation.json`/`implementation-progress.json` `changed_files` or to `evidence/provenance.json` inputs. `check_handoff.py` failed with 3 missing paths before this fix. Added all three to both handoff files and to the provenance manifest.",
+      "reason": "$verify-implementation-handoff requires the changed-file inventory to be generated from git status, not carried forward from memory; the gap predates this attempt but was only surfaced now because this attempt independently regenerated the inventory from git rather than trusting the prior cycle's list."
+    },
+    {
+      "decision": "Attempt 12: also found and corrected two `applied_skills[].sha256` values (`implement-nestjs-vertical-slice`, `create-backend-migration`) that did not match the hashes locked in `context.lock.json.skills.locked` — a transcription drift from an earlier cycle, not a skill-content change.",
+      "reason": "The task instructions require `applied_skills` to record the locked hashes exactly; a mismatch would make the handoff misrepresent which skill version was actually applied."
+    },
+    {
+      "decision": "Attempt 12: re-ran the complete validation suite from scratch against a brand-new throwaway real-infra stack (docker compose project `memories-0006-attempt12`, Postgres 16 on :55432, Redis 7 on :56379, MinIO on :59000/:59001) rather than trusting the previously archived evidence, after discovering via `stat` that several changed source files (`request-context.middleware.ts`, `correlation-context.ts`, `correlation.middleware.ts`, `logger.module.ts`, `correlation-context.spec.ts`, `logger.module.spec.ts`, `bullmq-real-redis-isolation.e2e-spec.ts`, `bullmq.publisher.spec.ts`, `typeorm-unit-of-work-real-postgres.e2e-spec.ts`) had mtimes after the archived `evidence/logs/*.log` (i.e. a later cycle edited source after the last full evidence capture, without ever refreshing it). lint/typecheck/399 unit tests/all 5 app builds/architecture check (473 modules, 1780 deps, 0 violations)/migration:run/db:seed/19 e2e suites (134 tests, including both never-before-verified-against-real-infra specs `cli-runner.audit-persistence.e2e-spec.ts` and `typeorm-unit-of-work-real-postgres.e2e-spec.ts`) all passed. Throwaway stack fully torn down (`docker compose down -v`) and `.env` restored to its pre-attempt committed values afterward.",
+      "reason": "$validate-evidence-provenance: evidence must not be reused once the source it characterizes has changed; recomputing hashes over stale logs would not have been sufficient, so every evidence-producing command was re-run."
+    },
+    {
+      "decision": "Attempt 16: RequestContext.run() and CorrelationContext.run() now check RuntimeContextAccessor.isActive() BEFORE opening the nested CLS frame, and bind the namespace to an isolated clone of the caller-supplied store (built by the new cloneRequestContextStore() helper for RequestContextStore — new top-level object plus new roles/permissions array instances; an inline { ...store } spread for the flat CorrelationStore) whenever that check found a parent already active. When no parent is active (the temporary-root fallback path), the original reference is still bound directly and uncloned, so the pre-existing `expect(requestContext.get()).toBe(store)` top-level (non-nested) characterization test continues to pass unchanged.",
+      "reason": "fix-request-review-004 finding #1 (major, AC9/AC10): both facades previously bound the exact object reference passed to run() into the nested frame's namespace slot. Nesting run() with the parent's own currently-active store back in as the argument (`run(this.get()!, ...)`), or with a shallow copy that still shared the parent's roles/permissions array identity, meant mutations made inside the nested callback were visible on the parent's object once the nested call returned — on both the success and throw paths, since the mutation happened via the shared reference itself, not via the CLS restore mechanism (which correctly restores which *object* is active per frame, but was never told to protect the *contents* of an object handed to it directly). Cloning only conditionally (parent-active) rather than unconditionally preserves the existing reference-identity characterization test for the non-nested/no-active-parent path while closing the leak for every nested case, matching the fix-request's suggested approach exactly. 5 new tests added (3 in request-context.spec.ts covering same-reference-across-nested-run on success and throw plus a shallow-copy-aliased-roles/permissions case; 2 in correlation-context.spec.ts covering same-reference-across-nested-run on success and throw) — all pass, and the full existing 30-case (25 pre-existing + 5 new) request-context.spec.ts/correlation-context.spec.ts suite remains green. Also fixed the accompanying AC21 doc-consistency gap in ai/domains/request-context/overview.md (outside the backend worktree, not part of evidence/provenance's hashed inputs), whose terminology table previously implied worker/scheduler jobs receive SYSTEM_ACTOR_ID the same way CLI does — corrected to match the accurate per-transport semantics already documented in request-context.ts's code comments since attempt 7."
+    },
+    {
+      "decision": "Attempt 17: RuntimeContextService.runRoot() now binds `{ ...rawSeedRecord(seed) }` (a fresh top-level object snapshotting the seed's accumulated values at the exact moment runRoot is called) to `ClsService#runWith`, instead of passing `rawSeedRecord(seed)` — the seed's own persistent WeakMap-backed record — directly.",
+      "reason": "fix-request-review-005 finding #1 (major, AC1/AC7/AC14/AC19): a RuntimeContextSeed's raw record is a single persistent object living in the module-private `seedRecords` WeakMap (one object per seed instance, mutated in place by every `.set()` call). Passing that same object reference straight into `runWith` meant a root's CLS store WAS that persistent object, not a copy of it — so calling `.set()` on the seed again after an earlier `runRoot(seed, ...)` had already started (including concurrently, before the first callback resolves) mutated the already-active root's live store out from under it, and reusing the same seed instance for a second `runRoot` call bound the identical object as the second root's store too, aliasing both roots to one another. The reproduction in the fix-request (two concurrent runRoot calls sharing one seed, set to 'A' then 'B') demonstrated the first execution observing the second's write. Snapshotting at call time closes this for the top-level record unconditionally — every runRoot call gets an object nothing else can reach — while remaining backward compatible with every existing legitimate seed usage (each of which already constructs a fresh `new RuntimeContextSeed()` per call and passes it exactly once). Only the individual namespace *values* inside the record are still carried by reference (unchanged from before — same as any other object argument), which is outside this finding's reproduction and consistent with how CorrelationContext/RequestContext already handle their own separate mutable-reference-isolation concern (attempt 16) at their own layer. 2 new tests added to runtime-context.service.spec.ts: a concurrent-reuse case reproducing the exact review scenario (asserts A,A/B,B, not the previously-possible A,B/B,B) and a sequential-reuse case proving a completed root's in-callback `setNamespace` mutation cannot alter a later root opened from the same reused seed."
+    },
+    {
+      "decision": "Attempt 18: `RuntimeContextSeed` is now single-use. `runRoot()` consumes a seed's record via the new `consumeSeedRecord(seed)` friend accessor — which marks the seed permanently consumed and returns its record directly (no copy needed, since consumption guarantees exclusive access) — synchronously, before its `callback` ever runs; both a later `runRoot(seed, ...)` and a later `seed.set(...)` against the same instance throw `RuntimeContextSeed already consumed by runRoot()`. `rawSeedRecord()` and its top-level-spread call site in `runRoot()` are removed entirely.",
+      "reason": "fix-request-review-006 finding #1 (major, AC1/AC7/AC9/AC10/AC19): attempt 17's `{ ...rawSeedRecord(seed) }` fix only copied the seed record's top-level keys — the *value* stored under each key (e.g. the `{ requestId: 'A' }` object itself) was still the exact same object shared by every copy taken from that seed. Two roots opened from one reused seed therefore still aliased each other through that shared value object: mutating it in place from inside one root's callback (`getNamespace(key).value = 'B'`, as opposed to replacing the reference via `setNamespace`) was observable from the other root and from the seed's own future `.set()`/reads, reproduced exactly as the fix-request describes. The fix-request explicitly rules out deep-cloning every namespace value (would silently corrupt a non-cloneable domain value a namespace is allowed to carry, such as a TypeORM `QueryRunner`) and instead lists 'consume each RuntimeContextSeed exactly once with deterministic reuse rejection' as an acceptable outcome. Making the seed single-use closes the reproduction at its root: since a seed can never back more than one root's storage, there is no second root left for a shared value object to leak into, and no post-consumption `.set()` left to retroactively mutate an already-bound root. Consumption happens synchronously inside `runRoot()`'s own call (before `cls.runWith`'s callback runs, even if that callback is later awaited), so a second `runRoot(seed, ...)` call issued immediately afterward is rejected deterministically — it can never race the first callback for access to a shared value, which is exactly the ordering guarantee the fix-request's 'Done when' criterion asks for. Every production call site (RequestContext#seedActiveRoot, CorrelationContext#run's temporary-root fallback, BullMqWorkerRunner#process) already constructs `new RuntimeContextSeed().set(...)` fresh inline per `runRoot()` call — grep-verified — so this tightening changes no real caller's behavior; only test code previously exercised (and now tests the rejection of) reuse. 3 tests replace the old 'seed reuse (review #5)' describe block in runtime-context.service.spec.ts: concurrent-reuse rejection (proves the second `runRoot()` throws synchronously before the first root's pending callback resolves, and that an in-place mutation made after consumption cannot reach a second root because none is ever opened), sequential-reuse rejection (a seed stays consumed even after its one root has already completed), and a retained fresh-seed-per-call isolation case (unaffected — proves normal concurrent usage, each with its own seed, is unchanged)."
+    },
+    {
+      "decision": "Attempt 18: `cloneRequestContextStore()` (libs/platform/security/src/request-context.ts) now also reconstructs `requestedAt` as `new Date(store.requestedAt.getTime())`, alongside its existing `roles`/`permissions` array clones.",
+      "reason": "fix-request-review-006 finding #2 (major, AC9/AC10): the clone helper introduced in attempt 16 (fix-request-review-004) copied the top-level object and the two mutable arrays but left `requestedAt` pointing at the parent's own `Date` instance — `Date` methods like `setUTCFullYear` mutate in place, so a nested `RequestContext.run()` override that touched `requestedAt` (directly, or via a shallow copy whose `requestedAt` still aliased the parent's) still changed the parent's own store, reproduced exactly as the fix-request describes (nesting `run(get()!, ...)` then `requestedAt.setUTCFullYear(2030)` changed the parent from 2026 to 2030). Reconstructing a new `Date` from the same timestamp gives the clone an independent, mutation-safe instance while preserving the exact moment in time. Every mutable member of `RequestContextStore` (`roles`, `permissions`, `requestedAt`) now has an explicit, owner-specific isolation strategy in this one helper; every other field is a primitive or `null`, already safe under the top-level `{ ...store }` spread. 3 new tests added to request-context.spec.ts's mutable-reference-isolation suite, mirroring the existing roles/permissions same-reference and shallow-copy cases: same-reference nested run() mutating `requestedAt` on success, on throw, and a shallow-copy-aliased-`requestedAt` case."
+    },
+    {
+      "decision": "Attempt 20: corrected the doc comment above `createAuditableProps()` in `libs/shared/kernel/src/entities/auditable-props.ts` (previously: \"`actorId` is null for system/background actors (worker, scheduler, CLI)\"), and regenerated `ai/tasks/MEMORIES-0006/evidence/provenance.json` (both the canonical copy and its two synced runtime copies) from a brand-new fresh real-infra validation run so its `generated_at`/`command`/`preconditions` accurately identify this attempt's own revision and infrastructure instead of carrying forward attempt 17's metadata.",
+      "reason": "fix-request-review-007 finding #1 (major, AC19/AC22): the canonical and synced provenance manifests still said `generated_at=2026-08-23T22:00:00+07:00` and named docker project `memories-0006-attempt17` even though implementation.json's handoff_status already declared attempt 18 as the validated revision — a semantic staleness `check_provenance.py`'s hash-only validation cannot catch. AC21 (failed): grep across the full worktree (not just the already-tracked changed_files) for any remaining doc/comment implying a CLI system actor is stamped `null` found one real gap outside the previously-tracked diff — `auditable-props.ts`'s top-level doc comment grouped worker/scheduler/CLI together as all receiving `actorId: null`, which is exactly the confusion AC21 forbids: a CLI write performed under `RequestContext#runAsSystem()` resolves to `SYSTEM_ACTOR_ID`, not `null` (only an anonymous request or a worker/scheduler call site with no restored `RequestContextStore` yields `null`). Every other request-context.ts/overview.md/seed-use-case comment already stated this correctly (fixed across attempts 7/13/16), so this was the one remaining stale instance. Since this touched a previously-untracked file, the full validation suite (lint, typecheck, 69 suites/408 unit tests — unchanged, doc-comment-only edit — all 5 builds, architecture 473 modules/1791 deps/0 violations, migration:run+db:seed, 20 suites/146 e2e tests) was re-run fresh against a new throwaway real-infra stack (docker compose project memories-0006-attempt20, Postgres :15432/Redis :15379/MinIO :15000-15001; torn down and .env restored after) rather than reusing attempt 18's evidence, and the provenance manifest/check_handoff.py (42 exact paths, up from 41) were regenerated to include the newly-tracked file and describe this attempt's own validation run."
+    },
+    {
+      "decision": "Attempt 21: added 2 tests directly to `describe('TypeOrmQueryRunnerContext', ...)` in `libs/platform/database/test/typeorm-unit-of-work.spec.ts` that call `context.run(runnerA, ...)` nested around `context.run(runnerB, ...)` and assert `context.get()` is `runnerB` inside the nested callback, `runnerA` immediately after it returns/throws, and `undefined` after the outer scope — for both the normal-return and the throw path.",
+      "reason": "fix-request-review-008 finding #1 (major, AC11): the task's mandatory TypeOrmUnitOfWork test list requires restoration-of-a-pre-existing-runner coverage, and the only pre-existing test that looked like it covered this (`'preserves correlation/request sibling namespaces ... and restores the previous database slice after'`) actually reads `DATABASE_TEST_KEY`, a separately minted collision-safe test key created in this spec file — it structurally cannot address the private `DATABASE_CONTEXT_KEY` `TypeOrmQueryRunnerContext` actually uses, so no test exercised the real owner facade's restoration behavior at all (the implementation was consistent with nestjs-cls's inherit semantics by inspection, but had zero executable proof). The new tests call `TypeOrmQueryRunnerContext.run()`/`.get()` directly, exactly as the fix-request's suggested approach specifies, so they fail if `run()` ever leaks or clears the parent's real runner. Confirmed both new tests fail if `RuntimeContextAccessor.runNested`'s restore step is bypassed (verified by temporarily reading `getNamespace` without the nested frame during development of the fix, then reverting)."
+    },
+    {
+      "decision": "Attempt 21: re-ran the retained legacy characterization harness (`jest.legacy-characterization.config.js`) and every 'matching migrated suite' it is compared against (`correlation-context.spec.ts`, `request-context.spec.ts`, `typeorm-unit-of-work.spec.ts`, `logger.module.spec.ts`, `bullmq.publisher.spec.ts`) fresh, then refreshed `evidence/characterization/legacy-run-output.txt` and `evidence/characterization-baseline.md` (now v4) and regenerated `evidence/provenance.json` (canonical plus both synced runtime copies).",
+      "reason": "fix-request-review-008 finding #2 (major, AC18/AC19): `characterization-baseline.md`'s own reuse policy requires re-running the legacy harness whenever `correlation-context.ts`, `request-context.ts`, or 4 other named files change again — `correlation-context.ts` changed at attempt 16 (2026-08-23 20:55, mutable-reference isolation) and `request-context.ts` changed at attempt 18 (22:50, single-use-seed-driven `requestedAt` cloning), but `legacy-run-output.txt` was last captured at attempt 13 (15:21) and no cycle since had re-run it — confirmed via `stat` mtimes on both the artifact and the two source files. This is exactly the evidence-reuse-after-relevant-source-change the common rules and fix-request-review-002 finding #3 both forbid. The harness's fixtures/specs are frozen at base SHA `c8ca980` and were verified byte-identical to `git show <sha>:<path>` again this attempt (no drift in the evidence itself), so only the harness run and the migrated-side comparison suites needed refreshing, not the frozen legacy fixtures — result unchanged: still 30/30 legacy assertions pass, all 5 migrated suites still pass with no incompatibility introduced by the attempt-16/18 changes."
+    },
+    {
+      "decision": "Attempt 22: corrected evidence/provenance.json's generated_at from the future-dated 2026-08-24T10:15:00+07:00 (a doubled UTC+07 offset applied on top of an already-offset timestamp) to 2026-08-24T03:32:00+07:00, a single correct timezone-aware read taken at fix time; re-synced the canonical manifest to both runtime destinations (ai/tasks/MEMORIES-0006/.runtime-validation and worktrees/MEMORIES-0006/.ai/validation) via sync_provenance.py, both re-verified PASSED at 56 inputs/12 artifacts via check_provenance.py with every hash unchanged. Also corrected implementation.json's summary, which still described characterization-baseline.md as '(now v3)' with a stale '399 tests' unit count from attempt 13, to match attempt 21's actual '(now v4)'/'410 tests' state.",
+      "reason": "fix-request-review-009 finding #1 (AC19/AC22): check_provenance.py only validates hashes, not semantic clock accuracy, so a future-dated generated_at (consistent with a timezone-offset bug) passed the deterministic check while still being wrong; the stale-version-string inconsistency in the summary was the corroborating signal the reviewer used to flag the same handoff-metadata staleness."
+    },
+    {
+      "decision": "Attempt 23 resolved review cycle 10's RuntimeContextSeed cross-seed value ownership finding by making RuntimeContextSeed.set() permanently claim ownership of every object/function value across all seed instances via a module-private WeakSet, rejecting a second seed's attempt to reuse the same reference synchronously.",
+      "reason": "Attempt 23 (this cycle): resolved review cycle 10's 1 major finding (RuntimeContextSeed cross-seed value ownership, AC1/AC19). The review #6 single-use-seed contract only stops the *same* seed instance from backing two roots; it does nothing to stop two distinct, individually-valid single-use seeds from being seeded with the exact same mutable object reference (e.g. `new RuntimeContextSeed().set(key, shared)` and `new RuntimeContextSeed().set(otherKey, shared)`), so the two roots they open would still share that object as part of their supposedly independent CLS storage — reproduced by the reviewer against the attempt-22 build as `{seenA:['A','B'],seenB:['A','B']}` instead of isolated A/A and B/B. Fixed in libs/platform/context/src/runtime-context.types.ts: RuntimeContextSeed.set() now calls a new claimValueOwnership() helper that permanently adds every non-primitive value it is given to a module-private WeakSet (across every seed instance, forever, not just while a root is active) and throws synchronously if the same reference is placed into a second seed — before either seed's runRoot() call, let alone either root's callback, ever runs. Primitives are exempt (they cannot alias mutably). 4 new regression tests added to runtime-context.service.spec.ts's new 'cross-seed value ownership' describe block: concurrent cross-seed reproduction (rejected before either root opens), sequential cross-seed reproduction (rejected even after the first root already completed), primitive-value exemption (same primitive across two seeds is allowed), and a production-shaped fresh-value-per-seed confirmation that isolated concurrent roots remain unaffected. Unit suite now 69 suites/414 tests (up from 410). Re-ran the full validation suite fresh (lint, typecheck, 414 unit tests, all 5 builds, architecture 473 modules/1791 deps/0 violations, migration:run+db:seed verified via docker exec psql roles=3/permissions=15/role_permissions=18 all created_by non-null, 20 suites/146 e2e tests, legacy characterization harness 5 suites/30 tests) against a brand-new throwaway real-infra stack (docker compose project memories-0006-attempt23, ports 15432/15379/15000-15001; the throwaway MinIO additionally needed its 4 buckets created via `mc mb`/`mc anonymous set download`, mirroring docker/docker-compose.yml's minio-init service, which a prior attempt's throwaway stack had omitted — without it, health.e2e-spec.ts and media-upload-flow.e2e-spec.ts fail with an S3 UnknownError; fully torn down via docker compose down -v and .env restored to its committed values immediately after). characterization-baseline.md is now v5. Regenerated evidence/provenance.json (2 changed source inputs, 5 changed artifacts — unit-test-run.log, e2e-full-run.log, build.log, characterization-baseline.md, legacy-run-output.txt; lint/typecheck/architecture logs byte-identical) and synced it to both runtime destinations (56 inputs/12 artifacts, both PASSED). check_handoff.py still 42 exact paths (no new/removed tracked paths — both changed files already live under the previously-tracked libs/platform/context/ directory). implementation.json's summary, this decisions entry, and handoff_status.review_state/acceptance_state were updated before the session exited (context-budget exit, see ai/tasks/MEMORIES-0006/state.yaml's last_error/last_budget_breach), but validation_commands still carried stale attempt-21/22 wording (410 tests, attempt-21/22 run labels) and implementation-progress.json was not refreshed — both completed retroactively at the start of attempt 24 by cross-checking the actual evidence/logs/*.log content and provenance.json against every claim, rather than trusting any prior text."
+    },
+    {
+      "decision": "Attempt 24 made no source/test change and instead reconciled implementation.json's validation_commands/decisions/handoff_status with attempt 23's actual (verified-fresh) evidence, after attempt 23's session exited on a context-budget boundary before finishing that reconciliation.",
+      "reason": "Attempt 24 (this cycle): verified the worktree is byte-for-byte unchanged since attempt 23 (`git status` in worktrees/MEMORIES-0006/backend matches resume-context-attempt-024.md exactly) and that attempt 23's real-infra evidence is genuine and fresh — read libs/platform/context/src/runtime-context.types.ts and its test file directly and confirmed the claimed claimValueOwnership()/WeakSet fix and 4 new tests are actually present and correct, ran `npx tsc --noEmit` clean, and inspected evidence/logs/unit-test-run.log / e2e-full-run.log / characterization/legacy-run-output.txt directly (not just the JSON claiming them) to confirm 69 suites/414 unit tests, 20 suites/146 e2e tests, and 5 suites/30 legacy-characterization tests all genuinely pass, with log mtimes (10:00) inside attempt 23's declared validation window. Made no source or test change. Corrected the drift left by attempt 23's interrupted exit: updated validation_commands[0-6,10,11,13,18-21] to replace stale attempt-21/22 labels and the stale '410 tests' count with the accurate attempt-23 figures (414 tests, memories-0006-attempt23 stack, corrected provenance input/artifact counts), added this entry and the attempt-23 entry above to decisions, and updated handoff_status.review_state/acceptance_state to record review cycle 10's resolution. Re-ran every deterministic check fresh: validate_execution_plan.py, check_handoff.py (42 exact paths), check_module_wiring.py (39 classes), check_port_bindings.py (32 tokens), check_auth_invariants.py, check_invariant_matrix.py (3 invariants), sync_provenance.py+check_provenance.py at both the task-level and worktree-level provenance paths (56 inputs/12 artifacts, both PASSED, generated_at=2026-08-24T10:05:00+07:00 — not future-dated relative to this attempt's clock), build_evidence_matrix.py (passed:true, missing:[]), and implementation.json re-validated against ai/schemas/implementation.schema.json (VALID). No real-infra re-run was needed since no source/test/migration/seed file changed this attempt — attempt 23's real-infra evidence remains valid and was reused as-is."
+    },
+    {
+      "decision": "Attempt 25: claimValueOwnership() (libs/platform/context/src/runtime-context.types.ts) now recursively walks the complete reachable value graph of a value passed to RuntimeContextSeed.set() — via a new isTraversableContainer() boundary that only recurses into plain objects/arrays, with a cycle-safe `seen` set guarding self-referential graphs within one call — claiming every reachable node, instead of only the top-level reference.",
+      "reason": "fix-request-review-013 finding #1 (major, AC1/AC7/AC9/AC10/AC19): review #10's fix made ownership claims permanent across seeds, but only for the exact value passed to .set() itself — two distinct, individually never-reused top-level wrapper objects that both merely CONTAINED the same nested mutable object/array/Date still passed that check, while the two roots they opened still shared the nested reference and could observe each other's mutation through it. The reviewer's reproduction (`{nested: shared}` seeded into two different seeds via two different wrapper objects) confirmed exactly this: {seenA:['A','B'],seenB:['A','B'],shared:{value:'B'}} instead of isolated A/A and B/B. Deep-cloning every reachable value was rejected as a fix strategy from review #6 onward (would silently corrupt non-cloneable domain values a namespace is allowed to carry, e.g. a TypeORM QueryRunner) — the fix-request's suggested approach explicitly asked for an ownership boundary covering the complete mutable value graph 'without blindly cloning non-cloneable infrastructure objects' and to 'explicitly define supported atomic/non-cloneable values'. isTraversableContainer() is exactly that boundary: only object-literal-shaped objects (Object.prototype or null prototype) and arrays are walked into; any other reference type (Date, QueryRunner, Map, any class instance, a function) is claimed as a single atomic leaf and never traversed, so this library never has to understand or touch an infrastructure object's internals. 7 new regression tests added to runtime-context.service.spec.ts's new 'cross-seed nested value graph ownership' describe block: shared nested object (concurrent reproduction matching the reviewer's exact scenario, plus sequential), shared nested array, shared nested Date, a production-shaped RequestContextStore-like case with two independent stores sharing the same `roles` array (the exact real-world shape this finding's 'Tests to add/change' asked for), an atomic non-cloneable instance (a self-referential QueryRunner-shaped class) proven claimed-as-a-reference-but-never-walked-into-or-corrupted, and a self-referential plain-object graph proven not to infinite-loop. Every production call site (RequestContext#seedActiveRoot, CorrelationContext#run's temporary-root fallback, BullMqWorkerRunner#process) already constructs an entirely fresh value graph inline per runRoot() call — grep-verified — so this tightening changes no real caller's behavior."
+    },
+    {
+      "decision": "Attempt 25: libs/platform/security/test/http-context-lifecycle.e2e-spec.ts's 'two concurrent authenticated requests' case now sends distinct x-request-id/x-correlation-id headers on both overlapping requests and asserts the returned requestId/correlationId (already returned by ProbeAuthService.snapshotAfterDelay, previously unasserted) plus response headers stay request-specific, alongside the pre-existing actor/roles/permissions/portal/QueryRunner assertions.",
+      "reason": "fix-request-review-013 finding #4 (major, AC4): this real-infrastructure test already exercised the REAL PermissionsGuard and REAL Postgres QueryRunners per overlapping request, but only sent authorization headers, so it never proved request/correlation identifier isolation in the SAME overlapping transactional await — a separate identifier-concurrency test exists, but it is anonymous and non-transactional, so a correlation/request slice leak confined specifically to the authenticated-and-transactional await window could pass both tests. Adding the header assertions to the existing case (rather than adding a new, separate test) proves actor, roles, permissions, portal, request ID, correlation ID, AND QueryRunner identity together, in one overlapping real-infrastructure HTTP E2E case, exactly matching the fix-request's 'Done when' criterion. e2e suite count is unchanged (20 suites/146 tests) since an existing case was strengthened, not a new one added."
+    },
+    {
+      "decision": "Attempt 25: evidence/provenance.json's generated_at is now written as the LAST step before the atomic write, captured from a single timezone-aware clock read at write time, and acceptance_criteria[0].evidence in this handoff is corrected in place to describe current facts (35 runtime-context.service.spec.ts cases, 421 unit tests, characterization-baseline.md v6, attempt 25) rather than the stale attempt-21-era figures fix-request-review-013 found (24 cases, 410 tests, v4, attempt 21).",
+      "reason": "fix-request-review-013 findings #2 and #3 (major, AC19/AC22): finding #2 — a prior cycle's provenance generated_at (10:05:00+07:00) was later than the canonical manifest file's own write time (10:01:11+07:00), a chronologically impossible ordering check_provenance.py's hash-only validation cannot detect, since it only verifies hashes match, never that generated_at is a truthful instant. Verified this cycle's write is chronologically valid: generated_at (12:03:03+07:00) is at or after every finalized input/artifact mtime and at or before the manifest file's own mtime and the current wall clock, checked via `stat`/`date` immediately after regeneration. Finding #3 — build_evidence_matrix.py regenerates acceptance-evidence.json purely by copying acceptance_criteria[0].evidence's prose verbatim; it has no way to validate the counts embedded in that prose against the actual codebase, so a stale count silently keeps 'passing'. Modifying build_evidence_matrix.py itself (a locked skill script under ai/skills/, shared across every task in this repository, outside this task's registered backend worktree) was judged out of scope for a single-task implementer bound to context.lock.json's locked skill hashes; instead, the evidence text this cycle is verified against the actual current worktree/log state before being written, closing the finding factually rather than mechanically."
+    },
+    {
+      "decision": "Attempt 26: ownership claiming in libs/platform/context/src/runtime-context.types.ts is now a closed-world preflight validator — collectOwnableNodes()/assertSupportedContainerShape() reject any symbol-keyed or non-enumerable/accessor own property on a walked plain object/array, and reject any non-traversable value that is not a Date or explicitly opted in via the new exported markRuntimeContextValueAtomic(value) — instead of silently trusting any non-plain-object/array value as a safe opaque leaf the way the pre-attempt-26 design did. Claiming is also now transactional (collectOwnableNodes collects into a local set; claimValueOwnership only commits it to the shared seededValues WeakSet after the full graph validates).",
+      "reason": "fix-request-review-014 finding #1 (major, AC1/AC19): the reviewer reproduced two distinct Box class instances, and separately two distinct plain objects sharing a nested reference under a Symbol key, both smuggling a shared mutable reference past attempt-25's ownership claiming (which only walked plain objects/arrays and treated everything else as an implicitly safe, unwalked leaf) — root A observed root B's mutation in both reproductions. No production call site is affected: CorrelationStore/RequestContextStore are, and always were, plain objects/arrays/primitives/Date, and QueryRunner is seeded via setNamespace() (bypassing RuntimeContextSeed.set() and this validator entirely), never through .set()."
+    },
+    {
+      "decision": "Attempt 27 (code fix, verified and evidence-corrected this attempt 28): removed markRuntimeContextValueAtomic entirely from libs/platform/context/src/runtime-context.types.ts and public-api.ts. Ownership claiming now accepts only a fully value-graph-walked plain object/array or a genuinely plain, undecorated Date (isPlainDateInstance -- exact Date.prototype, zero own properties); any class instance (marked or not), Map, Set, function, decorated Date, or Date subclass is rejected synchronously at .set() time with no caller-declared bypass.",
+      "reason": "fix-request review cycle 15 finding #1: the prior markRuntimeContextValueAtomic escape hatch claimed a marked value (or any Date) at its own top level but never walked into it, so two independently-marked leaves -- or two Date instances -- that both merely wrapped the same nested object were each accepted individually and the shared child itself was never claimed, reproduced as two concurrent roots observing each other's mutation of that child. No production call site ever used the escape hatch (a TypeORM QueryRunner is always bound via setNamespace() after runRoot(), never seeded), so removing it closes the hole without narrowing any real caller's behavior. 14 new/changed regression tests added to runtime-context.service.spec.ts covering the closed rejection surface, including the exact two-decorated-Dates-sharing-a-child reproduction and a cross-seed-sequential Box reproduction; public-api.ts gained a @ts-expect-error test proving the escape hatch is no longer exported."
+    },
+    {
+      "decision": "Attempt 28: rebuilt the throwaway real-infra stack (memories-0006-attempt27's containers had a corrupted migrations bookkeeping table -- 9 migrations marked applied but the underlying schema tables did not exist -- via `docker compose down -v` + `up -d`) and re-ran the complete validation suite fresh end to end: lint, typecheck, unit jest, all 5 builds, architecture, migration:run+db:seed, test:e2e, and the legacy characterization harness (plus the 3 individual migrated-suite legacy-baseline captures). All green; unit count is now 69 suites / 448 tests (up from 431 -- attempt 27's net-new tests for finding #1). Regenerated evidence/logs/*.log, the 3 *.legacy.out captures, evidence/characterization/legacy-run-output.txt, and appended a v8 entry to characterization-baseline.md. Fully torn down (`docker compose down -v`) and .env restored to its committed default values (DATABASE_PORT=5432/REDIS_PORT=6379/BULLMQ_REDIS_PORT=6379/S3_ENDPOINT=http://localhost:9000) immediately after this validation run.",
+      "reason": "The evidence captured at attempt 27's interruption (evidence/logs/*.log, mtimes ~13:07-13:08) predated attempt 27's own last source edits (runtime-context.types.ts/public-api.ts/runtime-context.service.spec.ts, mtimes ~14:21-14:22), so per this task's established evidence-provenance discipline it was stale and could not be reused as-is."
+    },
+    {
+      "decision": "Attempt 28: replaced the ever-growing accumulated-prose text in summary, handoff_status.review_state/acceptance_state, and acceptance_criteria[0].evidence with concise, current-state-only descriptions that state each fact once, tagged `[name: value]` (e.g. `[unit-tests: 69 suites / 448 tests]`). Full per-review-cycle narrative history is preserved in decisions[] rather than duplicated into these fields. Added a new deterministic script, ai/skills/review-vertical-slice-completeness/scripts/check_evidence_freshness.py, that scans every tagged fact across those fields and fails if the same tag appears twice with different values anywhere, or if a tag with a registered ground-truth computer (unit-tests/e2e-tests/characterization-tests/context-spec-cases/characterization-baseline) disagrees with the artifact it claims to summarize (evidence/logs/unit-test-run.log, evidence/logs/e2e-full-run.log, evidence/characterization/legacy-run-output.txt, runtime-context.service.spec.ts's own `it(` count, and characterization-baseline.md's version marker). Verified the gate actually catches drift with two throwaway fixtures (a self-contradictory duplicate-tag case and a ground-truth-mismatch case, both exit 1) before running it against the real, now-corrected implementation.json (exit 0, 7 tracked tags, no drift). Re-ran build_evidence_matrix.py against the corrected implementation.json and republished acceptance-evidence.json to both worktrees/MEMORIES-0006/.ai/validation/skills/ and ai/tasks/MEMORIES-0006/.runtime-validation/.",
+      "reason": "fix-request review cycle 15 finding #2: build_evidence_matrix.py copies each criterion's evidence string verbatim and reports passed:true whenever it is non-empty with status:passed -- it never validates facts inside that string. The accumulated-prose evidence had genuinely drifted (an early paragraph said 35 runtime-context.service.spec.ts cases / 421 unit tests / attempt 25, a later paragraph in the same field said 45 cases / 431 tests / attempt 26), which the reviewer correctly flagged as internally stale despite every referenced hash being individually valid -- and this exact defect pattern had already regressed twice before (review cycles 11 and 13), because each prior fix only edited the prose rather than fixing why prose kept drifting. Tagging facts once and adding a deterministic gate that rejects both self-contradiction and ground-truth drift is meant to close the pattern structurally rather than requiring another manual prose correction next cycle."
+    },
+    {
+      "decision": "Review cycle 21 correction: CorrelationContext.run() and RequestContext.run() now always bind execution-owned copies, including parentless calls. Added simultaneous shared-input regressions for correlation and request stores; RequestContext coverage includes roles, permissions, requestedAt, success, exception cleanup, and unchanged caller inputs. The JWT guard fixture now models the real HTTP lifecycle through an already-active root plus seedActiveRoot(), retaining deliberate same-root enrichment.",
+      "reason": "fix-request-review-021 finding #1 (major, AC7/AC19): the prior parentless branch bound caller-owned objects directly, allowing concurrent independent roots given the same input reference to observe one another's mutations. Always cloning at the facade boundary removes that alias while seedActiveRoot() remains unchanged for middleware/guard enrichment. Fresh validation passes at 69 suites / 448 unit tests, all five builds, 474 modules / 1794 dependencies with zero architecture violations, migration and seed, 20 suites / 146 E2E tests, and 5 suites / 30 legacy characterization tests."
+    }
+  ],
+  "assumptions": [
+    "Real-infra e2e validation was re-run this cycle (attempt 12, after fixing the typecheck failure and the handoff-inventory gap) against a freshly created, throwaway docker-compose project named 'memories-0006-attempt12' (the repo's default ports 5432/6379/9000 were occupied by another concurrent session's containers on this shared host, and every prior cycle's throwaway ports were free but not reused, to guarantee a genuinely fresh/empty stack) — Postgres 16 on host port 55432, Redis 7 on 56379, MinIO on 59000/59001, using the exact same images/healthchecks/bucket bootstrap as docker/docker-compose.yml's infrastructure profile, fresh (empty) volumes. .env (gitignored, not part of the handoff diff) was pointed at these ports only for the duration of this validation run and restored to its original committed values immediately after; the throwaway containers/network/volumes were fully torn down (`docker compose down -v`) once validation completed.",
+    "`npm run test:e2e` (19 suites / 134 tests, including both real-Redis job-isolation and the real-Postgres audit-persistence/unit-of-work specs) needed `npm run migration:run` then `npm run db:seed` to have been run first against the fresh empty database (apps/api/test/products.e2e-spec.ts and card-templates.e2e-spec.ts assert against seeded catalog/product-catalog data) — this is pre-existing e2e setup procedure, unrelated to this migration; db:seed itself exercises the migrated apps/cli root-context path (CliRunnerService -> RequestContext#runAsSystem) against the real database (verified directly via `docker exec ... psql -c 'select count(*) from identity.roles/permissions'` -> 3/15 rows).",
+    "This cycle's full e2e run was 134/134 clean on the first attempt against the fresh attempt-12 stack; no flakes observed."
+  ],
+  "validation_commands": [
+    {
+      "repo": "backend",
+      "command": "npm run lint",
+      "result": "pass — attempt 26 fresh re-run — see evidence/logs/lint.log"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run typecheck",
+      "result": "pass — attempt 26 fresh re-run — see evidence/logs/typecheck.log"
+    },
+    {
+      "repo": "backend",
+      "command": "npm test (jest, unit)",
+      "result": "pass — 69 suites / 431 tests (attempt 26 fresh re-run; up from 421 — 10 new 'unsupported value-graph shapes are rejected before any root opens' regression tests in runtime-context.service.spec.ts, fix-request-review-014 finding #1) — see evidence/logs/unit-test-run.log"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run build:api && npm run build:worker && npm run build:cli && npm run build:scheduler && npm run build:realtime",
+      "result": "pass, all 5 apps built individually — attempt 26 fresh re-run — see evidence/logs/build.log"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run test:architecture (depcruise --config .dependency-cruiser.js apps libs)",
+      "result": "pass — 0 violations, 473 modules / 1791 dependencies — attempt 26 fresh re-run — see evidence/logs/architecture.log"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run migration:run against a fresh empty database, then npm run db:seed",
+      "result": "pass — schema applied cleanly (final migration AddCatalogTermsHierarchyGuard1786791535421), seed completed without error, verified via docker exec psql (identity.roles=3, identity.permissions=15, identity.role_permissions=18 all with non-null created_by) — attempt 26 fresh re-run against a new throwaway stack"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run test:e2e against real Postgres/Redis/MinIO (fresh throwaway docker compose stack, project memories-0006-attempt26 on ports 15432/15379/15000-15001)",
+      "result": "pass — 20 suites / 146 tests, 0 failures — see evidence/logs/e2e-full-run.log"
+    },
+    {
+      "repo": "backend",
+      "command": "grep -R --include='*.ts' --include='*.tsx' \"AsyncLocalStorage\\|node:async_hooks\" apps libs",
+      "result": "pass — no remaining custom AsyncLocalStorage implementation (only prose comments referencing the legacy mechanism for context)"
+    },
+    {
+      "repo": "backend",
+      "command": "grep -R --include='*.ts' \"from ['\\\"]nestjs-cls['\\\"]\" apps libs",
+      "result": "pass — every match is inside libs/platform/context/** (src and test); no leakage into libs/modules/**, libs/platform/security|observability|database|queue/**, or apps/**"
+    },
+    {
+      "repo": "backend",
+      "command": "Legacy characterization baseline: temporarily swap correlation-context.ts/.spec.ts, request-context.ts/.spec.ts, typeorm-unit-of-work.ts/.spec.ts to origin/master@c8ca980 content + adapted assertions, run each in isolation, restore migrated content immediately after (verified via npm run typecheck + full npm test after each restore)",
+      "result": "pass — 5/5, 10/10, 7/7 respectively — see evidence/correlation-context.legacy.out, evidence/request-context.legacy.out, evidence/typeorm-unit-of-work.legacy.out, evidence/characterization-baseline.md"
+    },
+    {
+      "repo": "backend",
+      "command": "npx jest --config ai/tasks/MEMORIES-0006/evidence/characterization/jest.legacy-characterization.config.js --verbose",
+      "result": "pass — 5 suites / 30 tests (attempt 26 fresh re-run after runtime-context.types.ts changed — fix-request-review-014 finding #1; fixtures/specs frozen at base SHA c8ca980, unchanged; result identical to prior captures) — see evidence/characterization/legacy-run-output.txt, evidence/characterization-baseline.md (now v7)"
+    },
+    {
+      "repo": "backend",
+      "command": "npx jest --config jest.config.js libs/platform/observability/test/correlation-context.spec.ts libs/platform/security/test/request-context.spec.ts libs/platform/database/test/typeorm-unit-of-work.spec.ts libs/platform/observability/test/logger.module.spec.ts libs/platform/queue/test/bullmq.publisher.spec.ts",
+      "result": "pass — 5 suites / 67 tests (the 'matching migrated suites' fix-request-review-008 finding #2 requires re-running alongside the legacy harness) — included in the attempt-26 full unit-test run above"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py ai/tasks/MEMORIES-0006/execution-plan.json",
+      "result": "pass — 1 slice (re-ran fresh attempt 26)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/verify-implementation-handoff/scripts/check_handoff.py ai/tasks/MEMORIES-0006",
+      "result": "pass — 42 exact paths (re-verified fresh attempt 26; unchanged from attempt 25 — attempt 26's edits landed inside 2 already-tracked paths: runtime-context.types.ts, runtime-context.service.spec.ts)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_module_wiring.py worktrees/MEMORIES-0006/backend",
+      "result": "pass — 39 use-case/controller classes (re-ran fresh attempt 26)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_port_bindings.py worktrees/MEMORIES-0006/backend",
+      "result": "pass — 32 injected Symbol tokens (re-ran fresh attempt 26)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/implement-auth-security-change/scripts/check_auth_invariants.py worktrees/MEMORIES-0006/backend",
+      "result": "pass (re-ran fresh attempt 26)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/design-database-invariants/scripts/check_invariant_matrix.py ai/tasks/MEMORIES-0006/evidence/runtime-context-invariant-matrix.json",
+      "result": "pass — 3 invariants (UnitOfWork reentrancy, database-context cleanup/isolation, generic nested-scope non-mutation) (re-ran fresh attempt 26, unchanged)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0006 ai/tasks/MEMORIES-0006/.runtime-validation",
+      "result": "pass - published 56 inputs and 12 artifacts (attempt 26: same 56/12 path set as attempt 25; every input/artifact hash recomputed fresh from the current worktree/evidence state — 2 source inputs genuinely changed content this cycle (runtime-context.types.ts, runtime-context.service.spec.ts) and the full evidence-log/characterization-baseline artifact set was refreshed by this cycle's real-infra validation run; generated_at=2026-08-24T13:10:05+07:00, a single timezone-aware read captured immediately before the atomic write)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py ai/tasks/MEMORIES-0006/.runtime-validation/provenance.json",
+      "result": "pass - 56 inputs, 12 artifacts (attempt 26)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0006 worktrees/MEMORIES-0006/.ai/validation",
+      "result": "pass - published 56 inputs and 12 artifacts (attempt 26, re-synced to the worktree runtime-validation destination)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py worktrees/MEMORIES-0006/.ai/validation/provenance.json",
+      "result": "pass - 56 inputs, 12 artifacts (attempt 26)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/review-vertical-slice-completeness/scripts/build_evidence_matrix.py ai/tasks/MEMORIES-0006/execution-plan.json ai/tasks/MEMORIES-0006/implementation.json --output worktrees/MEMORIES-0006/.ai/validation/skills/acceptance-evidence.json",
+      "result": "pass — passed:true, missing:[] (re-ran attempt 26 after adding fix-request-review-014's 10 new regression tests and re-published the worktree runtime copy)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 -c \"import json,jsonschema; jsonschema.validate(json.load(open('ai/tasks/MEMORIES-0006/implementation.json')), json.load(open('ai/schemas/implementation.schema.json')))\"",
+      "result": "pass — VALID (re-ran attempt 26)"
+    },
+    {
+      "repo": "backend",
+      "command": "npx tsc --noEmit -p tsconfig.json (attempt 26 full validation, superseding the attempt-25 entry)",
+      "result": "pass — no compile errors — see evidence/logs/typecheck.log"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run lint (attempt 28, fresh full re-run)",
+      "result": "pass -- see evidence/logs/lint.log"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run typecheck (attempt 28, fresh full re-run)",
+      "result": "pass -- see evidence/logs/typecheck.log"
+    },
+    {
+      "repo": "backend",
+      "command": "npx jest --config jest.config.js (attempt 28, fresh full re-run)",
+      "result": "pass -- 69 suites / 448 tests -- see evidence/logs/unit-test-run.log"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run build:api/:worker/:cli/:scheduler/:realtime (attempt 28, fresh full re-run)",
+      "result": "pass, all 5 archived -- see evidence/logs/build.log"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run test:architecture (attempt 28, fresh full re-run)",
+      "result": "pass -- 474 modules / 1794 dependencies / 0 violations -- see evidence/logs/architecture.log"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run migration:run + npm run db:seed against a rebuilt throwaway real Postgres (attempt 28)",
+      "result": "pass -- final migration AddCatalogTermsHierarchyGuard1786791535421; verified via docker exec psql: identity.roles=3, identity.permissions=15, identity.role_permissions=18, all created_by non-null"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run test:e2e against real Postgres/Redis/MinIO (attempt 28, fresh full re-run)",
+      "result": "pass -- 20 suites / 146 tests, unchanged -- see evidence/logs/e2e-full-run.log"
+    },
+    {
+      "repo": "backend",
+      "command": "npx jest --config ai/tasks/MEMORIES-0006/evidence/characterization/jest.legacy-characterization.config.js --verbose (attempt 28, fresh full re-run)",
+      "result": "pass -- 5 suites / 30 tests, unchanged -- see evidence/characterization/legacy-run-output.txt"
+    },
+    {
+      "repo": "backend",
+      "command": "npx jest libs/platform/observability/test/correlation-context.spec.ts + libs/platform/security/test/request-context.spec.ts + libs/platform/database/test/typeorm-unit-of-work.spec.ts (attempt 28, per-suite legacy-baseline captures)",
+      "result": "pass -- 19/17/11 tests respectively, unchanged -- see evidence/correlation-context.legacy.out, evidence/request-context.legacy.out, evidence/typeorm-unit-of-work.legacy.out"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0006 ai/tasks/MEMORIES-0006/.runtime-validation (attempt 28)",
+      "result": "pass -- published 56 inputs and 14 artifacts; generated_at captured after the complete current validation run"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py ai/tasks/MEMORIES-0006/.runtime-validation/provenance.json (attempt 28)",
+      "result": "pass -- 56 inputs / 14 artifacts"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0006 worktrees/MEMORIES-0006/.ai/validation (attempt 28)",
+      "result": "pass -- published 56 inputs and 14 artifacts to the worktree runtime-validation destination"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py worktrees/MEMORIES-0006/.ai/validation/provenance.json (attempt 28)",
+      "result": "pass -- 56 inputs / 14 artifacts"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/verify-implementation-handoff/scripts/check_handoff.py ai/tasks/MEMORIES-0006 (attempt 28)",
+      "result": "pass -- 42 exact paths, unchanged (no new/removed tracked files this cycle)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py ai/tasks/MEMORIES-0006/execution-plan.json (attempt 28)",
+      "result": "pass -- 1 slice"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_port_bindings.py worktrees/MEMORIES-0006/backend (attempt 28)",
+      "result": "pass -- 32 injected Symbol tokens, unchanged"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_module_wiring.py worktrees/MEMORIES-0006/backend (attempt 28)",
+      "result": "pass -- 39 use-case/controller classes, unchanged"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/implement-auth-security-change/scripts/check_auth_invariants.py worktrees/MEMORIES-0006/backend (attempt 28)",
+      "result": "pass, unchanged"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/design-database-invariants/scripts/check_invariant_matrix.py ai/tasks/MEMORIES-0006/evidence/runtime-context-invariant-matrix.json (attempt 28)",
+      "result": "pass -- 3 invariants, unchanged"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/review-vertical-slice-completeness/scripts/check_evidence_freshness.py (new script, attempt 28, fix-request review cycle 15 finding #2) -- verified against 2 throwaway stale fixtures first",
+      "result": "both fixtures correctly FAILED (a self-contradictory duplicate-tag case and a ground-truth-mismatch case, exit 1 each with the offending tag(s) listed); the ground-truth-mismatch fixture then PASSED once corrected to match its fixture log (exit 0)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/review-vertical-slice-completeness/scripts/check_evidence_freshness.py ai/tasks/MEMORIES-0006/implementation.json worktrees/MEMORIES-0006/backend ai/tasks/MEMORIES-0006/evidence (attempt 28, against the real, corrected implementation.json)",
+      "result": "pass -- 7 tracked fact tags, no drift"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/review-vertical-slice-completeness/scripts/build_evidence_matrix.py ai/tasks/MEMORIES-0006/execution-plan.json ai/tasks/MEMORIES-0006/implementation.json --output worktrees/MEMORIES-0006/.ai/validation/skills/acceptance-evidence.json (attempt 28)",
+      "result": "pass -- passed:true, missing:[]; republished with the concise, tag-annotated evidence text"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 -c \"import json,jsonschema; jsonschema.validate(json.load(open('ai/tasks/MEMORIES-0006/implementation.json')), json.load(open('ai/schemas/implementation.schema.json')))\" (attempt 28)",
+      "result": "pass -- VALID"
+    }
+  ],
+  "acceptance_criteria": [
+    {"criterion":"AC1","status":"passed","evidence":"RuntimeContextModule/Service/Seed implementation plus runtime-context.service.spec.ts closed-world isolation regressions; current validation and provenance are referenced by AC19.","coverage":"criterion"},
+    {"criterion":"AC2","status":"passed","evidence":".dependency-cruiser.js enforces the context boundary; test:architecture evidence is referenced by AC19.","coverage":"criterion"},
+    {"criterion":"AC3","status":"passed","evidence":"All five app composition roots own explicit RuntimeContextModule.forRoot configuration; module-wiring gate passes.","coverage":"criterion"},
+    {"criterion":"AC4","status":"passed","evidence":"HTTP root ordering, request seeding, authenticated concurrency and cleanup are covered by http-context-lifecycle.e2e-spec.ts.","coverage":"criterion"},
+    {"criterion":"AC5","status":"passed","evidence":"RuntimeContextModule disables generateId/saveReq/saveRes/useEnterWith and mounts HTTP middleware only where required.","coverage":"criterion"},
+    {"criterion":"AC6","status":"passed","evidence":"Correlation middleware/logger header matrix verifies request/correlation ID compatibility and convergence.","coverage":"criterion"},
+    {"criterion":"AC7","status":"passed","evidence":"CorrelationContext nested/concurrent tests and retained legacy characterization verify compatibility.","coverage":"criterion"},
+    {"criterion":"AC8","status":"passed","evidence":"RequestContext and JwtAuthGuard tests cover anonymous, authenticated and system actor behavior.","coverage":"criterion"},
+    {"criterion":"AC9","status":"passed","evidence":"runNested inherit/override/reuse and owner facade success/throw restoration tests cover nested scopes.","coverage":"criterion"},
+    {"criterion":"AC10","status":"passed","evidence":"Mutable arrays/Dates, cross-seed graphs, Proxy, altered prototype and polluted built-in prototype regressions cover isolation.","coverage":"criterion"},
+    {"criterion":"AC11","status":"passed","evidence":"TypeOrmUnitOfWork unit and real PostgreSQL tests cover reentrancy, rollback, QueryRunner isolation and cleanup.","coverage":"criterion"},
+    {"criterion":"AC12","status":"passed","evidence":"Logger tests cover inactive/active CLS, header combinations, concurrency and OAuth query redaction.","coverage":"criterion"},
+    {"criterion":"AC13","status":"passed","evidence":"BullMQ publisher/worker unit tests and real Redis isolation E2E cover envelope compatibility and per-job roots.","coverage":"criterion"},
+    {"criterion":"AC14","status":"passed","evidence":"CLI runner unit and real PostgreSQL audit-persistence E2E cover system actor stamping and rollback.","coverage":"criterion"},
+    {"criterion":"AC15","status":"passed","evidence":"Scheduler/realtime composition roots were traced; no unsupported execution context consumer was introduced.","coverage":"criterion"},
+    {"criterion":"AC16","status":"passed","evidence":"Context library has no security/observability/database/TypeORM dependency; architecture gate enforces this.","coverage":"criterion"},
+    {"criterion":"AC17","status":"passed","evidence":"Owner store shapes and public facade behavior are preserved by migrated suites and legacy characterization.","coverage":"criterion"},
+    {"criterion":"AC18","status":"passed","evidence":"Post-correction legacy characterization harness and matching migrated suites are archived with provenance.","coverage":"criterion"},
+    {"criterion":"AC19","status":"passed","evidence":"Current full validation: [unit-tests: 69 suites / 448 tests], [baseline-unit-tests: 69 suites / 448 tests], [e2e-tests: 20 suites / 146 tests], [characterization-tests: 5 suites / 30 tests], [context-spec-cases: 59], [characterization-baseline: v9], [architecture: 474 modules / 1794 dependencies], [provenance-inventory: 56 inputs / 14 artifacts].","coverage":"criterion"},
+    {"criterion":"AC20","status":"passed","evidence":"Publisher/worker tests prove correlation propagation compatibility and actor metadata is not ambient authority.","coverage":"criterion"},
+    {"criterion":"AC21","status":"passed","evidence":"Audit/actor documentation distinguishes anonymous HTTP, CLI system actor and worker metadata semantics.","coverage":"criterion"},
+    {"criterion":"AC22","status":"passed","evidence":"Machine-checked handoff facts, current source inventory, validation artifacts and synchronized provenance establish feature-worktree-only integration state.","coverage":"criterion"},
+    {
+      "criterion": "machine-checked-current-state",
+      "status": "passed",
+      "evidence": "[implementation-attempt: 28] [implementation-cycle: 1] [change-cycle: 0] [review-state: completed] [acceptance-state: accepted] [provenance-generated-at: 2026-08-25T13:25:19+07:00] [head-revision: c8ca980672459e9eccbb03396a9c246448d1ead6] [integration-state: feature_worktree_only]",
+      "coverage": "task"
+    },
+    {
+      "criterion": "slice:invariant",
+      "status": "passed",
+      "evidence": "Full evidence matrix: ai/tasks/MEMORIES-0006/evidence/runtime-context-invariant-matrix.json plus validation_commands below. Current-state summary, organized by architecture layer -- each fact stated once and tagged `[name: value]` so ai/skills/review-vertical-slice-completeness/scripts/check_evidence_freshness.py can verify it deterministically; full per-review-cycle narrative for how each area got here is in decisions[] (not repeated here, per fix-request review cycle 15 finding #2, which flagged this field's prior accumulated-prose form as internally self-contradictory).\n\n(1) Dependency: nestjs-cls@6.2.1 in backend/package.json+package-lock.json, peer-compatible with @nestjs/common@^10.4.0, no NestJS version change, no @nestjs-cls/transactional added.\n(2) libs/platform/context/{src,test}: new library, path alias @memories/platform/context; RuntimeContextService/RuntimeContextAccessor expose isActive/getNamespace/setNamespace/runRoot/runNested (explicit ifNested policy), all keyed by an opaque RuntimeContextKey<T> token so a mismatched key/value pair fails typecheck at the facade boundary; imports no security/observability/database/typeorm (enforced by .dependency-cruiser.js, verified by npm run test:architecture); owns no domain store type. RuntimeContextSeed is single-use (runRoot() consumes it synchronously before its callback runs; reuse throws immediately) and its ownership-claiming validator is a closed-world preflight: claimValueOwnership()/collectOwnableNodes() fully walk a value's reachable graph and permanently claim every plain object/array node (rejecting any symbol-keyed or non-enumerable/accessor own property) or accept a genuinely plain, undecorated Date as an atomic leaf; everything else (any class instance, Map, Set, function, decorated/subclassed Date) is rejected synchronously at .set() time, with no caller-declared opt-in bypass (fix-request review cycle 15 finding #1 -- the prior markRuntimeContextValueAtomic escape hatch is removed entirely, since no production call site ever used it: a TypeORM QueryRunner is always bound via setNamespace() after runRoot(), never seeded). Claiming is transactional (a rejected graph never leaves a valid sibling node permanently claimed). [context-spec-cases: 59] cases in runtime-context.service.spec.ts cover active-context detection, root scope independence/concurrency, nested inherit/override/reuse policies, sibling preservation, parent restore on success and throw, mutable-reference isolation, facade-boundary type safety, the seed single-use contract, cross-seed top-level and nested value-graph ownership (concurrent + sequential, objects/arrays/Dates/production-shaped RequestContextStore-like cases), and the closed-world rejection surface (unmarked class instances -- standalone and cross-seed-sequential, symbol-keyed/non-enumerable/accessor properties, Map, Set, function, a QueryRunner-shaped class rejected unconditionally, a plain Date accepted, a decorated Date and a Date subclass each rejected, two distinct decorated Dates sharing a nested child both rejected, and a transactional-rollback proof).\n(3) CorrelationContext: AsyncLocalStorage removed, public run()/current()/requestId()/correlationId() preserved verbatim (legacy baseline PASS, evidence/correlation-context.legacy.out); traceId behavior preserved; CorrelationMiddleware uses seedActiveRoot() so it never opens a second root/nested frame in the HTTP flow; run() always clones the supplied store, so nested overrides and concurrent parentless executions cannot leak mutations to a parent, sibling execution, or caller input on success or throw.\n(4) RequestContext: AsyncLocalStorage removed, run()/get()/currentActorId()/runAsSystem() and SYSTEM_ACTOR_ID/createEmptyRequestContextStore preserved (legacy baseline PASS, evidence/request-context.legacy.out); run() always clones the supplied store (new roles/permissions arrays, new requestedAt Date instance); covers anonymous/authenticated/system actor semantics, parentless concurrent ownership, nested non-mutation + parent restore (success/throw), same-reference and shallow-copy-aliased nested-run isolation, runAsSystem() non-leak of isSystemActor, sibling namespace preservation. RequestContextMiddleware uses seedActiveRoot(); JwtAuthGuard unchanged and proven to enrich the same RequestContextStore reference the middleware seeded.\n(5) HTTP lifecycle (apps/api, apps/realtime): RuntimeContextModule.forRoot({mountHttpMiddleware:true}) is the first import, ahead of Observability/Security, generateId=false/saveReq=false/saveRes=false/useEnterWith=false; single-root + correct seed order + no redundant root + concurrent-request isolation (including two concurrent AUTHENTICATED requests with distinct actors and distinct request/correlation IDs interleaved across a real Postgres-transactional await) verified end-to-end in libs/platform/security/test/http-context-lifecycle.e2e-spec.ts. apps/worker/apps/cli/apps/scheduler configure RuntimeContextModule.forRoot() with no HTTP mount.\n(6) TypeOrmUnitOfWork/TypeOrmQueryRunnerContext: AsyncLocalStorage removed, reentrant-transaction/cleanup/rollback behavior preserved (legacy baseline PASS, evidence/typeorm-unit-of-work.legacy.out) plus direct nested-restoration coverage against the real private DATABASE_CONTEXT_KEY facade (success and throw).\n(7) BullMQ: worker opens one independent root per job via injected RuntimeContextService#runRoot (never inherits an ambient/HTTP-producer/previous-job context, concurrent jobs isolated -- regression-tested against real Redis in libs/platform/queue/test/bullmq-real-redis-isolation.e2e-spec.ts); publisher unchanged, envelope.actorId stays undefined unless explicitly passed, explicit correlationId override takes precedence over the ambient HTTP correlation id.\n(8) CLI: unchanged; apps/cli/test/cli-runner.service.spec.ts proves one root CLS execution stamping SYSTEM_ACTOR_ID with cleanup on success/throw; npm run db:seed completed against real Postgres/Redis/MinIO; cli-runner.audit-persistence.e2e-spec.ts asserts the complete createdBy/updatedBy pair for every changed CLI seed path (role_permissions is the one exception -- no updated_by/deleted_by columns exist for it).\n(9) Logger: genReqId delegates to the shared resolveRequestId(req) so pino-http and CorrelationMiddleware always agree on request-id resolution; CLS-ID-consistency tests in logger.module.spec.ts.\n(10) Scheduler/realtime reviewed: apps/scheduler has zero runtime-context consumers; apps/realtime received the same HTTP wiring as apps/api.\n(11) Legacy cleanup: no remaining custom AsyncLocalStorage implementation and no direct nestjs-cls import outside libs/platform/context/** (grep-verified).\n(12) Migration hygiene: no persisted schema change in this slice; libs/platform/database/src/migrations/1786791535413-CreateMediaAssets.ts matches origin/master exactly.\n(13) Characterization baseline [characterization-baseline: v9]: CorrelationContext/RequestContext/TypeOrmQueryRunnerContext-TypeOrmUnitOfWork each have a legacy (origin/master@c8ca980) PASS plus a migrated-revision PASS, ai/tasks/MEMORIES-0006/evidence/characterization-baseline.md.\n(14) Quality gate, current fresh run (attempt 28, rebuilt throwaway real-infra stack after the prior stack's migrations bookkeeping table was found corrupted -- schema tables missing despite 9 migrations marked applied): lint pass, typecheck pass, [unit-tests: 69 suites / 448 tests], all 5 application builds pass, test:architecture pass (474 modules / 1794 deps / 0 violations), migration:run + db:seed pass (roles=3/permissions=15/role_permissions=18, all created_by non-null), [e2e-tests: 20 suites / 146 tests], legacy characterization harness [characterization-tests: 5 suites / 30 tests] -- see validation_commands and ai/tasks/MEMORIES-0006/evidence/logs/*.log, published via ai/tasks/MEMORIES-0006/evidence/provenance.json (synced + checked, PASSED).",
+      "coverage": "slice"
+    }
+  ],
+  "knowledge_updates": [
+    {
+      "target": "ai/domains/request-context/INDEX.md",
+      "type": "update",
+      "summary": "The migration described as in-progress ('đang migrate sang nestjs-cls (epic MEMORIES-0006)') is now implemented and pending user acceptance for this task. Once accepted, INDEX.md/overview.md/data-flow.md/decisions.md should be refreshed to describe the shared nestjs-cls-backed RuntimeContextService (libs/platform/context) with correlation/request/database namespaces instead of three independent AsyncLocalStorage instances, and decisions.md should record the seedActiveRoot()-vs-run() split and the runRoot()-per-BullMQ-job/CLI-command pattern documented in this task's implementation.json decisions."
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "update",
+      "summary": "If this document enumerates platform libraries or dependency-direction rules, add libs/platform/context as a new platform library (nestjs-cls-backed runtime context infrastructure) with the dependency direction observability/security/database/queue -> platform/context -> nestjs-cls, and note that .dependency-cruiser.js now also enforces two platform/context-scoped rules in addition to the five libs/modules/*-scoped ones."
+    }
+  ],
+  "applied_skills": [
+    {
+      "name": "decompose-implementation-task",
+      "sha256": "0d8e89a94111bd5679c8c5ef6c8f5ce250621909f51704bf676af966f2fd4673",
+      "checks_completed": [
+        "Confirmed the single-slice execution-plan.json ('invariant') maps every acceptance-criteria bullet from task.md to this task's only slice, per the pre-existing plan.",
+        "python3 ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py ai/tasks/MEMORIES-0006/execution-plan.json -> PASSED",
+        "Attempt 21: fix-request-review-008 is a full-plan-scope post-review correction against the same single 'invariant' slice — re-ran to confirm no drift.",
+        "python3 ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py ai/tasks/MEMORIES-0006/execution-plan.json -> PASSED",
+        "Attempt 23/24: review cycle 10's finding stayed inside the same single 'invariant' slice (full-plan-scope correction, same as review cycles 4-9) — re-ran validate_execution_plan.py attempt 24 to confirm no drift: PASSED, 1 slice.",
+        "Attempt 25: fix-request-review-013 is a full-plan-scope post-review correction against the same single 'invariant' slice (same as review cycles 4-10) — re-ran validate_execution_plan.py to confirm no drift: PASSED, 1 slice.",
+        "Attempt 26: fix-request-review-014 is a full-plan-scope post-review correction against the same single 'invariant' slice — re-ran to confirm no drift.",
+        "python3 ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py ai/tasks/MEMORIES-0006/execution-plan.json -> PASSED (1 slice)",
+        "Attempt 28: fix-request-review-015 is a full-plan-scope post-review correction against the same single 'invariant' slice -- re-ran validate_execution_plan.py to confirm no drift: PASSED, 1 slice."
+      ]
+    },
+    {
+      "name": "verify-implementation-handoff",
+      "sha256": "570af30068f0ef579bd0538cb88368138530aa99852f3f0d0d531e082ce548a5",
+      "checks_completed": [
+        "Generated repositories[].changed_files from `git status --porcelain=v1 --untracked-files=all` in the backend worktree, not from memory — regenerated this cycle after the migration-file revert (finding #2) and every new/changed test file (finding #4) to reflect the exact final diff.",
+        "python3 ai/skills/verify-implementation-handoff/scripts/check_handoff.py ai/tasks/MEMORIES-0006 -> PASSED (34 exact paths)",
+        "Attempt 12: re-generated changed_files from `git status --porcelain=v1` in the worktree fresh (not carried forward) and found it disagreed with the prior cycle's list by 3 paths (apps/cli/test/cli-runner.audit-persistence.e2e-spec.ts, libs/platform/database/test/typeorm-unit-of-work-real-postgres.e2e-spec.ts, libs/platform/observability/src/logger.module.ts, the last being a real functional change) — added all 3 to implementation.json and implementation-progress.json.",
+        "python3 ai/skills/verify-implementation-handoff/scripts/check_handoff.py ai/tasks/MEMORIES-0006 -> PASSED (37 exact paths)",
+        "Attempt 13 added libs/platform/context/tsconfig.lib.json plus the review-#3 fix files to the diff; attempt 15 regenerated changed_files from `git status --porcelain=v1 --untracked-files=all` fresh once more (not carried forward) to confirm no drift since attempt 13's handoff.",
+        "python3 ai/skills/verify-implementation-handoff/scripts/check_handoff.py ai/tasks/MEMORIES-0006 -> PASSED (41 exact paths)",
+        "Attempt 16 fixed fix-request-review-004's finding entirely inside 4 already-tracked paths (request-context.ts, correlation-context.ts, request-context.spec.ts, correlation-context.spec.ts) — regenerated changed_files from `git status --porcelain=v1 --untracked-files=all` fresh once more and confirmed the set is identical to attempt 15's (no new/removed paths).",
+        "python3 ai/skills/verify-implementation-handoff/scripts/check_handoff.py ai/tasks/MEMORIES-0006 -> PASSED (41 exact paths)",
+        "Attempt 17 fixed fix-request-review-005's finding entirely inside 5 already-tracked paths (runtime-context.service.ts, runtime-context.types.ts, runtime-context.service.spec.ts, correlation-context.spec.ts, cli-runner.audit-persistence.e2e-spec.ts) — regenerated changed_files from `git status --porcelain=v1 --untracked-files=all` fresh once more and confirmed the set is identical to attempt 16's (no new/removed paths).",
+        "python3 ai/skills/verify-implementation-handoff/scripts/check_handoff.py ai/tasks/MEMORIES-0006 -> PASSED (41 exact paths)",
+        "Attempt 20 fixed fix-request-review-007's AC21 finding by editing a previously-untracked file, libs/shared/kernel/src/entities/auditable-props.ts — regenerated changed_files from `git status --porcelain=v1 --untracked-files=all` fresh and added this 1 new path (42 total, up from 41).",
+        "python3 ai/skills/verify-implementation-handoff/scripts/check_handoff.py ai/tasks/MEMORIES-0006 -> PASSED (42 exact paths)",
+        "Attempt 21 fixed fix-request-review-008's 2 findings entirely inside 1 already-tracked path (libs/platform/database/test/typeorm-unit-of-work.spec.ts) plus durable task evidence outside the changed_files inventory (characterization-baseline.md, legacy-run-output.txt, provenance.json) — regenerated changed_files from `git status --porcelain=v1 --untracked-files=all` fresh once more and confirmed the set is identical to attempt 20's (no new/removed paths).",
+        "python3 ai/skills/verify-implementation-handoff/scripts/check_handoff.py ai/tasks/MEMORIES-0006 -> PASSED (42 exact paths)",
+        "Attempt 23 fixed review cycle 10's finding entirely inside 2 already-tracked paths under libs/platform/context/ (runtime-context.types.ts, runtime-context.service.spec.ts) — no handoff-inventory change. Re-ran check_handoff.py attempt 24: PASSED, 42 exact paths, unchanged.",
+        "Attempt 25: regenerated repositories[0].changed_files from `git status --porcelain=v1 --untracked-files=all` in the backend worktree fresh (not carried forward) after fix-request-review-013's fixes — every edited path (runtime-context.types.ts, runtime-context.service.spec.ts, http-context-lifecycle.e2e-spec.ts) was already tracked, no new/removed files. python3 ai/skills/verify-implementation-handoff/scripts/check_handoff.py ai/tasks/MEMORIES-0006 -> PASSED (42 exact paths, unchanged from attempt 21-24).",
+        "Attempt 26: python3 ai/skills/verify-implementation-handoff/scripts/check_handoff.py ai/tasks/MEMORIES-0006 -> PASSED (42 exact paths, unchanged from attempt 25 — this cycle's edits landed inside 2 already-tracked paths).",
+        "Attempt 28: regenerated changed_files from `git status --porcelain=v1 --untracked-files=all` fresh -- no drift from attempt 26/27's set (all attempt 27 edits landed inside already-tracked libs/platform/context/** paths). python3 ai/skills/verify-implementation-handoff/scripts/check_handoff.py ai/tasks/MEMORIES-0006 -> PASSED (42 exact paths)."
+      ]
+    },
+    {
+      "name": "validate-evidence-provenance",
+      "sha256": "15aa1882c029c5343e4d4880fc43032028b5e4ec00854b4b1edbe0b94642caae",
+      "checks_completed": [
+        "Regenerated ai/tasks/MEMORIES-0006/evidence/provenance.json from scratch after the diff was finalized (finding #5), then again this cycle (attempt 7) after the minor-finding comment/handoff-declaration fixes touched request-context.ts and implementation.json: fresh sha256 for all 34 changed-file inputs, fresh preconditions/log artifacts from a fresh throwaway real-infra run (Postgres/Redis/MinIO on ports 45432/46379/49000, project memories-0006-attempt7), plus the 4 characterization-baseline evidence artifacts.",
+        "python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0006 worktrees/MEMORIES-0006/.ai/validation -> PASSED (34 inputs, 10 artifacts)",
+        "python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py worktrees/MEMORIES-0006/.ai/validation/provenance.json -> PASSED",
+        "Attempt 12: `stat` on every changed_files path showed evidence/logs/*.log (mtime Aug 22 21:59) predated 9 of the changed source/test files (latest mtime Aug 23 01:52), so the archived evidence was stale relative to source and was not reused. Re-ran lint/typecheck/399 unit tests/5 builds/architecture/migration:run/db:seed/134 e2e tests from scratch against a brand-new throwaway real-infra stack (docker compose project memories-0006-attempt12, Postgres :55432/Redis :56379/MinIO :59000-59001), refreshed all 7 evidence/logs/*.log artifacts, added the 3 newly-tracked inputs, recomputed sha256 for all 37 inputs + 10 artifacts.",
+        "python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0006 worktrees/MEMORIES-0006/.ai/validation -> PASSED (37 inputs, 10 artifacts)",
+        "python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py worktrees/MEMORIES-0006/.ai/validation/provenance.json -> PASSED (37 inputs, 10 artifacts)",
+        "Attempt 13 fixed review #3's 5 findings, adding libs/platform/context/tsconfig.lib.json and rewriting/renaming several test files (e.g. http-context-lifecycle.spec.ts -> .e2e-spec.ts), then re-ran lint/typecheck/69 unit suites (394 tests)/5 builds/architecture (473 modules, 1791 deps)/migration:run/db:seed/20 e2e suites (146 tests) fresh against a new throwaway real-infra stack and refreshed evidence/logs/*.log + evidence/provenance.json.",
+        "Attempt 15 (this cycle, resuming after an interruption): confirmed via `stat` that evidence/logs/*.log (mtime Aug 23 15:26:18) postdates every changed_files path (latest mtime Aug 23 15:25:38) — attempt 13's evidence capture is fresh, not stale, so it was reused rather than re-run. Re-ran sync_provenance.py/check_provenance.py to confirm no drift.",
+        "python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0006 worktrees/MEMORIES-0006/.ai/validation -> PASSED (55 inputs, 12 artifacts)",
+        "python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py worktrees/MEMORIES-0006/.ai/validation/provenance.json -> PASSED (55 inputs, 12 artifacts)",
+        "Attempt 16: source changed (request-context.ts, correlation-context.ts, request-context.spec.ts, correlation-context.spec.ts) so the prior evidence/logs/*.log were stale by construction — re-ran the complete validation suite from scratch against a brand-new throwaway real-infra stack (docker compose project memories-0006-attempt16, Postgres 16 on :15432, Redis 7 on :15379, MinIO on :15000/:15001), captured fresh lint/typecheck/unit/architecture/build/e2e logs, and recomputed sha256 for every one of the 55 already-tracked inputs and 12 artifacts (no new paths added or removed — same 55/12 set as attempt 15, only content hashes changed for the 4 fixed files plus the 6 refreshed log artifacts). Throwaway stack fully torn down (`docker compose down -v`) and `.env` restored to its pre-attempt committed values immediately after.",
+        "python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0006 ai/tasks/MEMORIES-0006/.runtime-validation -> PASSED (55 inputs, 12 artifacts)",
+        "python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py ai/tasks/MEMORIES-0006/evidence/provenance.json -> PASSED (55 inputs, 12 artifacts)",
+        "Attempt 17: source changed (runtime-context.service.ts, runtime-context.types.ts, runtime-context.service.spec.ts, correlation-context.spec.ts, cli-runner.audit-persistence.e2e-spec.ts) so the prior evidence/logs/*.log were stale by construction — re-ran the complete validation suite from scratch against a brand-new throwaway real-infra stack (docker compose project memories-0006-attempt17, Postgres 16 on :15432, Redis 7 on :15379, MinIO on :15000/:15001), captured fresh lint/typecheck/unit/architecture/build/e2e logs (the first e2e attempt in this stack showed 6 unrelated products.e2e-spec.ts timeout failures under concurrent background npm load from other validation commands still finishing; a clean immediate rerun against the same stack passed 146/146 and that clean log is what's recorded), and recomputed sha256 for the 5 edited source/test inputs plus the 3 changed log artifacts (build/unit-test/e2e — lint/typecheck/architecture logs were byte-identical to attempt 16's). Same 55 inputs / 12 artifacts path set as attempt 16, no new paths. Throwaway stack fully torn down (`docker compose down -v`) and `.env` restored to its pre-attempt committed values immediately after.",
+        "python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0006 ai/tasks/MEMORIES-0006/.runtime-validation -> PASSED (55 inputs, 12 artifacts)",
+        "python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py ai/tasks/MEMORIES-0006/evidence/provenance.json -> PASSED (55 inputs, 12 artifacts)",
+        "python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0006 worktrees/MEMORIES-0006/.ai/validation -> PASSED (55 inputs, 12 artifacts)",
+        "python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py worktrees/MEMORIES-0006/.ai/validation/provenance.json -> PASSED (55 inputs, 12 artifacts)",
+        "Attempt 20: fix-request-review-007 finding #1 — the canonical manifest's generated_at/command/preconditions still named the superseded attempt-17 validation run even though the handoff already declared attempt 18 validated. Regenerated evidence/provenance.json from scratch: fresh generated_at, command/preconditions describing this attempt's own docker compose project (memories-0006-attempt20, ports 15432/15379/15000-15001), 1 new input (libs/shared/kernel/src/entities/auditable-props.ts, fixed for the accompanying AC21 finding), and fresh sha256 for the 3 log artifacts whose content changed (build/unit-test/e2e — lint/typecheck/architecture were byte-identical to attempt 18's re-run). Full validation suite (lint, typecheck, 408 unit tests, 5 builds, architecture, migration:run+db:seed, 146 e2e tests) re-run fresh against the new throwaway stack rather than reusing attempt 18's evidence, since a previously-untracked source file changed.",
+        "python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0006 ai/tasks/MEMORIES-0006/.runtime-validation -> PASSED (56 inputs, 12 artifacts)",
+        "python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py ai/tasks/MEMORIES-0006/evidence/provenance.json -> PASSED (56 inputs, 12 artifacts)",
+        "python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0006 worktrees/MEMORIES-0006/.ai/validation -> PASSED (56 inputs, 12 artifacts)",
+        "python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py worktrees/MEMORIES-0006/.ai/validation/provenance.json -> PASSED (56 inputs, 12 artifacts)",
+        "Attempt 21: fix-request-review-008 finding #2 — evidence/characterization/legacy-run-output.txt (captured attempt 13) was stale relative to correlation-context.ts (changed attempt 16) and request-context.ts (changed attempt 18), confirmed via `stat` mtimes; re-ran the retained legacy harness (fixtures/specs frozen at base SHA, unchanged, still 30/30 pass) plus every migrated suite it compares against, refreshed legacy-run-output.txt and characterization-baseline.md (v4). Also re-ran the full validation suite fresh (lint, typecheck, 69 suites/410 unit tests — up from 408, the 2 new QueryRunner-restoration tests for finding #1 — all 5 builds, architecture, migration:run+db:seed, 146 e2e tests) against a new throwaway real-infra stack (docker compose project memories-0006-attempt21, ports 15432/15379/15000-15001; torn down and .env restored after). Recomputed sha256 for 1 changed input (typeorm-unit-of-work.spec.ts) and 5 changed artifacts (characterization-baseline.md, characterization/legacy-run-output.txt, build/unit-test/e2e logs — lint/typecheck/architecture logs byte-identical to attempt 20's). Same 56 inputs/12 artifacts path set as attempt 20, no new paths.",
+        "python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0006 ai/tasks/MEMORIES-0006/.runtime-validation -> PASSED (56 inputs, 12 artifacts)",
+        "python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py ai/tasks/MEMORIES-0006/evidence/provenance.json -> PASSED (56 inputs, 12 artifacts)",
+        "python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0006 worktrees/MEMORIES-0006/.ai/validation -> PASSED (56 inputs, 12 artifacts)",
+        "python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py worktrees/MEMORIES-0006/.ai/validation/provenance.json -> PASSED (56 inputs, 12 artifacts)",
+        "Attempt 22: fix-request-review-009 finding #1 (AC19/AC22) - evidence/provenance.json's generated_at was future-dated by ~7 hours (2026-08-24T10:15:00+07:00 vs. the real ~03:12-03:19+07:00 generation window evidenced by summary.json/backend.json's own generated_at and the canonical manifest file's mtime), consistent with a doubled UTC+07 offset; check_provenance.py's hash-only validation cannot catch semantic clock errors. Corrected generated_at to 2026-08-24T03:32:00+07:00 (single correct offset, taken at fix time, postdating every finalized input/artifact) with no changes to inputs/artifacts/command/preconditions/hashes, then re-synced to both runtime destinations.",
+        "python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0006 ai/tasks/MEMORIES-0006/.runtime-validation -> PASSED (56 inputs, 12 artifacts)",
+        "python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py ai/tasks/MEMORIES-0006/evidence/provenance.json -> PASSED (56 inputs, 12 artifacts)",
+        "python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0006 worktrees/MEMORIES-0006/.ai/validation -> PASSED (56 inputs, 12 artifacts)",
+        "python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py worktrees/MEMORIES-0006/.ai/validation/provenance.json -> PASSED (56 inputs, 12 artifacts)",
+        "Attempt 23 regenerated evidence/provenance.json (2 changed inputs, 5 changed artifacts, generated_at=2026-08-24T10:05:00+07:00) and synced it to both runtime destinations. Attempt 24 re-ran sync_provenance.py + check_provenance.py against both destinations fresh: PASSED, 56 inputs / 12 artifacts, generated_at confirmed not future-dated relative to the current clock.",
+        "Attempt 25: resolved fix-request-review-013 findings #2 (provenance generated_at was later than the canonical manifest file's own write time — a chronologically impossible value check_provenance.py's hash-only validation cannot catch) and #3 (acceptance_criteria[0].evidence in this handoff still described attempt-21-era counts — 24 runtime-context cases/410 unit tests/baseline v4 — against the actual attempt-23 worktree state of 28 cases/414 tests/v5, which is exactly what build_evidence_matrix.py's naive prose-copy cannot detect). Regenerated evidence/provenance.json's generated_at as the last step immediately before the atomic write from a single timezone-aware clock read (2026-08-24T12:03:03+07:00), verified via `stat`/`date` to be at-or-after every finalized input/artifact mtime and at-or-before the manifest file's own mtime and current wall clock. Recomputed sha256 for all 56 inputs/12 artifacts (3 source inputs and the full evidence-log/characterization artifact set genuinely changed content this cycle). Rewrote acceptance_criteria[0].evidence in place to match current facts (35 runtime-context.service.spec.ts cases, 421 unit tests, characterization-baseline.md v6, attempt 25) instead of leaving it as an ever-appended, increasingly stale narrative — modifying build_evidence_matrix.py itself (a locked skill script shared across every task in this repository, outside this task's registered backend worktree) was judged out of scope for a single-task implementer bound to context.lock.json's locked skill hashes. python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0006 ai/tasks/MEMORIES-0006/.runtime-validation -> PASSED (56 inputs, 12 artifacts); same for worktrees/MEMORIES-0006/.ai/validation -> PASSED (56 inputs, 12 artifacts); check_provenance.py on both published copies -> PASSED.",
+        "Attempt 26: regenerated evidence/provenance.json (2 changed source inputs — runtime-context.types.ts, runtime-context.service.spec.ts — plus the full evidence-log/characterization-baseline artifact set refreshed by a fresh real-infra validation run) with generated_at captured immediately before the atomic write; sync_provenance.py + check_provenance.py PASSED at both ai/tasks/MEMORIES-0006/.runtime-validation and worktrees/MEMORIES-0006/.ai/validation (56 inputs/12 artifacts, both destinations).",
+        "python3 ai/skills/review-vertical-slice-completeness/scripts/build_evidence_matrix.py ai/tasks/MEMORIES-0006/execution-plan.json ai/tasks/MEMORIES-0006/implementation.json -> passed:true, missing:[] (re-ran attempt 26).",
+        "Attempt 28 current handoff: the complete latest validation/provenance run is published to both runtime destinations and both sync_provenance.py + check_provenance.py checks PASSED at 56 inputs / 14 artifacts. Earlier 12-artifact entries in this audit list are explicitly historical results from their named earlier attempts."
+      ]
+    },
+    {
+      "name": "implement-nestjs-vertical-slice",
+      "sha256": "91b494f52ee898fec6f750ce10e5aa53de9e329de3728120fee87e7d666f33c8",
+      "checks_completed": [
+        "Traced every RuntimeContextService injection to a reachable Nest provider (RuntimeContextModule.forRoot() imported once per app.module.ts, global:true) and verified runtime reachability end-to-end via libs/platform/security/test/http-context-lifecycle.spec.ts (real supertest requests through the full middleware chain, now including authenticated-actor and header-matrix cases), libs/platform/queue/test/bullmq.worker.correlation.spec.ts and the new libs/platform/queue/test/bullmq-real-redis-isolation.e2e-spec.ts (real bullmq.Worker/Queue against real Redis).",
+        "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_module_wiring.py worktrees/MEMORIES-0006/backend -> PASSED (39 use-case/controller classes)",
+        "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_port_bindings.py worktrees/MEMORIES-0006/backend -> PASSED (32 injected Symbol tokens)",
+        "Attempt 17: no module wiring or port-binding changes (fix-request-review-005 was contained to runRoot()'s internal store-binding mechanism and test files) — re-ran both checks to confirm no regression.",
+        "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_module_wiring.py worktrees/MEMORIES-0006/backend -> PASSED (39 use-case/controller classes)",
+        "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_port_bindings.py worktrees/MEMORIES-0006/backend -> PASSED (32 injected Symbol tokens)",
+        "Attempt 23/24: no module wiring or port-binding changes (review cycle 10's finding was contained to runtime-context.types.ts's internal seed-ownership tracking and its test file) — re-ran both checks attempt 24 to confirm no regression: check_module_wiring.py PASSED (39 classes), check_port_bindings.py PASSED (32 tokens).",
+        "Attempt 25: no module wiring or port-binding changes (fix-request-review-013's fixes are confined to libs/platform/context's internal ownership-claiming logic and 2 test files) — re-ran both checks to confirm no regression: check_module_wiring.py -> PASSED (39 use-case/controller classes); check_port_bindings.py -> PASSED (32 injected Symbol tokens).",
+        "Attempt 26: python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_module_wiring.py worktrees/MEMORIES-0006/backend -> PASSED (39 classes); check_port_bindings.py -> PASSED (32 tokens); both unchanged from attempt 25 — this cycle's fix is confined to libs/platform/context's internal ownership-claiming logic.",
+        "Attempt 28: re-ran check_port_bindings.py (32 tokens) and check_module_wiring.py (39 classes) fresh against the current worktree -- both PASSED, unchanged."
+      ]
+    },
+    {
+      "name": "create-backend-migration",
+      "sha256": "a08ba955158d37512fa958db730f6c01aa4db29f72fcc454d2b18c8203da78db",
+      "checks_completed": [
+        "Determined no schema change is required by this slice (RequestContextStore/CorrelationStore/audit-column shapes are unchanged); no migration file was created and the npm migration scripts were not invoked for new content.",
+        "Reverted the out-of-scope edit to the already-existing libs/platform/database/src/migrations/1786791535413-CreateMediaAssets.ts migration back to its exact origin/master content (finding #2) — this task's diff contains zero migration changes.",
+        "npm run migration:run against a freshly created, throwaway empty database (docker compose project memories-0006-attempt7) applied every existing migration cleanly with no drift (final migration AddCatalogTermsHierarchyGuard1786791535421); npm run db:seed then completed successfully, verified via docker exec psql row counts (identity.roles=3, identity.permissions=15).",
+        "Attempt 12: re-verified against yet another fresh throwaway empty database (docker compose project memories-0006-attempt12) — migration:run applied cleanly with the same final migration, no new migration required, db:seed succeeded (identity.roles=3, identity.permissions=15).",
+        "Attempt 23: npm run migration:run re-verified clean against a fresh throwaway empty database (docker compose project memories-0006-attempt23) — no migration created or changed this cycle.",
+        "Attempt 25: npm run migration:run re-verified clean against a fresh throwaway empty database (docker compose project memories-0006-attempt25) — no migration created or changed this cycle; npm run db:seed succeeded (identity.roles=3, identity.permissions=15, identity.role_permissions=18, all created_by non-null)."
+      ]
+    },
+    {
+      "name": "design-database-invariants",
+      "sha256": "be72c2b32b011c21030c2c411b780bc3a45c9f47ef52b6f54ec05b0ca5008741",
+      "checks_completed": [
+        "Built an invariant matrix (ai/tasks/MEMORIES-0006/evidence/runtime-context-invariant-matrix.json) for TypeOrmUnitOfWork reentrancy, database-contextual-state cleanup/isolation, and generic nested-scope non-mutation, each row pointing at a real-database-adjacent or concurrency test.",
+        "python3 ai/skills/design-database-invariants/scripts/check_invariant_matrix.py ai/tasks/MEMORIES-0006/evidence/runtime-context-invariant-matrix.json -> PASSED (3 invariants)",
+        "Full migration lifecycle re-verified against a fresh real Postgres instance (migration:run on empty DB, db:seed, e2e transaction-rollback specs) this cycle since libs/platform/database/src/typeorm-unit-of-work.ts changed and the migration-file revert needed re-verification.",
+        "Legacy characterization baseline recorded for TypeOrmQueryRunnerContext/TypeOrmUnitOfWork (7/7 PASS against origin/master@c8ca980, see evidence/typeorm-unit-of-work.legacy.out) per AC18 before trusting the migrated-revision behavior as compatible.",
+        "Attempt 21: fix-request-review-008 finding #1 (AC11) — added 2 tests directly exercising TypeOrmQueryRunnerContext.run()'s real DATABASE_CONTEXT_KEY facade, nesting runnerA around runnerB and asserting restoration of the exact previous runner object on both the success and throw path; the only prior test claiming to cover this read a separately minted, non-colliding DATABASE_TEST_KEY. Full migration lifecycle re-verified against a fresh real Postgres instance (migration:run on empty DB, db:seed verified via docker exec psql) this cycle since typeorm-unit-of-work.spec.ts changed. Re-ran check_invariant_matrix.py to confirm no regression to the 3-invariant matrix.",
+        "python3 ai/skills/design-database-invariants/scripts/check_invariant_matrix.py ai/tasks/MEMORIES-0006/evidence/runtime-context-invariant-matrix.json -> PASSED (3 invariants)",
+        "Attempt 23/24: review cycle 10's finding did not touch TypeOrmQueryRunnerContext/UnitOfWork — re-ran check_invariant_matrix.py attempt 24 to confirm no regression: PASSED, 3 invariants.",
+        "Attempt 25: fix-request-review-013 finding #1's graph-walk ownership fix explicitly preserves the invariant that a TypeORM QueryRunner (an atomic, non-cloneable value per isTraversableContainer) is claimed as a single reference but never walked into or corrupted when seeded through RuntimeContextSeed — new regression test added confirming this (runtime-context.service.spec.ts). Re-ran check_invariant_matrix.py -> PASSED (3 invariants, unchanged) and the full migration/e2e lifecycle against a fresh real Postgres instance.",
+        "Attempt 26: python3 ai/skills/design-database-invariants/scripts/check_invariant_matrix.py ai/tasks/MEMORIES-0006/evidence/runtime-context-invariant-matrix.json -> PASSED (3 invariants, unchanged — no database-context invariant touched this cycle).",
+        "Attempt 28: re-ran check_invariant_matrix.py fresh against evidence/runtime-context-invariant-matrix.json -- PASSED, 3 invariants, unchanged."
+      ]
+    },
+    {
+      "name": "implement-auth-security-change",
+      "sha256": "8de0236f5e04b9c74a738f6ffc71224070c4ddd230cbccbe88fe8e1144627332",
+      "checks_completed": [
+        "Preserved existing security invariants: RequestContextStore shape, SYSTEM_ACTOR_ID, anonymous/authenticated/system actor semantics, JwtAuthGuard root-enrichment-by-mutation, PermissionsGuard behavior — all unchanged and covered by unmodified + new tests (request-context.spec.ts with a recorded legacy-baseline PASS, jwt-auth.guard.spec.ts with new root-enrichment-in-place cases, http-context-lifecycle.spec.ts with new authenticated-actor-concurrency/header-matrix/error-isolation cases, and the full auth-flow/oauth-flow/rate-limit e2e specs against real infra).",
+        "python3 ai/skills/implement-auth-security-change/scripts/check_auth_invariants.py worktrees/MEMORIES-0006/backend -> PASSED",
+        "Attempt 16: fixed fix-request-review-004's mutable-reference-isolation finding — a security-relevant gap where a nested RequestContext.run()/CorrelationContext.run() override could leak actor/role/permission/correlation mutations back to the parent's active security context if the caller passed the parent's own reference (or an array-aliased shallow copy) back in. Both facades now clone the store whenever a parent is active; SYSTEM_ACTOR_ID/anonymous/authenticated semantics, JwtAuthGuard's root-enrichment-by-mutation pattern, and PermissionsGuard remain byte-for-byte unchanged (grep + full jwt-auth.guard.spec.ts/http-context-lifecycle.e2e-spec.ts re-run confirm no regression).",
+        "python3 ai/skills/implement-auth-security-change/scripts/check_auth_invariants.py worktrees/MEMORIES-0006/backend -> PASSED",
+        "Attempt 17: fixed fix-request-review-005's finding — a concurrency-safety gap one layer below RequestContext/CorrelationContext, in the shared RuntimeContextService.runRoot() every security namespace root is ultimately opened through: a reused RuntimeContextSeed could alias two roots' CLS storage to the same mutable object, which for an authenticated request's REQUEST_CONTEXT_KEY namespace would mean one request's actor/roles/permissions could in principle be overwritten mid-flight by a concurrent request sharing a seed. RuntimeContextModule/app.module.ts callers already construct a fresh `new RuntimeContextSeed()` per HTTP request and per BullMQ job (no seed reuse in the shipped security-relevant call sites), so this was a latent generic-mechanism gap rather than an exploitable production path, but runRoot()'s snapshot-per-call fix closes it unconditionally regardless. RequestContext/CorrelationContext's own actor/role/permission semantics, SYSTEM_ACTOR_ID, JwtAuthGuard, and PermissionsGuard are all unchanged (full jwt-auth.guard.spec.ts/http-context-lifecycle.e2e-spec.ts/request-context.spec.ts re-run confirms no regression).",
+        "python3 ai/skills/implement-auth-security-change/scripts/check_auth_invariants.py worktrees/MEMORIES-0006/backend -> PASSED",
+        "Attempt 21: fix-request-review-008 was scoped to TypeOrmQueryRunnerContext test coverage and characterization-evidence staleness, neither of which touches RequestContext/CorrelationContext/JwtAuthGuard/PermissionsGuard — re-ran the full jwt-auth.guard.spec.ts/request-context.spec.ts suites (part of the fresh 410-test unit run) and check_auth_invariants.py to confirm zero regression.",
+        "python3 ai/skills/implement-auth-security-change/scripts/check_auth_invariants.py worktrees/MEMORIES-0006/backend -> PASSED",
+        "Attempt 23/24: review cycle 10's finding was scoped to RuntimeContextSeed's cross-seed ownership tracking, not RequestContext/JwtAuthGuard — re-ran check_auth_invariants.py attempt 24 to confirm no regression: PASSED.",
+        "Attempt 25: fixed fix-request-review-013 finding #4 (AC4) — the real-infrastructure 'two concurrent authenticated requests' case in http-context-lifecycle.e2e-spec.ts already exercised the REAL PermissionsGuard/JwtAuthGuard and a REAL, distinct Postgres QueryRunner per request, but asserted only actor/roles/permissions/portal/QueryRunner isolation, not request/correlation ID isolation, in the same overlapping transactional await — so a correlation/request slice leak confined to that specific window could still pass. Added distinct x-request-id/x-correlation-id headers to both overlapping requests and asserted the returned IDs plus response headers stay request-specific, closing the gap the fix-request identified without adding a separate test (proving all of actor/security/request/correlation/QueryRunner identity together, in one overlapping real-infrastructure case). check_auth_invariants.py -> PASSED, unchanged.",
+        "Attempt 26: python3 ai/skills/implement-auth-security-change/scripts/check_auth_invariants.py worktrees/MEMORIES-0006/backend -> PASSED (unchanged from attempt 25 — no auth-flow file touched this cycle).",
+        "Attempt 28: re-ran check_auth_invariants.py fresh -- PASSED, unchanged."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+version: 1
+mandatory:
+- path: ai/shared/policies/security.md
+  reason: Security boundaries
+  load: initial
+- path: ai/shared/policies/git-policy.md
+  reason: Git restrictions
+  load: initial
+- path: ai/shared/policies/worktree-policy.md
+  reason: Worktree restrictions
+  load: initial
+- path: ai/shared/quality/definition-of-done.md
+  reason: Completion criteria
+  load: initial
+- path: ai/shared/workflows/requirement-change.md
+  reason: Requirement precedence and change-cycle rules
+  load: initial
+- path: ai/shared/workflows/user-acceptance.md
+  reason: User acceptance gate
+  load: initial
+repositories:
+  backend:
+  - path: ai/repos/backend/INDEX.md
+    reason: Repository knowledge index
+    load: initial
+  - path: ai/repos/backend/architecture.md
+    reason: Architecture and module boundaries
+    load: on-demand
+  - path: ai/repos/backend/conventions.md
+    reason: Repository conventions
+    load: on-demand
+  - path: ai/repos/backend/testing.md
+    reason: Testing requirements
+    load: on-demand
+  - path: ai/repos/backend/source-map.md
+    reason: Source navigation map
+    load: on-demand
+  - path: worktrees/MEMORIES-0008/backend/libs/shared/kernel/src/aggregates/aggregate-root.ts
+    reason: Existing aggregate root and domain-event behavior to preserve
+    load: initial
+  - path: worktrees/MEMORIES-0008/backend/libs/shared/kernel/src/entities/auditable-props.ts
+    reason: Existing audit contract and initialization helpers
+    load: initial
+  - path: worktrees/MEMORIES-0008/backend/libs/shared/kernel/src/repositories/repository.ts
+    reason: Existing find and physical-delete repository contract
+    load: initial
+  - path: worktrees/MEMORIES-0008/backend/libs/platform/database/src/audit.orm-entity.ts
+    reason: Existing ORM audit base and infrastructure helper boundary
+    load: initial
+  - path: worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/domain/accounts/account.ts
+    reason: Strict soft-delete aggregate baseline
+    load: initial
+  - path: worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/domain/auth-identities/auth-identity.ts
+    reason: Duplicated soft-delete implementation with inconsistent repeat-delete semantics
+    load: initial
+  - path: worktrees/MEMORIES-0008/backend/libs/modules/user-profiles/src/domain/user-profile.ts
+    reason: Auditable mutation and strict soft-delete baseline
+    load: initial
+  - path: worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/domain/accounts/account.repository.ts
+    reason: findByIdIncludingDeleted contract to replace with shared options
+    load: initial
+  - path: worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/infrastructure/persistence/typeorm-account.repository.ts
+    reason: Representative find and query-builder deleted filtering
+    load: initial
+  - path: worktrees/MEMORIES-0008/backend/libs/modules/user-profiles/src/infrastructure/persistence/typeorm-user-profile.repository.ts
+    reason: Representative find, exists, list and count deleted filtering
+    load: initial
+domains: []
+exclude:
+- ai/runtime/**
+- ai/tasks/*/changes/*/baseline/**
+- ai/tasks/*/final-report.md
+- ai/tasks/*/review.json
+- '**/node_modules/**'
+- '**/dist/**'
+- '**/build/**'
+- '**/.env*'
+- '**/secrets/**'

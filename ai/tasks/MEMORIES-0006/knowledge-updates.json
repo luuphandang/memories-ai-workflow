@@ -1,0 +1,19 @@
+{
+  "task_id": "MEMORIES-0006",
+  "updates": [
+    {
+      "target": "ai/domains/request-context/INDEX.md",
+      "type": "update",
+      "summary": "The migration described as in-progress ('đang migrate sang nestjs-cls (epic MEMORIES-0006)') is now implemented and pending user acceptance for this task. Once accepted, INDEX.md/overview.md/data-flow.md/decisions.md should be refreshed to describe the shared nestjs-cls-backed RuntimeContextService (libs/platform/context) with correlation/request/database namespaces instead of three independent AsyncLocalStorage instances, and decisions.md should record the seedActiveRoot()-vs-run() split and the runRoot()-per-BullMQ-job/CLI-command pattern documented in this task's implementation.json decisions.",
+      "content": "",
+      "approved": false
+    },
+    {
+      "target": "ai/repos/backend/architecture.md",
+      "type": "update",
+      "summary": "If this document enumerates platform libraries or dependency-direction rules, add libs/platform/context as a new platform library (nestjs-cls-backed runtime context infrastructure) with the dependency direction observability/security/database/queue -> platform/context -> nestjs-cls, and note that .dependency-cruiser.js now also enforces two platform/context-scoped rules in addition to the five libs/modules/*-scoped ones.",
+      "content": "",
+      "approved": false
+    }
+  ]
+}

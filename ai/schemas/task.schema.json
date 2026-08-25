@@ -135,7 +135,7 @@
         "max_cycles": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 20
+          "maximum": 25
         },
         "fail_on": {
           "type": "array",

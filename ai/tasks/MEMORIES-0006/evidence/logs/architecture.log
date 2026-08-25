@@ -1,0 +1,5 @@
+npm notice run @memories/backend@0.1.0 test:architecture
+npm notice run depcruise --config .dependency-cruiser.js apps libs
+
+✔ no dependency violations found (474 modules, 1794 dependencies cruised)
+

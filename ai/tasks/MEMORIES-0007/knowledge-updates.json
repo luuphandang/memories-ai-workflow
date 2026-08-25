@@ -1,0 +1,12 @@
+{
+  "task_id": "MEMORIES-0007",
+  "updates": [
+    {
+      "target": "ai/repos/backend/conventions.md",
+      "type": "proposal",
+      "summary": "Consider documenting the new convention: a TypeORM persistence adapter that needs to participate in TypeOrmUnitOfWork transactions should construct one TypeOrmRepositoryResolver<Entity> per ORM entity it owns (from libs/platform/database) instead of writing its own repositoryFor()-style method, so future adapters follow the shared primitive introduced by MEMORIES-0007 instead of reintroducing the duplicated pattern.",
+      "content": "",
+      "approved": false
+    }
+  ]
+}

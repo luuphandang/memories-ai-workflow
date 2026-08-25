@@ -1,0 +1,51 @@
+{
+  "task_id": "MEMORIES-0007",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "status": "ready",
+  "slices": [
+    {
+      "id": "task-requirements",
+      "title": "Task requirements",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Task requirements"
+      ],
+      "requirement_details": {
+        "Task requirements": [
+          "Lập inventory tất cả logic TypeORM repository-resolution bị lặp trong backend, gồm các method",
+          "Thiết kế một primitive dùng chung tại `libs/platform/database` để resolve TypeORM repository",
+          "Primitive hỗ trợ type-safe cho một hoặc nhiều ORM entity trong cùng persistence adapter.",
+          "Migrate toàn bộ các occurrence tương đương đã xác định sang primitive chung.",
+          "Giữ query, mapping, soft-delete, conditional update, upsert, raw SQL và aggregate persistence",
+          "Bổ sung unit/characterization tests cho resolver dùng chung và các adapter đại diện.",
+          "Cập nhật public exports, module wiring và repository knowledge nếu abstraction mới tạo ra",
+          "AC1 — Có một API dùng chung, type-safe trong `@memories/platform/database` thực hiện việc chọn",
+          "AC2 — API dùng chung không giữ `QueryRunner` hoặc resolved transactional repository trong",
+          "AC3 — Tất cả 13 persistence implementation trong baseline, cùng mọi occurrence tương đương",
+          "AC4 — Repository có nhiều ORM entity, đặc biệt product và card-template repositories, resolve",
+          "AC5 — Ngoài transaction, mọi adapter tiếp tục gọi đúng injected TypeORM repository và giữ",
+          "AC6 — Trong transaction, mọi operation của adapter tiếp tục dùng repository từ chính active",
+          "AC7 — Nested transaction, rollback và concurrent transaction isolation của",
+          "AC8 — Domain repository interfaces, use-case/controller contracts, API contracts, database",
+          "AC9 — Abstraction mới chỉ giải quyết infrastructure concern về repository resolution; không",
+          "AC10 — Unit tests của abstraction chứng minh ít nhất: fallback path, active-runner path, đúng",
+          "AC11 — Characterization/regression tests đại diện cho cả single-entity và multi-entity adapter",
+          "AC12 — Existing transaction/concurrency tests tiếp tục pass; test mới sẽ fail nếu implementer",
+          "AC13 — `lint`, `typecheck`, `test`, `test-architecture` và `build` của backend đều pass.",
+          "AC14 — Implementation handoff ghi rõ inventory đã migrate, abstraction được chọn, test evidence,"
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "pending"
+    }
+  ]
+}
