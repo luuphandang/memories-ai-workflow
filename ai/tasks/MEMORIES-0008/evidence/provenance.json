@@ -1,0 +1,333 @@
+{
+  "task_id": "MEMORIES-0008",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "generated_at": "2026-08-26T09:03:04+07:00",
+  "command": "npm run lint && npm run typecheck && npm test && npm run test:architecture && npm run build && npm run test:e2e (worktrees/MEMORIES-0008/backend, real Postgres/Redis/MinIO via /tmp/memories-0008-e2e-infra/docker-compose.yml, remapped ports 25432/26379/29000-29001, migration:run + db:seed applied); python3 ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py ai/tasks/MEMORIES-0008/execution-plan.json; python3 ai/skills/design-database-invariants/scripts/check_invariant_matrix.py ai/tasks/MEMORIES-0008/database-invariants.json; python3 ai/skills/implement-auth-security-change/scripts/check_auth_invariants.py worktrees/MEMORIES-0008/backend; python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_module_wiring.py worktrees/MEMORIES-0008/backend; python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_port_bindings.py worktrees/MEMORIES-0008/backend; python3 ai/skills/verify-implementation-handoff/scripts/check_handoff.py ai/tasks/MEMORIES-0008",
+  "preconditions": [
+    {
+      "name": "backend worktree dependencies installed (npm ci)",
+      "passed": true
+    },
+    {
+      "name": "worktree uncommitted files (git status --porcelain=v1 --untracked-files=all) match exactly the 61 inputs listed below",
+      "passed": true
+    },
+    {
+      "name": "real Postgres/Redis/MinIO reachable at remapped ports (25432/26379/29000-29001) with migrations applied and catalog seeded, for npm run test:e2e",
+      "passed": true
+    }
+  ],
+  "inputs": [
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/apps/api/test/catalog-inactive-terms.e2e-spec.ts",
+      "sha256": "b25f916b6854333b948c714efa07860df97f51394b402850f4e4da4ebfa98644"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/apps/api/test/products.e2e-spec.ts",
+      "sha256": "5f5fed9f853eca26d4cbf13da9d211987abb0ea0a4c8b533d5d9bdacea33f765"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/apps/api/test/register-transaction-rollback.e2e-spec.ts",
+      "sha256": "2e2ef84df20f0c4131bc982eb3244aa6b1c79c5df8d093e635f8fb0efb583161"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/card-catalog/src/domain/card-template/card-template.repository.ts",
+      "sha256": "6ef324ca92ac8af59bf7f1091bd76c56af119f4a2588aa40dffdc8a5117742d1"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/card-catalog/src/domain/card-template/card-template.ts",
+      "sha256": "f06acf7c455d9a8de55005b3c21ff57f99280cf792ec34e9092fb85130329cd2"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/card-catalog/src/infrastructure/persistence/card-template.mapper.ts",
+      "sha256": "923d78150427a42bf40829204c1b7efc3a6d8320330b487a9f9e8a1dbc7a7544"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/card-catalog/src/infrastructure/persistence/typeorm-card-template.repository.ts",
+      "sha256": "114fa317c8d06de794e7872463d6fb615fc288c960b18554158b81e978760c62"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/card-catalog/test/list-card-templates.use-case.spec.ts",
+      "sha256": "a7db43dac43f3faad0c638d77063b5c5d3b415682dddae0790ff1ec20ead52cf"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/card-catalog/test/typeorm-card-template.repository.deleted-mode.spec.ts",
+      "sha256": "35e264735ec11a486a3a2a8c86161b6134b1c7c1486efb04adc28e42a0904497"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/catalog/src/infrastructure/persistence/typeorm-catalog-term.repository.ts",
+      "sha256": "c145222c88a78584f86c476a70505c318c4f57afe927535a51b277e1063910e1"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/catalog/test/list-catalog-terms.use-case.spec.ts",
+      "sha256": "db56f915d4e93ec34384bc23cc2342afa0a42ddf636b29235ae36de1e31df3e4"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/catalog/test/typeorm-catalog-term.repository.spec.ts",
+      "sha256": "d68764f4d821d1933a17b3c9cc40355720a9c79d42d5bf311f0436ba05eb6f3c"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/domain/accounts/account.repository.ts",
+      "sha256": "9511a94451365532533c680a2a96d8a696d3d9ef52bf94dbf8f803dba4a6faa7"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/domain/accounts/account.ts",
+      "sha256": "1f95eb3d8bc1c29b5b55fe7a85d90461a1ae6f8ab91c6a19ea95ddb004cef83f"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/domain/auth-identities/auth-identity.repository.ts",
+      "sha256": "76b6954da6aa03617ac3a7eb291dbec20672a82d6d02ed74f483e37f1b4b90fe"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/domain/auth-identities/auth-identity.ts",
+      "sha256": "7830afe92d8f96c7aaa23cd7214c44e3238481f1e3828774f007e0da5643a92c"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/domain/permissions/permission.repository.ts",
+      "sha256": "71bc7596715430fd0c9e38797500057fb11799bf39512798090155992d7b252a"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/domain/permissions/permission.ts",
+      "sha256": "69825ac820c3dd3029b1772f9d20148bb1d012d533ef69d1e026417f7396e72c"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/domain/roles/role.repository.ts",
+      "sha256": "69a3b575b00bf2cc763020187f2cf0951ed60dff097d9c4680503a1948d9fe67"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/domain/roles/role.ts",
+      "sha256": "2a9b16e37d8dee966eda7d1ee48b92ca3822f727a4e877c02099772783e507ef"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/infrastructure/persistence/account.mapper.ts",
+      "sha256": "b8e42f5dbd4906964b436a2e88d0032744d7ccee2101673836c82f755a4d234d"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/infrastructure/persistence/auth-identity.mapper.ts",
+      "sha256": "904ece78a911b3c2402692d57f3fba23e57daf66a92bf40b184edd2442cbf9aa"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/infrastructure/persistence/permission.mapper.ts",
+      "sha256": "3a60cb4aec22c2813f030cb7355406055dda107a037a71d0f200a290943e9ae0"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/infrastructure/persistence/role.mapper.ts",
+      "sha256": "16825bad9329d04fed32972cbb38be9b7da8cd94174abecb1d7f192a50c41e7f"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/infrastructure/persistence/typeorm-account.repository.ts",
+      "sha256": "26ebda6e7803b09f3199ae058052c6814c2b6478d230e6b9bdf966aee0585388"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/infrastructure/persistence/typeorm-auth-identity.repository.ts",
+      "sha256": "54979ecb15b6b8afcdb98a5291a3a6c4fdc0c312da1fbbabde663a8a4bb2212e"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/infrastructure/persistence/typeorm-permission.repository.ts",
+      "sha256": "5240e8ce9e3d1e86a751db8b9a7e4d243d0dd89377e9f73357f4af6f2e9b26c7"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/infrastructure/persistence/typeorm-refresh-session.repository.ts",
+      "sha256": "faa991f7b2c73f7f04942fdde0099a4149b96a96d5f98de075dfea6c94ed645c"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/infrastructure/persistence/typeorm-role.repository.ts",
+      "sha256": "098bafca5428793a63957330233df25220c3d03ff29548a754c1b47a6e354e5d"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/infrastructure/security/account-lookup.service.ts",
+      "sha256": "588622f53b1ca3df7504f2513211bf3a3c3087401a83d8748f13d8103fc2233a"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/test/auth-identity.spec.ts",
+      "sha256": "80870f73a2257238aa90ae80d46e394e2bd653cddfb993fad866206792542804"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/test/typeorm-account.repository.spec.ts",
+      "sha256": "528fee5d36ef9245ce54cbe364fcde2d20e23c68d24b0b726157001f64a6ad97"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/test/typeorm-auth-identity.repository.spec.ts",
+      "sha256": "59dd216bd18b11849640ff184f42120c9a10fc53f5956001994cb6514ef59587"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/test/typeorm-permission.repository.spec.ts",
+      "sha256": "63e016e15d23b4b3e37664cea4b250045befc54a5e193a8c79e7c2fa04ba5d87"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/test/typeorm-role.repository.spec.ts",
+      "sha256": "6f5843a2f036accfebfaf89b94f0e50f9e9087815e751dc5798d7d603148776f"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/media/src/infrastructure/persistence/typeorm-media-asset.repository.ts",
+      "sha256": "4652b5c22f503cf667e3d8827751eb6414e512b3d92d69100d4a8f9988554516"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/product-catalog/src/domain/product/product.repository.ts",
+      "sha256": "8669713d298c74f30b404fb0efb3c7ae0b2369ebb5a0015ced4abe989feafe82"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/product-catalog/src/domain/product/product.ts",
+      "sha256": "2057e9c554b65f1f62c2a588d2835616b33cc5a6acc6cd156e986e808a732b88"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/product-catalog/src/infrastructure/persistence/product.mapper.ts",
+      "sha256": "8eb9852c5542422ec7c17b80153c18538604cbbaff489ec523d851ec81fc3bd1"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/product-catalog/src/infrastructure/persistence/typeorm-product.repository.ts",
+      "sha256": "fe13ba5785d4dc8daf5fa9b7d0593f19a319f0a7fb22e4979b6e40d727da436e"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/product-catalog/test/list-products.use-case.spec.ts",
+      "sha256": "e2f6b29285a8632372b45380dc6ebf31a86fb5c71b2b6f057d14f3a94678c4ee"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/product-catalog/test/product.spec.ts",
+      "sha256": "f59d95330878788fa3535bd47ef31bda9c76cced0b128d65d552b3a6a51eb7b5"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/product-catalog/test/typeorm-product.repository.deleted-mode.spec.ts",
+      "sha256": "fed4d694829cee148deb94b631316290eee7bb139191cb36ca7bc9a449bc82ad"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/user-profiles/src/domain/user-profile.repository.ts",
+      "sha256": "025484064f3c379c8f9c09e7fc68ab4f43f3601c9395a935e7344dce96374824"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/user-profiles/src/domain/user-profile.ts",
+      "sha256": "0465dbc8a6f736b92751c2739d2b25cb9fa4a4f1bdee431ba86fd72e3f8c3ef2"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/user-profiles/src/infrastructure/persistence/typeorm-user-profile.repository.ts",
+      "sha256": "0306284a122ec8dc088c3782ff3de678b8e89d25e7ff31e4f43555cff69ccb1c"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/user-profiles/src/infrastructure/persistence/user-profile.mapper.ts",
+      "sha256": "e79ea20b0eacfa2d11a450baab18d9a2ff1276fcee964b4eb7af775ff64c8ec5"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/user-profiles/test/typeorm-user-profile.repository.spec.ts",
+      "sha256": "b80ddf46bf43ed8e8edb57de929262c8f02191c8cae3b8ebeab9d07325f9306b"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/platform/database/src/audit-props.mapper.ts",
+      "sha256": "ba76cd26a327db05b761a256d587474b552b01d49db79477401e90de5e4a283a"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/platform/database/src/deleted-record-query.helper.ts",
+      "sha256": "9864444934361a1d3b3beba592afaeea024c44684ece162acb6e77ecf953dd81"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/platform/database/src/public-api.ts",
+      "sha256": "1bd1d8aebfc911a9c07aa4ad180441d06f95f203c599b79e20113338359b1a88"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/platform/database/test/audit-props.mapper.spec.ts",
+      "sha256": "e8e52729ef55046fd2199aa72d2deb2d7d378e31451c6c24462da4e6f16882a4"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/platform/database/test/deleted-record-query.helper.spec.ts",
+      "sha256": "f8c0ec4b6beb7ccafef99553ac39ff30eff3b5b7c9fb7d60f2501c6493ad84ad"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/shared/kernel/src/aggregates/auditable-aggregate-root.ts",
+      "sha256": "e8a9b61f0d1b01f30c56c91546bc6476077af6140a2471645c7d32c46c2da714"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/shared/kernel/src/public-api.ts",
+      "sha256": "c5fd6849ded8d5628f70319d6416e54646f9cc56d6e87a445cdb05a7c90e1edf"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/shared/kernel/src/repositories/auditable-repository.ts",
+      "sha256": "02f6a593081bb0c32dacf774f42e0a80d87bf684143e85d1b8409739aefc4178"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/shared/kernel/src/repositories/repository-query-options.ts",
+      "sha256": "10ecdf443a49739f9d1e6a018bb53839f381d887d9aa9c269610dbf944825265"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/shared/kernel/src/repositories/repository.ts",
+      "sha256": "bcfb1717fcd42083ca29e07377176ea5619fddcb5c1593dd618b2880681c9f69"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/shared/kernel/test/auditable-aggregate-root.spec.ts",
+      "sha256": "366a3bed0f01e029bf9a086489569b797e4f627d943ffd45aa939e51db63c014"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/libs/modules/identity-access/test/delete-account.use-case.spec.ts",
+      "sha256": "30faa67871276df99830143b8d7db19279c47e57bd1c29fb48706b13b96ffb54"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/backend/apps/api/test/soft-delete-query-modes.e2e-spec.ts",
+      "sha256": "94e1aaa4620deb92deb90809040dcd3fb1f6ecff397ea546ad4432691cb0d3ae"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "logs/lint.txt",
+      "sha256": "eadceadef528fb93873bed6ad9823db9bcf037907b6dd8ef548d7b5968122dfb"
+    },
+    {
+      "path": "logs/typecheck.txt",
+      "sha256": "dd02a3bc3e876050ad3429c484fc8bc2493f215bd53ce943e1da011724f05dac"
+    },
+    {
+      "path": "logs/test.txt",
+      "sha256": "166bf25cb3518cc27c39fb4fcafd74a2cfdcdfab1a5ad2500e09af99bd10b7ab"
+    },
+    {
+      "path": "logs/test-architecture.txt",
+      "sha256": "321ceaf3d4ef77f59227f9283a3b7febb6587c904fd92a8b0a82b47a99cb1982"
+    },
+    {
+      "path": "logs/build.txt",
+      "sha256": "2b027d36946b6b9ee6d7387799e3271bfde05762bb6abffee3db37fbb0268a8e"
+    },
+    {
+      "path": "logs/e2e-full-run.log",
+      "sha256": "8ab3044a4236c6286842cda1302071d01f60116f50ce4d8e21dfd84e636c857b"
+    },
+    {
+      "path": "logs/validate-execution-plan.txt",
+      "sha256": "e608a3d40c06a5573d636d8b38dcda011beb5cab3fc92fc00db92e633809362d"
+    },
+    {
+      "path": "logs/check-invariant-matrix.txt",
+      "sha256": "1b68a141b06f707a6509466b3eb30f9f2d412ed9f69cbcc210aa74879c1f751d"
+    },
+    {
+      "path": "logs/check-auth-invariants.txt",
+      "sha256": "1233ec5673c869ea8c90e95f76097072c2e5358ef3b91d46ba3d4aa4f846ddcf"
+    },
+    {
+      "path": "logs/check-module-wiring.txt",
+      "sha256": "b23a45051aa94698f01a51e4e1082cf2125aa1bc58120bd64046dda566360b7a"
+    },
+    {
+      "path": "logs/check-port-bindings.txt",
+      "sha256": "ead4769dc886a5692ac79366ab35b7c7673f6f11c376d5d2d16b4dbf35b820da"
+    },
+    {
+      "path": "logs/check-handoff.txt",
+      "sha256": "52577086bfe12c1fcb4cd4189769eb1797de6068d97f82ed13a55211ba4b045d"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/.ai/validation/backend.json",
+      "sha256": "8929e83fd959df914adbebd6441e325f65e5fe6a372954d035a079787924b101"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0008/.ai/validation/summary.json",
+      "sha256": "5461c5471054d29cd7abfac43dbed6aaa7db3f8c684e329b3af303fdd50c8d34"
+    }
+  ],
+  "validation_artifact_refresh": {
+    "command": "./ai/bin/ai task validate-code MEMORIES-0008 --tier full",
+    "generated_at": "2026-08-26T09:03:04+07:00",
+    "artifacts": [
+      "backend.json",
+      "summary.json"
+    ]
+  }
+}

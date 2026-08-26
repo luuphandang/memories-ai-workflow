@@ -1,0 +1,3 @@
+npm notice run @memories/backend@0.1.0 build
+npm notice run nest build
+webpack 5.97.1 compiled [1m[32msuccessfully[39m[22m in 2926 ms

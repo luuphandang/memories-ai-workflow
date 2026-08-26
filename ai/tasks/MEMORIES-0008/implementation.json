@@ -1,14 +1,428 @@
 {
   "task_id": "MEMORIES-0008",
-  "status": "not_started",
-  "summary": "",
-  "applied_skills": [],
-  "repositories": [],
-  "decisions": [],
-  "assumptions": [],
-  "validation_commands": [],
-  "acceptance_criteria": [],
-  "knowledge_updates": [],
+  "status": "implemented",
   "implementation_cycle": 1,
-  "change_cycle": 0
+  "change_cycle": 0,
+  "summary": "All 7 slices complete: 'auditable-aggregate-abstraction', 'migrate-aggregate-hi-n-t-i', 'soft-delete-repository-query-contract', 'typeorm-helpers', 'audit-mapper-helpers', 'physical-delete-naming' and 'tests-and-documentation'. Shared AuditableAggregateRoot<TProps extends AuditableProps> lives in libs/shared/kernel with read-only audit, isDeleted, protected touch, public strict-semantics softDelete and an overridable already-deleted error hook; Account, AuthIdentity, UserProfile, Product, CardTemplate, Role and Permission extend it, with their duplicate audit/isDeleted/touch/softDelete implementations removed. On top of that, the same 7 aggregates' repositories share a domain-safe soft-delete query contract: DeletedRecordMode ('exclude'|'include'|'only') + RepositoryQueryOptions + resolveDeletedRecordMode (default 'exclude') in libs/shared/kernel/src/repositories/repository-query-options.ts, and a new AuditableRepository<TAggregate, TId> interface (repositories/auditable-repository.ts) that only the 7 in-scope repository interfaces extend. Every read method on those 7 repositories (findById, business-key lookups, exists methods, findAllByAccountId, list/count) accepts an optional trailing `options?: RepositoryQueryOptions`; `AccountRepository.findByIdIncludingDeleted` was removed and its two call sites now use `findById(id, { deleted: 'include' })`. The 'typeorm-helpers' slice deduplicated the mode -> query translation itself: the per-repository private `deletedWhere`/`deletedWhereSql` methods (previously duplicated verbatim across all 7 TypeORM repositories) are gone, replaced by two shared functions in libs/platform/database/src/deleted-record-query.helper.ts — `deletedRecordFindWhere<Entity extends AuditableOrmEntity>(mode)` for `FindOptionsWhere`-based find/findOne/count calls and `deletedRecordWhereSql(alias, mode)` for query-builder/raw-SQL predicates. The 'audit-mapper-helpers' slice deduplicated the six-audit-field ORM<->domain mapping itself: a new libs/platform/database/src/audit-props.mapper.ts exports `auditablePropsFromOrmEntity(raw: AuditableOrmEntity): AuditableProps` (ORM -> domain, spread into each mapper's `Aggregate.create({...})` props) and `applyAuditablePropsToOrmEntity<Entity extends AuditableOrmEntity>(entity, audit): Entity` (domain -> ORM, mutates the already-constructed entity in place), exported via public-api.ts. All 7 in-scope mappers (AccountMapper, AuthIdentityMapper, PermissionMapper, RoleMapper, CardTemplateMapper, ProductMapper, UserProfileMapper) had their duplicated 6-line `createdBy/createdAt/updatedBy/updatedAt/deletedBy/deletedAt` block replaced by one call each in `toDomain`/`toPersistence`; CatalogTerm/MediaAsset/RefreshSession mappers (out of scope, confirmed by grep — none reference the six audit fields) are untouched. No TypeORM import was added to shared kernel/domain; every `deletedRecordWhereSql` call site still passes only a repository-controlled literal alias, never request input. This session's 'physical-delete-naming' slice renamed the base `Repository<TAggregate, TId>.delete(id)` to `hardDelete(id)` (libs/shared/kernel/src/repositories/repository.ts) with a doc comment stating physical-delete semantics and the soft-delete alternative. A full-backend caller inventory (grep across apps/libs for every `.delete(` call reaching a domain repository, cross-checked against all 10 classes implementing `Repository`) found the rename fully safe to apply everywhere in one pass: no application/use-case/controller code calls the interface method at all (the two existing delete flows — DeleteAccountUseCase, DeleteUserProfileUseCase — already only call `aggregate.softDelete(...)` then `repository.save(aggregate)`); the only 5 call sites were test-only (2 e2e fixture-cleanup calls in catalog-inactive-terms.e2e-spec.ts, 2 in products.e2e-spec.ts, 1 direct unit-test call in typeorm-catalog-term.repository.spec.ts) plus 3 jest-mock object literals (`delete: jest.fn()`) in use-case spec files. All 10 TypeORM repository implementations (Account, AuthIdentity, UserProfile, Product, CardTemplate, Role, Permission, CatalogTerm, MediaAsset, RefreshSession) and every one of those caller/mock sites were renamed to `hardDelete` in the same pass — no `delete()` naming ambiguity remains anywhere in the codebase. This session's 'tests-and-documentation' slice closed the one substantive gap left by prior sessions' already-thorough test coverage (base AuditableAggregateRoot behavior, all three deleted-mode query paths across 7 repositories, and audit-mapper round-trip were already covered): a dedicated regression test for `DeleteAccountUseCase`, the only Account-cascade delete flow in the codebase, was missing entirely (grepped for existing coverage first — zero hits). Added libs/modules/identity-access/test/delete-account.use-case.spec.ts (4 cases) asserting the full cascade in one mocked transaction: Account soft-deleted with actor/timestamp, every non-already-deleted AuthIdentity soft-deleted and saved (an already-deleted identity is left untouched, not re-thrown), UserProfileProvisioner.deleteByAccountId invoked, RefreshSessionRepository.revokeAllForAccount invoked, a not-found account throws DomainError with zero side effects, and cascading an already-deleted account rejects via the inherited strict softDelete conflict. No source code changed in this slice — it is documentation/test-only. Public exports (libs/shared/kernel/src/public-api.ts, libs/platform/database/src/public-api.ts) were already complete from prior slices (AuditableAggregateRoot, AuditableRepository, RepositoryQueryOptions/DeletedRecordMode/resolveDeletedRecordMode, deletedRecordFindWhere/deletedRecordWhereSql, auditablePropsFromOrmEntity/applyAuditablePropsToOrmEntity all exported), verified again this session. Per common.md/claude-implementer.md's 'không sửa ai/repos trực tiếp' rule, the convention-doc update for this now-durable abstraction is recorded as a proposal in `knowledge_updates` below rather than edited directly.",
+  "applied_skills": [
+    {
+      "name": "decompose-implementation-task",
+      "sha256": "0d8e89a94111bd5679c8c5ef6c8f5ce250621909f51704bf676af966f2fd4673",
+      "checks_completed": [
+        "Reused existing ai/tasks/MEMORIES-0008/execution-plan.json (7 slices) mapping every acceptance-criterion group to one primary slice",
+        "python3 ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py ai/tasks/MEMORIES-0008/execution-plan.json -> 'Execution plan PASSED: 7 slices'",
+        "Worked only on the assigned slice 'physical-delete-naming' this session; kept implementation-progress.json.current_slice aligned to it throughout (execution-plan.json status fields left untouched — owned by the orchestrator)",
+        "This session worked only on the final assigned slice 'tests-and-documentation'; re-ran python3 ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py ai/tasks/MEMORIES-0008/execution-plan.json -> 'Execution plan PASSED: 7 slices'; execution-plan.json status fields left untouched"
+      ]
+    },
+    {
+      "name": "verify-implementation-handoff",
+      "sha256": "570af30068f0ef579bd0538cb88368138530aa99852f3f0d0d531e082ce548a5",
+      "checks_completed": [
+        "repositories[].changed_files generated from `git status --porcelain=v1 --untracked-files=all` in worktrees/MEMORIES-0008/backend (59 files: the 49 from the five already-completed slices plus 10 new/changed for this slice), not from memory",
+        "python3 ai/skills/verify-implementation-handoff/scripts/check_handoff.py ai/tasks/MEMORIES-0008 -> 'Implementation handoff PASSED: 59 exact paths'",
+        "This session added 1 new test-only file (delete-account.use-case.spec.ts, the sole source/test change of this slice) to repositories[].changed_files; python3 ai/skills/verify-implementation-handoff/scripts/check_handoff.py ai/tasks/MEMORIES-0008 -> 'Implementation handoff PASSED: 60 exact paths'",
+        "Attempt 17 fix: added soft-delete-query-modes.e2e-spec.ts to changed_files (61 total). check_handoff.py -> 'PASSED: 61 exact paths'."
+      ]
+    },
+    {
+      "name": "validate-evidence-provenance",
+      "sha256": "15aa1882c029c5343e4d4880fc43032028b5e4ec00854b4b1edbe0b94642caae",
+      "checks_completed": [
+        "Regenerated the durable manifest at ai/tasks/MEMORIES-0008/evidence/provenance.json with fresh sha256 for all 59 changed inputs plus this session's 11 validation-log artifacts, all captured after the final source edit in this session (no reuse of the prior slice's now-stale hashes)",
+        "python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0008 worktrees/MEMORIES-0008/.ai/validation -> 'Provenance sync PASSED: published 59 inputs and 11 artifacts'",
+        "python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py worktrees/MEMORIES-0008/.ai/validation/provenance.json -> 'Evidence provenance PASSED: 59 inputs, 11 artifacts'",
+        "database-invariants.json durable copy diffed byte-identical against worktrees/MEMORIES-0008/.ai/validation/database-invariants.json (unchanged this session — pure rename, not a query-semantics change); check_invariant_matrix.py re-run against the durable copy also passes",
+        "This session re-ran lint/typecheck/test/test:architecture/build plus all 6 skill checks fresh, added the 1 new input (delete-account.use-case.spec.ts) to the durable manifest, then python3 ai/skills/validate-evidence-provenance/scripts/finalize_provenance_run.py ai/tasks/MEMORIES-0008/evidence/provenance.json rehashed all 60 inputs + 11 artifacts -> python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0008 worktrees/MEMORIES-0008/.ai/validation -> 'Provenance sync PASSED: published 60 inputs and 11 artifacts' -> python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py worktrees/MEMORIES-0008/.ai/validation/provenance.json -> 'Evidence provenance PASSED: 60 inputs, 11 artifacts'",
+        "Attempt 17 fix: re-ran full validation + test:e2e against real Postgres/Redis/MinIO, renamed the e2e log to logs/e2e-full-run.log (check_evidence_freshness.py's ground-truth name), rehashed 61 inputs + 14 artifacts, sync_provenance.py/check_provenance.py -> 'PASSED: 61 inputs, 14 artifacts', check_evidence_freshness.py -> 'PASSED: 13 tags, no drift'."
+      ]
+    },
+    {
+      "name": "implement-nestjs-vertical-slice",
+      "sha256": "91b494f52ee898fec6f750ce10e5aa53de9e329de3728120fee87e7d666f33c8",
+      "checks_completed": [
+        "Method-rename-only change across 10 repository provider classes and their call sites; no NestJS module/controller/DI wiring or port token added, removed, or renamed (the interface method name is not part of any Symbol token)",
+        "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_module_wiring.py worktrees/MEMORIES-0008/backend -> 'Nest module wiring check PASSED: 39 use-case/controller classes' (unchanged)",
+        "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_port_bindings.py worktrees/MEMORIES-0008/backend -> 'Port binding check PASSED: 32 injected Symbol tokens' (unchanged)",
+        "This slice adds only a test file (no module/controller/DI/port-token change); re-ran both checks fresh this session -> 'Nest module wiring check PASSED: 39 use-case/controller classes' and 'Port binding check PASSED: 32 injected Symbol tokens' (both unchanged)"
+      ]
+    },
+    {
+      "name": "create-backend-migration",
+      "sha256": "a08ba955158d37512fa958db730f6c01aa4db29f72fcc454d2b18c8203da78db",
+      "checks_completed": [
+        "Not applicable to this slice: no schema/column change, no migration file created, no TypeORM CLI invoked — pure TypeScript method rename over the existing physical-delete SQL statement",
+        "Still not applicable this session: 'tests-and-documentation' added one test file and one knowledge-update proposal, no schema/migration change"
+      ]
+    },
+    {
+      "name": "design-database-invariants",
+      "sha256": "be72c2b32b011c21030c2c411b780bc3a45c9f47ef52b6f54ec05b0ca5008741",
+      "checks_completed": [
+        "python3 ai/skills/design-database-invariants/scripts/check_invariant_matrix.py ai/tasks/MEMORIES-0008/database-invariants.json -> 'Database invariant matrix PASSED: 3 invariants' (matrix unchanged this session — pure method rename, the underlying `repositoryResolver.get().delete(...)` TypeORM call and its SQL are byte-for-byte unchanged in every repository)",
+        "worktrees/MEMORIES-0008/.ai/validation/database-invariants.json diffed byte-identical against the durable copy; re-ran check_invariant_matrix.py against the durable copy -> PASSED: 3 invariants",
+        "No schema/column change introduced",
+        "This session's new test (delete-account.use-case.spec.ts) exercises the existing DeleteAccountUseCase cascade at the mocked-repository boundary, introducing no new query semantics; re-ran python3 ai/skills/design-database-invariants/scripts/check_invariant_matrix.py ai/tasks/MEMORIES-0008/database-invariants.json -> 'Database invariant matrix PASSED: 3 invariants' (unchanged)"
+      ]
+    },
+    {
+      "name": "implement-auth-security-change",
+      "sha256": "8de0236f5e04b9c74a738f6ffc71224070c4ddd230cbccbe88fe8e1144627332",
+      "checks_completed": [
+        "This slice renames the physical-delete method on TypeOrmAccountRepository/TypeOrmAuthIdentityRepository (identity/credential aggregates) alongside the other 8, so the skill applies",
+        "python3 ai/skills/implement-auth-security-change/scripts/check_auth_invariants.py worktrees/MEMORIES-0008/backend -> 'Auth invariant check PASSED'",
+        "Verified the rename does not change soft-delete semantics: grepped DeleteAccountUseCase and DeleteUserProfileUseCase (the only two account/identity delete flows) and confirmed neither ever called `.delete()`/`.hardDelete()` — both only call `aggregate.softDelete(actorId, occurredAt)` then `repository.save(aggregate)`, unchanged by this slice",
+        "This slice's new delete-account.use-case.spec.ts directly regression-tests the Account/AuthIdentity identity-and-credential cascade-delete path, so the skill applies again; re-ran python3 ai/skills/implement-auth-security-change/scripts/check_auth_invariants.py worktrees/MEMORIES-0008/backend -> 'Auth invariant check PASSED'"
+      ]
+    }
+  ],
+  "repositories": [
+    {
+      "name": "backend",
+      "changed_files": [
+        "apps/api/test/register-transaction-rollback.e2e-spec.ts",
+        "libs/modules/card-catalog/src/domain/card-template/card-template.repository.ts",
+        "libs/modules/card-catalog/src/domain/card-template/card-template.ts",
+        "libs/modules/card-catalog/src/infrastructure/persistence/typeorm-card-template.repository.ts",
+        "libs/modules/card-catalog/test/typeorm-card-template.repository.deleted-mode.spec.ts",
+        "libs/modules/identity-access/src/domain/accounts/account.repository.ts",
+        "libs/modules/identity-access/src/domain/accounts/account.ts",
+        "libs/modules/identity-access/src/domain/auth-identities/auth-identity.repository.ts",
+        "libs/modules/identity-access/src/domain/auth-identities/auth-identity.ts",
+        "libs/modules/identity-access/src/domain/permissions/permission.repository.ts",
+        "libs/modules/identity-access/src/domain/permissions/permission.ts",
+        "libs/modules/identity-access/src/domain/roles/role.repository.ts",
+        "libs/modules/identity-access/src/domain/roles/role.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/typeorm-account.repository.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/typeorm-auth-identity.repository.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/typeorm-permission.repository.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/typeorm-role.repository.ts",
+        "libs/modules/identity-access/src/infrastructure/security/account-lookup.service.ts",
+        "libs/modules/identity-access/test/auth-identity.spec.ts",
+        "libs/modules/identity-access/test/typeorm-account.repository.spec.ts",
+        "libs/modules/identity-access/test/typeorm-auth-identity.repository.spec.ts",
+        "libs/modules/identity-access/test/typeorm-permission.repository.spec.ts",
+        "libs/modules/identity-access/test/typeorm-role.repository.spec.ts",
+        "libs/modules/product-catalog/src/domain/product/product.repository.ts",
+        "libs/modules/product-catalog/src/domain/product/product.ts",
+        "libs/modules/product-catalog/src/infrastructure/persistence/typeorm-product.repository.ts",
+        "libs/modules/product-catalog/test/product.spec.ts",
+        "libs/modules/product-catalog/test/typeorm-product.repository.deleted-mode.spec.ts",
+        "libs/modules/user-profiles/src/domain/user-profile.repository.ts",
+        "libs/modules/user-profiles/src/domain/user-profile.ts",
+        "libs/modules/user-profiles/src/infrastructure/persistence/typeorm-user-profile.repository.ts",
+        "libs/modules/user-profiles/test/typeorm-user-profile.repository.spec.ts",
+        "libs/platform/database/src/deleted-record-query.helper.ts",
+        "libs/platform/database/src/public-api.ts",
+        "libs/platform/database/test/deleted-record-query.helper.spec.ts",
+        "libs/shared/kernel/src/aggregates/auditable-aggregate-root.ts",
+        "libs/shared/kernel/src/public-api.ts",
+        "libs/shared/kernel/src/repositories/auditable-repository.ts",
+        "libs/shared/kernel/src/repositories/repository-query-options.ts",
+        "libs/shared/kernel/test/auditable-aggregate-root.spec.ts",
+        "libs/modules/card-catalog/src/infrastructure/persistence/card-template.mapper.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/account.mapper.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/auth-identity.mapper.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/permission.mapper.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/role.mapper.ts",
+        "libs/modules/product-catalog/src/infrastructure/persistence/product.mapper.ts",
+        "libs/modules/user-profiles/src/infrastructure/persistence/user-profile.mapper.ts",
+        "libs/platform/database/src/audit-props.mapper.ts",
+        "libs/platform/database/test/audit-props.mapper.spec.ts",
+        "libs/shared/kernel/src/repositories/repository.ts",
+        "apps/api/test/catalog-inactive-terms.e2e-spec.ts",
+        "apps/api/test/products.e2e-spec.ts",
+        "libs/modules/card-catalog/test/list-card-templates.use-case.spec.ts",
+        "libs/modules/catalog/src/infrastructure/persistence/typeorm-catalog-term.repository.ts",
+        "libs/modules/catalog/test/list-catalog-terms.use-case.spec.ts",
+        "libs/modules/catalog/test/typeorm-catalog-term.repository.spec.ts",
+        "libs/modules/identity-access/src/infrastructure/persistence/typeorm-refresh-session.repository.ts",
+        "libs/modules/media/src/infrastructure/persistence/typeorm-media-asset.repository.ts",
+        "libs/modules/product-catalog/test/list-products.use-case.spec.ts",
+        "libs/modules/identity-access/test/delete-account.use-case.spec.ts",
+        "apps/api/test/soft-delete-query-modes.e2e-spec.ts"
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "audit getter on AuditableAggregateRoot returns Object.freeze({...six fields}) — a fresh shallow copy — instead of returning this.props directly as the three pre-existing per-aggregate implementations did.",
+      "reason": "Task.md AC4 requires 'audit không cho caller mutate props'; freezing a copy makes that true for the shared base immediately."
+    },
+    {
+      "decision": "softDelete is public and non-abstract on the base class; touch is protected and non-abstract.",
+      "reason": "task.md section 6 requires callers to invoke `aggregate.softDelete(...)` then `repository.save(aggregate)` from the application layer; touch was always an internal helper."
+    },
+    {
+      "decision": "Added a protected, overridable alreadyDeletedError() hook returning a generic 'aggregate_already_deleted' conflict by default, called from the base softDelete.",
+      "reason": "task.md requires keeping the ability to override the existing specific error code ('account_already_deleted', 'user_profile_already_deleted')."
+    },
+    {
+      "decision": "Did not create SoftDeletableAggregateRoot, did not add a restore() method, and did not inject Clock/RequestContext into the new class.",
+      "reason": "Explicitly out of scope; actorId/occurredAt continue to be supplied by the application layer as plain parameters."
+    },
+    {
+      "decision": "Migrated all 7 baseline aggregates (Account, AuthIdentity, UserProfile, Product, CardTemplate, Role, Permission) onto AuditableAggregateRoot<TProps>.",
+      "reason": "task.md section 2 explicitly lists these 7 aggregates; verified via grep that CatalogTerm, MediaAsset, RefreshSession are the only remaining direct AggregateRoot subclasses, matching the 'Không migrate' list exactly."
+    },
+    {
+      "decision": "Account.alreadyDeletedError() and UserProfile.alreadyDeletedError() override the base hook to reproduce their exact prior error codes/messages.",
+      "reason": "AC6/AC18 require existing error codes not to regress."
+    },
+    {
+      "decision": "AuthIdentity does NOT override alreadyDeletedError() — it inherits the base's generic 'aggregate_already_deleted' code and gains a strict already-deleted guard it never had before.",
+      "reason": "task.md's inventory marks AuthIdentity's pre-migration softDelete as non-strict with no specific error code; DeleteAccountUseCase (its only caller) already guards with `if (!identity.isDeleted)`, so the new strict path cannot be hit by existing callers. New regression test locks this in."
+    },
+    {
+      "decision": "Product.isActive and CardTemplate.isActive changed from a direct `props.deletedAt === null` check to the inherited `isDeleted` getter.",
+      "reason": "task.md section 2: 'dùng isDeleted thay kiểm tra trực tiếp props.deletedAt khi phù hợp' — behaviorally identical, verified by existing/added tests."
+    },
+    {
+      "decision": "Product and CardTemplate now also inherit a public softDelete() they did not have before; nothing calls it.",
+      "reason": "One shared implementation per task.md's Goal; grepped for `.softDelete(` call sites — none exist for these two, so no observable behavior change (AC15)."
+    },
+    {
+      "decision": "Role and Permission only had a duplicate `audit` getter removed; no other change.",
+      "reason": "task.md's inventory table lists 'Không' for isDeleted/touch/softDelete on both."
+    },
+    {
+      "decision": "Added domain-safe DeletedRecordMode ('exclude'|'include'|'only') + RepositoryQueryOptions + resolveDeletedRecordMode (default 'exclude') in libs/shared/kernel/src/repositories/repository-query-options.ts, and a new AuditableRepository<TAggregate, TId> interface (repositories/auditable-repository.ts) extending the base Repository with an overridden findById(id, options?).",
+      "reason": "task.md's technical note explicitly suggests a separate interface for auditable repositories 'nhằm tránh options xuất hiện trên repository không hỗ trợ soft delete' rather than editing the base Repository — this keeps MediaAssetRepository/RefreshSessionRepository/join-table repositories completely unaffected, confirmed by grep showing only the 7 in-scope interfaces now extend AuditableRepository."
+    },
+    {
+      "decision": "Added an optional trailing `options?: RepositoryQueryOptions` to every read method on the 7 in-scope repository interfaces: findById (inherited), business-key lookups (findByCode, findByProviderAndIdentifier, findByProviderAndSubject), exists methods (existsByProviderAndIdentifier, existsByAccountId), findAllByAccountId, and list/count methods (list -> {items, total}; Role/Permission's parameterless list()).",
+      "reason": "task.md AC9 requires every relevant read method to consistently accept/pass the mode, covering find, exists, list, count/total and business-key lookup."
+    },
+    {
+      "decision": "Removed AccountRepository.findByIdIncludingDeleted entirely; both call sites (AccountLookupService.exists(), register-transaction-rollback.e2e-spec.ts) now call findById(id, { deleted: 'include' }).",
+      "reason": "task.md AC10 explicitly requires replacing this method with the shared options contract; grepped the whole repo afterward to confirm no remaining reference to the removed method name."
+    },
+    {
+      "decision": "Extracted the mode -> query translation that was previously duplicated as a private deletedWhere(mode)/deletedWhereSql(alias, mode) pair inside each of the 7 TypeORM repositories into two shared functions, deletedRecordFindWhere<Entity extends AuditableOrmEntity>(mode) and deletedRecordWhereSql(alias, mode), in a new libs/platform/database/src/deleted-record-query.helper.ts, exported via public-api.ts and wired into all 7 repositories (deleting every private method).",
+      "reason": "task.md section 4 explicitly requires a single shared helper at platform database/infrastructure so no repository hard-codes the 3-mode switch or IsNull(); the 'typeorm-helpers' slice (this session) is exactly where AC8's 'không lặp switch' requirement is scoped."
+    },
+    {
+      "decision": "deletedRecordFindWhere is generically constrained to `Entity extends AuditableOrmEntity` (hard-codes the `deletedAt` property name) rather than taking a configurable column-name parameter.",
+      "reason": "Every one of the 7 in-scope ORM entities already extends the shared AuditableOrmEntity base (libs/platform/database/src/audit.orm-entity.ts, `deletedAt` mapped to the `deleted_at` column) — verified via grep across all module persistence directories — so a configurable property name would be unused generality; the constraint also statically prevents the helper from ever being called against an entity that has no `deletedAt` column."
+    },
+    {
+      "decision": "deletedRecordWhereSql keeps taking a plain `alias: string` parameter with no runtime format validation.",
+      "reason": "task.md's constraint is about caller discipline ('chỉ nhận alias do implementation kiểm soát; không ghép request input vào SQL'), not the helper's signature; every call site (verified by grep) still passes a fixed literal the repository itself declared via `createQueryBuilder(...)`/`.leftJoin(...)` — identical to the pre-extraction private methods, which also took a bare `alias: string` with no validation. Adding validation here would be new behavior the task doesn't ask for and no caller needs."
+    },
+    {
+      "decision": "TypeOrmRepositoryResolver-based transaction-aware repository resolution was left completely untouched by this slice — the helper only replaces the mode -> query-condition translation, never touches how a repository obtains its TypeORM repository/query-builder instance.",
+      "reason": "task.md section 4 requires keeping existing transaction-aware repository resolution and query semantics; confirmed via full-suite pass and via the untouched register-transaction-rollback.e2e-spec.ts still referencing findById(id, { deleted: 'include' }) unchanged."
+    },
+    {
+      "decision": "Account.list's options.deleted parametrizes only the main 'account' alias condition; the leftJoin's own 'localIdentity.deleted_at IS NULL' condition (sourcing the displayed phone number) is left untouched regardless of mode.",
+      "reason": "task.md's join rule: 'joined records giữ business semantics hiện tại' — phone display for a joined LOCAL identity should still hide a deleted identity's phone independent of the Account-level deleted mode."
+    },
+    {
+      "decision": "Product.list and CardTemplate.list's options.deleted parametrizes only the main products/card_templates row condition, independent of the existing ACTIVE-status business filter; computeFacets on both repositories was NOT given an options parameter.",
+      "reason": "Facet-count queries are a derived reporting view over the same ACTIVE+not-deleted catalog; nothing in task.md introduces a deleted-aware facet view and no caller needs one today. Documented in both product.repository.ts and card-template.repository.ts as a scoped decision, not an oversight."
+    },
+    {
+      "decision": "All 32 new unit tests (7 new spec files) mock at the TypeOrmRepository/query-builder boundary rather than hitting a real Postgres instance.",
+      "reason": "Matches ai/repos/backend/testing.md's stated unit-test mock policy ('unit test mock repository ở boundary port/interface') and the pre-existing typeorm-product/card-template characterization-spec convention; these tests verify this task's new mode -> TypeORM condition/SQL translation code deterministically, not Postgres's own driver-level IS NULL semantics. No e2e-level behavior changed in this slice (the one e2e-spec edit is a call-site rename), so no new real-infra evidence was generated or claimed."
+    },
+    {
+      "decision": "Added libs/platform/database/test/deleted-record-query.helper.spec.ts (8 cases) unit-testing deletedRecordFindWhere and deletedRecordWhereSql directly against all three modes, plus updated the stale doc comment in typeorm-permission.repository.spec.ts that referenced the now-removed per-repository 'deletedWhere' method.",
+      "reason": "task.md section 7 requires 'Test helper/repository cho default và đủ ba deleted modes'; the 7 existing per-repository spec files already regression-test the helper indirectly (they assert on the resulting where-clause/SQL string, unaffected by the internal refactor), so this new spec is the helper's own direct unit coverage."
+    },
+    {
+      "decision": "Did not touch Repository.delete()/hardDelete() naming, or CatalogTerm/MediaAsset/RefreshSession/the two join-table repositories/mappers.",
+      "reason": "Those are the separate pending slices (physical-delete-naming, tests-and-documentation) and task.md's explicit exclusion list."
+    },
+    {
+      "decision": "Created libs/platform/database/src/audit-props.mapper.ts with two exported functions: auditablePropsFromOrmEntity(raw: AuditableOrmEntity): AuditableProps (ORM -> domain, spread into each mapper's Aggregate.create({...}) props) and applyAuditablePropsToOrmEntity<Entity extends AuditableOrmEntity>(entity, audit): Entity (domain -> ORM, mutates the already-constructed entity in place and returns it). Both replace the identical 6-line createdBy/createdAt/updatedBy/updatedAt/deletedBy/deletedAt block that was duplicated verbatim across all 7 in-scope mappers' toDomain/toPersistence methods. Exported via libs/platform/database/src/public-api.ts.",
+      "reason": "task.md section 5 explicitly requires a single shared helper for the six audit fields in both directions; placing it beside the existing deleted-record-query.helper.ts in platform/database (not shared kernel) keeps it out of domain/shared kernel while still letting it depend on the shared AuditableOrmEntity base rather than any bounded context's concrete ORM entity."
+    },
+    {
+      "decision": "auditablePropsFromOrmEntity takes a plain `raw: AuditableOrmEntity` parameter (no generic) since it only reads the six inherited fields, while applyAuditablePropsToOrmEntity is generic (`Entity extends AuditableOrmEntity`) so TypeScript infers and preserves the concrete entity type at each mutate-in-place call site without requiring an explicit type argument.",
+      "reason": "Keeps every call site (`...auditablePropsFromOrmEntity(raw)` and `applyAuditablePropsToOrmEntity(entity, domain.audit)`) exactly as terse as the code it replaced, with zero explicit generics needed anywhere, verified by a clean npm run typecheck across the whole workspace."
+    },
+    {
+      "decision": "Migrated all 7 in-scope mappers (AccountMapper, AuthIdentityMapper, PermissionMapper, RoleMapper, CardTemplateMapper, ProductMapper, UserProfileMapper): toDomain's 6 audit-field lines become one `...auditablePropsFromOrmEntity(raw)` spread inside the existing `Aggregate.create({...})` props object (position unchanged, after each aggregate's own domain-specific fields); toPersistence's 6 `entity.<field> = domain.audit.<field>` lines become one `applyAuditablePropsToOrmEntity(entity, domain.audit);` statement immediately before `return entity;`.",
+      "reason": "task.md section 5's 'migrate mapper trong scope khi không mất type safety/behavior chuyên biệt' — each aggregate's own props (status, code, tokenVersion, etc.) are left as individually-typed fields exactly as before, so no type safety or per-aggregate behavior is lost; only the six generic audit fields are deduplicated."
+    },
+    {
+      "decision": "Did not migrate CatalogTermMapper, MediaAssetMapper or RefreshSessionMapper.",
+      "reason": "Confirmed via grep across all three files that none references createdBy/updatedBy/deletedBy/deletedAt — they don't carry the six-field AuditableProps shape (task.md's explicit exclusion list: CatalogTerm has only 2 timestamp fields and needs a schema/migration change to gain the rest; MediaAsset has no audit fields; RefreshSession has no soft delete) — so there is no duplicated audit-mapping code in scope to extract for any of them."
+    },
+    {
+      "decision": "Renamed `Repository<TAggregate, TId>.delete(id)` to `hardDelete(id)` in libs/shared/kernel/src/repositories/repository.ts, with a doc comment stating it is a physical delete and pointing to `aggregate.softDelete(...)` + `save(...)` as the soft-delete alternative, instead of leaving `delete()` as-is with only a comment.",
+      "reason": "task.md §6 prefers the `hardDelete()` rename whenever the full caller set can be migrated safely within the task. A full-backend inventory (see next decision) found every caller migratable in one pass, so the rename — not the fallback documented-`delete()` path — applies."
+    },
+    {
+      "decision": "Inventoried every caller of the base `Repository.delete()` across the whole backend (not just the 7 in-scope aggregates) before renaming: grepped every `.delete(` in apps/ and libs/ (excluding node_modules), cross-checked against all 10 classes implementing `Repository`/`AuditableRepository` (Account, AuthIdentity, UserProfile, Product, CardTemplate, Role, Permission, CatalogTerm, MediaAsset, RefreshSession — confirmed via `grep -rl \"implements.*Repository\"` + `delete(id`), and searched every `libs/modules/*/src/application` and `.../src/domain/*.repository.ts` interface for a re-declared or called `delete(`.",
+      "reason": "task.md §6's first bullet explicitly requires this inventory before deciding rename vs. keep; scoping it to only the 7 in-scope aggregates would have missed CatalogTerm/MediaAsset/RefreshSession callers, which also implement the same base interface and would have been left with an ambiguous physical-delete name."
+    },
+    {
+      "decision": "Found zero application/use-case/controller callers of `Repository.delete()` anywhere in the backend — the only 5 call sites were test-only: 2 e2e fixture-cleanup calls each in apps/api/test/catalog-inactive-terms.e2e-spec.ts and apps/api/test/products.e2e-spec.ts (`products.delete(id)`, `cardTemplates.delete(id)`), and 1 direct unit-test call in libs/modules/catalog/test/typeorm-catalog-term.repository.spec.ts (`repo.delete(new UniqueEntityId())`). Renamed all 5 to `hardDelete`.",
+      "reason": "This makes the rename unambiguously safe/complete: no production code path depends on the old name, so there is no breaking-scope concern task.md's fallback (\"giữ delete() nhưng document\") is meant to guard against."
+    },
+    {
+      "decision": "Also renamed 3 jest-mock object-literal properties (`delete: jest.fn()` -> `hardDelete: jest.fn()`) in libs/modules/card-catalog/test/list-card-templates.use-case.spec.ts, libs/modules/catalog/test/list-catalog-terms.use-case.spec.ts (2 occurrences) and libs/modules/product-catalog/test/list-products.use-case.spec.ts, discovered via `npm run typecheck` failing with `TS2353: 'delete' does not exist in type 'Mocked<...Repository>'` after the interface rename, not via the initial grep inventory (grep only finds call sites, not structurally-typed mock object keys).",
+      "reason": "These are `jest.Mocked<XxxRepository>` literals satisfied structurally against the renamed interface; TypeScript's excess-property check on the object literal is what caught them. `npm run typecheck` was rerun clean afterward, confirming no other structural mock was missed."
+    },
+    {
+      "decision": "Confirmed via reading DeleteAccountUseCase and DeleteUserProfileUseCase (the two existing account/profile delete flows) that neither calls `.delete()`/`.hardDelete()` at all — both exclusively call `aggregate.softDelete(actorId, occurredAt)` then `repository.save(aggregate)` inside a transaction, matching task.md §6's fourth bullet verbatim. No use-case code needed to change for this slice.",
+      "reason": "task.md §6 requires soft delete to keep going through `aggregate.softDelete(...)` + `repository.save(...)`, never through the physical-delete method; verifying this is the acceptance evidence for that bullet rather than an assumption."
+    },
+    {
+      "decision": "Renamed the method identically (`async hardDelete(id: UniqueEntityId): Promise<void> { await this.repositoryResolver.get().delete({ id: id.toValue() }); }`) in all 10 implementations without touching the method body, the internal `this.repositoryResolver.get().delete(...)` TypeORM call (TypeORM's own `Repository.delete`, a different, unrelated API), or any relation-cleanup `.delete(...)` calls inside `saveWithCatalogLinks`/`saveWithVariantsAndCatalogLinks` (which delete child rows, not the aggregate itself, and are not part of the `Repository<TAggregate, TId>` contract).",
+      "reason": "Keeps the rename mechanical and behavior-preserving — only the public domain-interface method name changes, never the SQL/ORM call it wraps or unrelated child-table cleanup calls that happen to also be named `delete`."
+    },
+    {
+      "decision": "Added exactly one new test file, libs/modules/identity-access/test/delete-account.use-case.spec.ts (4 cases), rather than adding more per-aggregate/mapper/helper tests, for the 'tests-and-documentation' slice.",
+      "reason": "Audited what prior slices already covered against task.md §7/AC16 before writing anything: base AuditableAggregateRoot behavior (auditable-aggregate-root.spec.ts), all three deleted modes across find/exists/list for 7 repositories (7 typeorm-*.repository spec files + deleted-record-query.helper.spec.ts), and audit-mapper round-trip (audit-props.mapper.spec.ts) were all already in place from attempts 1-15. Grepping for 'DeleteAccountUseCase' across every spec file found zero existing coverage of the one requirement explicitly named in AC16 ('Account cascade') and task.md §7's third bullet ('cascade xóa Account') — this was the only genuine gap."
+    },
+    {
+      "decision": "The new spec mocks AccountRepository/AuthIdentityRepository/RefreshSessionRepository/UserProfileProvisioner/UnitOfWork/Clock/RequestContext at the constructor-injection boundary, following the exact convention already used by change-account-password.use-case.spec.ts and create-account.use-case.spec.ts, rather than hitting a real Postgres instance.",
+      "reason": "Matches ai/repos/backend/testing.md's unit-test mock-at-port-boundary policy; DeleteAccountUseCase's own logic (which repositories/ports it calls, in what order, with what guard) is what needed regression coverage, not TypeORM/Postgres transaction behavior which is already covered by the existing apps/api/test/register-transaction-rollback.e2e-spec.ts e2e suite (unmodified by this slice beyond the earlier findByIdIncludingDeleted->findById(...,{deleted:'include'}) call-site rename)."
+    },
+    {
+      "decision": "Test case 2 asserts an already-deleted AuthIdentity is silently skipped (not re-soft-deleted, no throw) while a still-active sibling identity in the same account is still deleted in the same call.",
+      "reason": "Locks in DeleteAccountUseCase's existing `if (!identity.isDeleted)` guard (delete-account.use-case.ts line 67) against the strict softDelete conflict AuthIdentity now inherits from AuditableAggregateRoot (migrated in the 'migrate-aggregate-hi-n-t-i' slice) — without this guard, deleting an account with a mix of already-deleted and active identities would throw partway through the loop instead of completing the cascade, which would be a behavior regression AC6 forbids."
+    },
+    {
+      "decision": "Did not edit ai/repos/backend/conventions.md directly to document the new AuditableAggregateRoot/AuditableRepository/RepositoryQueryOptions/hardDelete convention; instead recorded it as a single proposal entry in this handoff's `knowledge_updates` array.",
+      "reason": "common.md/claude-implementer.md explicitly forbid implementer agents from editing ai/shared, ai/repos or ai/domains directly ('Không sửa ai/shared, ai/repos hoặc ai/domains trực tiếp'). An initial direct edit to conventions.md was made in error while investigating task.md's 'update knowledge/convention if the abstraction becomes durable' bullet; it was caught before any validation command ran and reverted with `git checkout -- ai/repos/backend/conventions.md`, confirmed clean via `git status --porcelain ai/repos/backend/conventions.md` (no output). No ai/repos file is part of this handoff's changed_files."
+    },
+    {
+      "decision": "Did not add any new production/domain/infrastructure source file in this slice.",
+      "reason": "task.md §7's four bullets are all test-and-documentation deliverables (unit test the base class, test the three deleted modes, regression-test a representative repository/use-case plus Account cascade, update exports/knowledge); every prior slice's production code already satisfies AC1-AC15, and public exports were already complete — re-verified by reading both public-api.ts files this session rather than assumed from the prior handoff."
+    },
+    {
+      "decision": "Fixed 3 blocking review findings (cycle 1, attempt 17): (1) audit getter now returns `new Date(...)` copies instead of the mutable Date refs it previously returned from this.props; (2) Product/CardTemplate computeFacets now accept optional RepositoryQueryOptions and propagate the mode into every main-row facet predicate via deletedRecordWhereSql instead of a hard-coded `deleted_at IS NULL`; (3) added a real-Postgres e2e regression (soft-delete-query-modes.e2e-spec.ts) and ran the full npm run test:e2e suite (21 suites/148 tests) against a standalone docker compose stack.",
+      "reason": "Object.freeze on the audit snapshot is shallow, so nested Date objects remained mutable references into aggregate state; facet queries were the only reads left ignoring the shared deleted-record mode contract; and every prior cycle's deleted-mode evidence was mocked TypeORM, never verified against real Postgres, per task.md's explicit 'don't claim DB behavior verified from mocks' requirement."
+    }
+  ],
+  "assumptions": [],
+  "validation_commands": [
+    {
+      "repo": "backend",
+      "command": "npm run lint",
+      "result": "pass (0 errors, 0 warnings)"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run typecheck",
+      "result": "pass"
+    },
+    {
+      "repo": "backend",
+      "command": "npm test",
+      "result": "pass (84 suites, 528 tests; +10 this cycle: 2 audit-snapshot Date-mutation regression tests, 4 Product facet deleted-mode tests, 4 CardTemplate facet deleted-mode tests)"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run test:architecture",
+      "result": "pass (no dependency violations, 496 modules, 1893 dependencies)"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run build",
+      "result": "pass (webpack compiled successfully)"
+    },
+    {
+      "repo": "backend",
+      "command": "npm run test:e2e",
+      "result": "pass (21 suites, 148 tests) against real Postgres 16/Redis 7/MinIO (docker compose project memories-0008-e2e, remapped ports 25432/26379/29000-29001; migration:run + db:seed applied first); includes new apps/api/test/soft-delete-query-modes.e2e-spec.ts proving AccountRepository.findById (TypeORM find condition) and ProductRepository.list (raw-SQL list+count) honor exclude/include/only against real Postgres with seeded active+soft-deleted rows"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py ai/tasks/MEMORIES-0008/execution-plan.json",
+      "result": "pass (Execution plan PASSED: 7 slices)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/design-database-invariants/scripts/check_invariant_matrix.py ai/tasks/MEMORIES-0008/database-invariants.json",
+      "result": "pass (Database invariant matrix PASSED: 3 invariants)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/implement-auth-security-change/scripts/check_auth_invariants.py worktrees/MEMORIES-0008/backend",
+      "result": "pass (Auth invariant check PASSED)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_module_wiring.py worktrees/MEMORIES-0008/backend",
+      "result": "pass (Nest module wiring check PASSED: 39 use-case/controller classes)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/implement-nestjs-vertical-slice/scripts/check_port_bindings.py worktrees/MEMORIES-0008/backend",
+      "result": "pass (Port binding check PASSED: 32 injected Symbol tokens)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/verify-implementation-handoff/scripts/check_handoff.py ai/tasks/MEMORIES-0008",
+      "result": "pass (Implementation handoff PASSED: 61 exact paths)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/validate-evidence-provenance/scripts/finalize_provenance_run.py ai/tasks/MEMORIES-0008/evidence/provenance.json --command ... --precondition ... --precondition ...",
+      "result": "pass (Finalized provenance: 61 inputs, 14 artifacts)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0008 worktrees/MEMORIES-0008/.ai/validation",
+      "result": "pass (Provenance sync PASSED: published 61 inputs and 14 artifacts)"
+    },
+    {
+      "repo": "backend",
+      "command": "python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py worktrees/MEMORIES-0008/.ai/validation/provenance.json",
+      "result": "pass (Evidence provenance PASSED: 61 inputs, 14 artifacts)"
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "criterion": "workflow:evidence-freshness",
+      "status": "passed",
+      "evidence": "[unit-tests: 84 suites / 528 tests] [e2e-tests: 21 suites / 148 tests] [architecture: 496 modules / 1893 dependencies] [provenance-inventory: 61 inputs / 14 artifacts] [implementation-attempt: 18] [implementation-cycle: 1] [change-cycle: 0] [resolved-review-cycles: 0] [review-state: reviewing] [acceptance-state: pending] [provenance-generated-at: 2026-08-26T09:03:04+07:00] [head-revision: 96b6e0e697eaafdab7a7da20796418ad4ba39fd2] [integration-state: feature_worktree_only]"
+    },
+    {
+      "criterion": "slice:auditable-aggregate-abstraction",
+      "status": "passed",
+      "evidence": "libs/shared/kernel/src/aggregates/auditable-aggregate-root.ts defines AuditableAggregateRoot<TProps extends AuditableProps> extends AggregateRoot<TProps> with: get audit() returning Object.freeze of the 6 AuditableProps fields (read-only); get isDeleted() delegating to isAuditablePropsDeleted(this.props); protected touch(actorId, occurredAt) stamping only updatedBy/updatedAt; public softDelete(actorId, occurredAt) with strict semantics (throws via overridable alreadyDeletedError() on a second call, leaves original delete metadata untouched); no SoftDeletableAggregateRoot, no Clock/RequestContext/TypeORM import, no restore(). Exported via libs/shared/kernel/src/public-api.ts. Tests: libs/shared/kernel/test/auditable-aggregate-root.spec.ts, 6 cases. [Review cycle 1 fix] `audit` now returns `new Date(...)` copies for createdAt/updatedAt/deletedAt instead of the mutable refs in `this.props` (Object.freeze is shallow); +2 regression tests mutate the returned Dates and assert internal state is unaffected. AC4 satisfied."
+    },
+    {
+      "criterion": "slice:migrate-aggregate-hi-n-t-i",
+      "status": "passed",
+      "evidence": "Account, AuthIdentity, UserProfile, Product, CardTemplate, Role and Permission all now `extends AuditableAggregateRoot<TProps>` instead of `AggregateRoot<TProps>`, with their own duplicate audit/isDeleted/touch/softDelete method bodies removed. Account.alreadyDeletedError() and UserProfile.alreadyDeletedError() override the base hook to reproduce the exact pre-existing conflict codes/messages. AuthIdentity now inherits the base's strict softDelete with the generic 'aggregate_already_deleted' code; regression test auth-identity.spec.ts 'rejects deleting an already-deleted identity' locks this in. Product.isActive and CardTemplate.isActive use the inherited isDeleted getter. CatalogTerm, MediaAsset, RefreshSession NOT migrated, confirmed via grep. Full suite passing throughout."
+    },
+    {
+      "criterion": "slice:soft-delete-repository-query-contract",
+      "status": "passed",
+      "evidence": "libs/shared/kernel/src/repositories/repository-query-options.ts defines `DeletedRecordMode = 'exclude' | 'include' | 'only'`, `RepositoryQueryOptions { deleted?: DeletedRecordMode }` and `resolveDeletedRecordMode(options)` defaulting to `'exclude'` — domain-safe, no TypeORM import (verified: file has zero imports). libs/shared/kernel/src/repositories/auditable-repository.ts defines `AuditableRepository<TAggregate, TId>` extending the base `Repository` with `findById(id, options?)`; exported via public-api.ts. Exactly the 7 in-scope domain repository interfaces (AccountRepository, AuthIdentityRepository, UserProfileRepository, ProductRepository, CardTemplateRepository, RoleRepository, PermissionRepository — verified via `grep -n \"extends Repository<\\|extends AuditableRepository<\"` across every `*.repository.ts`) now extend AuditableRepository<T> and accept an optional trailing `options?: RepositoryQueryOptions` on every read method: findById, findByCode, findByProviderAndIdentifier/findByProviderAndSubject (business-key lookup), existsByProviderAndIdentifier/existsByAccountId (exists), findAllByAccountId, and list (returns {items, total} — count/total). CatalogTermRepository, MediaAssetRepository, RefreshSessionRepository and the two join-table repositories (AccountRoleRepository, RolePermissionRepository) are unchanged, confirmed by the same grep. `AccountRepository.findByIdIncludingDeleted` is fully removed (grep for the name returns zero hits); its two callers — `AccountLookupService.exists()` and `apps/api/test/register-transaction-rollback.e2e-spec.ts` — now call `findById(id, { deleted: 'include' })`. Default (options omitted) is verified to reproduce the exact prior behavior everywhere it's exercised: 470 pre-existing tests plus every new spec still pass unchanged. Tests: 7 new spec files added in the prior session (31 cases across the default/include/only modes, covering findById, a business-key lookup, two exists methods, and two paginated list/count methods) plus 1 updated e2e assertion. [Review cycle 1 fix] `computeFacets` on Product/CardTemplate now accepts optional RepositoryQueryOptions and propagates the mode into every main-row facet predicate via `deletedRecordWhereSql`, replacing hard-coded `deleted_at IS NULL`; joined catalog_terms keep unchanged ACTIVE-only semantics. AC9 satisfied for facet/count reads."
+    },
+    {
+      "criterion": "slice:typeorm-helpers",
+      "status": "passed",
+      "evidence": "New libs/platform/database/src/deleted-record-query.helper.ts exports `deletedRecordFindWhere<Entity extends AuditableOrmEntity>(mode): FindOptionsWhere<Entity>` and `deletedRecordWhereSql(alias: string, mode: DeletedRecordMode): string`, exported via libs/platform/database/src/public-api.ts. Both live at platform/infrastructure, not shared kernel/domain (`libs/shared/kernel` has zero `typeorm` import — verified via grep across libs/shared/kernel/src; test:architecture also passes, 492 modules/1865 dependencies, no violations). Each function contains exactly one `exclude`/`include`/`only` switch — grepped every `libs/modules/*/src/infrastructure/persistence/*.ts` for `deletedWhere`/`deletedWhereSql`/`IsNull()`/`Not(IsNull())`/`'1=1'` literals afterward and found zero remaining hits outside the new helper file, confirming all 7 previously-duplicated private `deletedWhere(mode)`/`deletedWhereSql(alias, mode)` method pairs (in TypeOrmAccountRepository, TypeOrmAuthIdentityRepository, TypeOrmRoleRepository, TypeOrmPermissionRepository, TypeOrmUserProfileRepository, TypeOrmProductRepository, TypeOrmCardTemplateRepository) were deleted and every call site rewired to the shared functions instead (`deletedRecordFindWhere<XOrmEntity>(resolveDeletedRecordMode(options))` spread into `where`, `deletedRecordWhereSql(<fixed-alias>, mode)` passed to `.where(...)`/`.andWhere(...)`/interpolated into a raw-SQL WHERE fragment). Every `deletedRecordWhereSql` call site (Account.list -> `'account'`, UserProfile.list -> `'profile'`, Product.list -> `'p'`, CardTemplate.applyFilters -> `'template'`) still passes only a literal string the repository itself declared via `createQueryBuilder(...)`, never filter/request input — unchanged from the pre-extraction private methods, confirmed by grep showing no variable/request-derived value reaches the `alias` parameter anywhere in the 7 repositories. `TypeOrmRepositoryResolver`-based transaction-aware repository resolution is untouched (the helper only replaces the mode -> condition translation, never how a repository obtains its TypeORM repository/query-builder); the previously-passing typeorm-account/typeorm-auth-identity/typeorm-role/typeorm-permission/typeorm-user-profile/typeorm-product/typeorm-card-template spec files (which assert on the resulting where-object/SQL string, not on the removed private methods) all pass unchanged, proving query semantics are identical before/after. Tests: new libs/platform/database/test/deleted-record-query.helper.spec.ts (8 cases: `deletedRecordFindWhere` default/`include`/`only`; `deletedRecordWhereSql` default/`include`/`only`/multi-alias) plus the 7 existing per-repository spec files' unchanged assertions as indirect regression coverage. Full suite: 82 suites / 509 tests passing (up from 81/502 before this slice, +1 suite/+7 tests for the new helper spec). Validation: npm run lint/typecheck/test/test:architecture/build all pass; validate_execution_plan, check_invariant_matrix, check_auth_invariants, check_module_wiring, check_port_bindings, check_handoff (40 exact paths) all pass; provenance re-synced and re-verified. [Review cycle 1 fix] Added default/include/only tests for every Product and CardTemplate facet family (typeorm-*.deleted-mode.spec.ts), proving deletedRecordWhereSql is applied consistently to every main-aggregate facet predicate. AC8 satisfied."
+    },
+    {
+      "criterion": "slice:audit-mapper-helpers",
+      "status": "passed",
+      "evidence": "New libs/platform/database/src/audit-props.mapper.ts exports `auditablePropsFromOrmEntity(raw: AuditableOrmEntity): AuditableProps` (ORM -> domain) and `applyAuditablePropsToOrmEntity<Entity extends AuditableOrmEntity>(entity: Entity, audit: AuditableProps): Entity` (domain -> ORM), exported via libs/platform/database/src/public-api.ts. Both are constrained only to the shared `AuditableOrmEntity` base (libs/platform/database/src/audit.orm-entity.ts) and `AuditableProps` (libs/shared/kernel), never to a bounded context's concrete ORM entity type (e.g. AccountOrmEntity) — verified by reading the helper file itself, which imports nothing module-specific. All 7 in-scope mappers (AccountMapper, AuthIdentityMapper, PermissionMapper, RoleMapper, CardTemplateMapper, ProductMapper, UserProfileMapper) were migrated: grepped every `libs/modules/*/src/infrastructure/persistence/*.mapper.ts` for `createdBy: raw.createdBy`/`entity.createdBy = domain.audit` afterward and found zero remaining hits, confirming every duplicated 6-line audit block (`createdBy`/`createdAt`/`updatedBy`/`updatedAt`/`deletedBy`/`deletedAt`) in both `toDomain` and `toPersistence` was replaced by one `...auditablePropsFromOrmEntity(raw)` spread and one `applyAuditablePropsToOrmEntity(entity, domain.audit)` call respectively; each mapper's own domain-specific fields (status, tokenVersion, code, name, description, accessTier, ratingAverage, fullName, email, etc.) are untouched, individually typed exactly as before — no type safety or per-aggregate behavior lost. CatalogTermMapper, MediaAssetMapper, RefreshSessionMapper were NOT touched — grepped all three for `createdBy`/`updatedBy`/`deletedBy`/`deletedAt` and found zero hits, confirming they carry no six-field AuditableProps shape to extract (matching task.md's exclusion list). No TypeORM import was added to shared kernel/domain (`libs/shared/kernel` still has zero `typeorm` import, confirmed via grep; test:architecture passes, 494 modules/1877 dependencies, no violations). Actor/timestamp/nullability round-trip is exercised directly (null actorId, non-null actorId, deleted vs. non-deleted timestamp pairs) in the new unit spec, and indirectly by every pre-existing mapper-driving test (account.spec.ts, auth-identity.spec.ts, user-profile.spec.ts, product.spec.ts, card-template.spec.ts, and all 7 typeorm-*.repository spec files' save/find round-trips) passing unchanged. Tests: new libs/platform/database/test/audit-props.mapper.spec.ts (5 cases: full six-field round-trip, deleted-row actor/timestamp preservation, entity mutation + same-instance return, null-actor round-trip, soft-delete metadata write) plus the unchanged existing mapper/repository specs as indirect regression coverage. Full suite: 83 suites / 514 tests passing (up from 82/509 before this slice, +1 suite/+5 tests for the new helper spec). Validation: npm run lint/typecheck/test/test:architecture/build all pass; validate_execution_plan, check_invariant_matrix, check_auth_invariants, check_module_wiring, check_port_bindings, check_handoff (49 exact paths) all pass; provenance re-synced (49 inputs, 11 artifacts) and re-verified; database-invariants.json diffed byte-identical (no schema/query-semantics change this slice)."
+    },
+    {
+      "criterion": "slice:physical-delete-naming",
+      "status": "passed",
+      "evidence": "Renamed the base `Repository<TAggregate, TId>.delete(id: TId): Promise<void>` to `hardDelete(id: TId): Promise<void>` in libs/shared/kernel/src/repositories/repository.ts, with a doc comment stating it is a physical delete and directing callers to `aggregate.softDelete(actorId, occurredAt)` + `repository.save(aggregate)` for soft delete instead. Full-backend caller inventory (grep across every apps/**/*.ts and libs/**/*.ts for `.delete(` reaching a domain repository, cross-checked against all 10 classes implementing `Repository`/`AuditableRepository`: Account, AuthIdentity, UserProfile, Product, CardTemplate, Role, Permission — the 7 in-scope aggregates — plus CatalogTerm, MediaAsset, RefreshSession — the 3 out-of-scope-for-aggregate-migration ones that still share the same base interface) found: (a) zero application/use-case/controller callers anywhere — confirmed by reading DeleteAccountUseCase and DeleteUserProfileUseCase, the only two delete-shaped use cases, which exclusively call `aggregate.softDelete(...)` then `repository.save(aggregate)`, never the physical-delete method; (b) exactly 5 call sites, all test-only: `products.delete(id)`/`cardTemplates.delete(id)` (x2 each) in apps/api/test/catalog-inactive-terms.e2e-spec.ts and apps/api/test/products.e2e-spec.ts (e2e fixture cleanup), and `repo.delete(new UniqueEntityId())` in libs/modules/catalog/test/typeorm-catalog-term.repository.spec.ts (direct unit test of the repository's own delete). All 10 TypeORM repository implementations were renamed to `async hardDelete(id: UniqueEntityId): Promise<void>` with an identical method body (only the internal `this.repositoryResolver.get().delete({...})` TypeORM call remains, unchanged — a different, unrelated API); all 5 call sites renamed to `.hardDelete(...)`. `npm run typecheck` additionally surfaced 3 structurally-typed jest-mock object literals (`delete: jest.fn()`) in libs/modules/card-catalog/test/list-card-templates.use-case.spec.ts, libs/modules/catalog/test/list-catalog-terms.use-case.spec.ts (x2) and libs/modules/product-catalog/test/list-products.use-case.spec.ts, all renamed to `hardDelete: jest.fn()`; typecheck is clean afterward, confirming no other caller/mock was missed. Grepped the whole backend afterward for `\\bdelete(id` and for a lone `.delete(` reaching any of the 10 repository variable names — zero remaining hits outside the renamed set (only unrelated `Map.delete`/`Set.delete`/supertest `.delete('/http/path')`/TypeORM's own internal `repositoryResolver.get().delete({...})` remain). No behavior change: every renamed method's body is byte-for-byte identical to before, so this is a pure rename, confirmed by the full 83-suite/514-test unit suite passing unchanged. Tests: no new spec files needed (rename-only); the existing 5 test call sites plus 3 mock literals directly exercise the renamed contract, and the unchanged typeorm-*.repository.spec.ts assertions on the resulting delete-condition remain valid regression coverage. Validation: npm run lint/typecheck/test/test:architecture/build all pass; validate_execution_plan, check_invariant_matrix, check_auth_invariants, check_module_wiring, check_port_bindings, check_handoff (59 exact paths) all pass; provenance re-synced (59 inputs, 11 artifacts) and re-verified; database-invariants.json diffed byte-identical (no query-semantics change this slice)."
+    },
+    {
+      "criterion": "slice:tests-and-documentation",
+      "status": "passed",
+      "evidence": "Audited prior slices' already-added test coverage against task.md §7/AC16 before writing anything new: libs/shared/kernel/test/auditable-aggregate-root.spec.ts (6 cases) unit-tests the base class through a concrete test aggregate (audit copy-not-reference, isDeleted, protected touch via a public subclass wrapper, strict softDelete conflict, overridable alreadyDeletedError hook); libs/platform/database/test/deleted-record-query.helper.spec.ts (8 cases) plus 7 typeorm-*.repository spec files (typeorm-account/typeorm-auth-identity/typeorm-permission/typeorm-role/typeorm-user-profile/typeorm-card-template.repository.deleted-mode/typeorm-product.repository.deleted-mode) cover default/`include`/`only` for find, at least one `exists` method (existsByProviderAndIdentifier in typeorm-auth-identity.repository.spec.ts, existsByAccountId-equivalent in typeorm-user-profile), and at least one paginated `list`/count (typeorm-account.repository.spec.ts, typeorm-role/typeorm-permission list()); libs/platform/database/test/audit-props.mapper.spec.ts (5 cases) round-trips all six audit fields both directions including null-actor and deleted-row cases. The one genuine gap: no test anywhere exercised DeleteAccountUseCase, the only Account-cascade-delete flow in the codebase (grepped `DeleteAccountUseCase` across every `*.spec.ts`/`*.e2e-spec.ts` — zero hits before this slice). Added libs/modules/identity-access/test/delete-account.use-case.spec.ts (4 cases, mocked-repository unit style matching change-account-password.use-case.spec.ts's convention): (1) a single execute() cascades Account.softDelete (actor/timestamp stamped, accounts.save called) + every non-deleted AuthIdentity.softDelete+save + userProfileProvisioner.deleteByAccountId(accountId) + refreshSessions.revokeAllForAccount(accountId, now), all inside the mocked unitOfWork.withTransaction; (2) an already-deleted AuthIdentity in the account's identity list is left untouched (not re-deleted, not thrown) while a still-active sibling identity is still deleted — locking in the use case's `if (!identity.isDeleted)` guard; (3) a missing account throws DomainError('account_not_found') with zero cascade side effects (accounts.save/authIdentities.save/userProfileProvisioner.deleteByAccountId/refreshSessions.revokeAllForAccount all uncalled); (4) cascading delete on an already-deleted account rejects via the inherited strict softDelete 'already deleted' conflict from AuditableAggregateRoot, proving AC5's strict-conflict guarantee is observable through the full use-case orchestration, not just the aggregate in isolation. No production source file was changed in this slice — it is purely additive test coverage. Public exports (libs/shared/kernel/src/public-api.ts: AuditableAggregateRoot, AuditableRepository, RepositoryQueryOptions/DeletedRecordMode/resolveDeletedRecordMode; libs/platform/database/src/public-api.ts: deletedRecordFindWhere/deletedRecordWhereSql, auditablePropsFromOrmEntity/applyAuditablePropsToOrmEntity) were already complete from prior slices — re-verified this session by reading both files, no further export needed. Knowledge/convention update: per common.md/claude-implementer.md's explicit 'không sửa ai/repos trực tiếp' rule, a proposal to document the now-durable AuditableAggregateRoot/AuditableRepository/RepositoryQueryOptions/hardDelete convention in ai/repos/backend/conventions.md is recorded in `knowledge_updates` below instead of edited directly (an initial direct edit was made in error, caught before running any validation, and reverted via `git checkout` — confirmed clean via `git status --porcelain ai/repos/backend/conventions.md` producing no output). Tests: 1 new spec file, 4 cases, all passing; full suite grew from 83 suites/514 tests to 84 suites/518 tests. Validation: npm run lint/typecheck/test/test:architecture/build all pass (rerun fresh this session, logs at ai/tasks/MEMORIES-0008/evidence/logs/); validate_execution_plan, check_invariant_matrix, check_auth_invariants, check_module_wiring, check_port_bindings, check_handoff (60 exact paths) all pass; provenance finalized/re-synced/re-verified (60 inputs, 11 artifacts); database-invariants.json unchanged (no query-semantics change this slice, confirmed 3/3 invariants still pass). [Review cycle 1 fix] Added apps/api/test/soft-delete-query-modes.e2e-spec.ts: real-Postgres proof that AccountRepository.findById (TypeORM condition) and ProductRepository.list (raw-SQL list+count) honor exclude/include/only against seeded active+soft-deleted rows. npm run test:e2e passed (21 suites/148 tests) against a standalone real Postgres/Redis/MinIO stack; logged at evidence/logs/e2e-full-run.log, tracked as a provenance artifact and an `[e2e-tests: 21 suites / 148 tests]` freshness tag."
+    }
+  ],
+  "knowledge_updates": [
+    {
+      "target": "ai/repos/backend/conventions.md",
+      "type": "proposal",
+      "summary": "Document the AuditableAggregateRoot<TProps>/AuditableRepository<TAggregate, TId>/RepositoryQueryOptions convention introduced by MEMORIES-0008 as the standard for any future aggregate that needs audit trail + soft delete: (1) extend libs/shared/kernel/src/aggregates/auditable-aggregate-root.ts's AuditableAggregateRoot instead of re-implementing audit/isDeleted/touch/softDelete — `audit` returns a frozen copy (never mutable), `touch` is protected, `softDelete` is strict (second call conflicts via an overridable `alreadyDeletedError()` hook); (2) declare the repository interface via AuditableRepository<TAggregate, TId> (libs/shared/kernel/src/repositories/auditable-repository.ts) rather than the base Repository, and accept an optional trailing `options?: RepositoryQueryOptions` (`{ deleted?: 'exclude' | 'include' | 'only' }`, default 'exclude' via resolveDeletedRecordMode) on every read method (find/exists/list/count/business-key lookup) — never add a bespoke `findByIdIncludingDeleted`-style method; (3) translate the mode to a TypeORM condition via the shared libs/platform/database/src/deleted-record-query.helper.ts functions (deletedRecordFindWhere for FindOptionsWhere, deletedRecordWhereSql for query-builder/raw SQL) instead of writing a new per-repository IsNull()/deleted_at switch; (4) map the six ORM<->domain audit fields via libs/platform/database/src/audit-props.mapper.ts's auditablePropsFromOrmEntity/applyAuditablePropsToOrmEntity instead of six manual field assignments per mapper; (5) name the physical-delete repository method `hardDelete`, never bare `delete`, to keep it visually distinct from `aggregate.softDelete(...) + repository.save(...)`. Not yet added directly to conventions.md per the 'không sửa ai/repos trực tiếp' constraint on implementer agents — a maintainer/orchestrator pass should fold this in as a new bullet once the task is accepted."
+    }
+  ]
 }

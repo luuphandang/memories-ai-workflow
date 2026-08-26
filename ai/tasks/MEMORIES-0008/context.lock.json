@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-23T05:27:22+07:00",
+  "generated_at": "2026-08-26T09:25:00+07:00",
   "task_id": "MEMORIES-0008",
   "implementation_cycle": 1,
   "change_cycle": 0,
@@ -80,13 +80,13 @@
     },
     {
       "path": "worktrees/MEMORIES-0008/backend/libs/shared/kernel/src/entities/auditable-props.ts",
-      "sha256": "a2bb1e2a6467f172cd1d086887e815775f62a566d14a9eb107db4fd5dc2f1031",
+      "sha256": "bebd62f8750d74204d1a9cb4bee74324892697519b53e5e12b1ae726646c5118",
       "load": "initial",
       "category": "knowledge"
     },
     {
       "path": "worktrees/MEMORIES-0008/backend/libs/shared/kernel/src/repositories/repository.ts",
-      "sha256": "ec32d3801a89f25fbc60110a16fdec5ed9d40e5b7995ef88807dffe2cde4aef0",
+      "sha256": "bcfb1717fcd42083ca29e07377176ea5619fddcb5c1593dd618b2880681c9f69",
       "load": "initial",
       "category": "knowledge"
     },
@@ -98,37 +98,37 @@
     },
     {
       "path": "worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/domain/accounts/account.ts",
-      "sha256": "37bbca06a59c2a2ac7d4346900923e93911b5c67de140c6e38d80c6517ff216a",
+      "sha256": "1f95eb3d8bc1c29b5b55fe7a85d90461a1ae6f8ab91c6a19ea95ddb004cef83f",
       "load": "initial",
       "category": "knowledge"
     },
     {
       "path": "worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/domain/auth-identities/auth-identity.ts",
-      "sha256": "6188bf6a4ce9aa7552b18fa89d6b48a9b91456c588dbe73dcbe163d49d6f58ef",
+      "sha256": "7830afe92d8f96c7aaa23cd7214c44e3238481f1e3828774f007e0da5643a92c",
       "load": "initial",
       "category": "knowledge"
     },
     {
       "path": "worktrees/MEMORIES-0008/backend/libs/modules/user-profiles/src/domain/user-profile.ts",
-      "sha256": "57cb8f904578ccf790eda49dcddf76cdecbe9b2566f42beb39a424039b6ba7f2",
+      "sha256": "0465dbc8a6f736b92751c2739d2b25cb9fa4a4f1bdee431ba86fd72e3f8c3ef2",
       "load": "initial",
       "category": "knowledge"
     },
     {
       "path": "worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/domain/accounts/account.repository.ts",
-      "sha256": "b5160793b4c4476c4dcc8354e355afb557798983e811c7e7a6d5c9e405c60ee6",
+      "sha256": "9511a94451365532533c680a2a96d8a696d3d9ef52bf94dbf8f803dba4a6faa7",
       "load": "initial",
       "category": "knowledge"
     },
     {
       "path": "worktrees/MEMORIES-0008/backend/libs/modules/identity-access/src/infrastructure/persistence/typeorm-account.repository.ts",
-      "sha256": "1c8a6a2427e47037c8c81c0e235fa5fbb0264b714c0e654ad44fb9bd9d918cc5",
+      "sha256": "26ebda6e7803b09f3199ae058052c6814c2b6478d230e6b9bdf966aee0585388",
       "load": "initial",
       "category": "knowledge"
     },
     {
       "path": "worktrees/MEMORIES-0008/backend/libs/modules/user-profiles/src/infrastructure/persistence/typeorm-user-profile.repository.ts",
-      "sha256": "f788e39d05a067a6ccca84ca43971d7fef0125d1da62e87b224e41950a832f79",
+      "sha256": "0306284a122ec8dc088c3782ff3de678b8e89d25e7ff31e4f43555cff69ccb1c",
       "load": "initial",
       "category": "knowledge"
     },
@@ -146,10 +146,10 @@
     "backend": {
       "path": "worktrees/MEMORIES-0008/backend",
       "base_ref": "origin/master",
-      "head_sha": "c8ca980672459e9eccbb03396a9c246448d1ead6",
+      "head_sha": "96b6e0e697eaafdab7a7da20796418ad4ba39fd2",
       "branch": "feature/MEMORIES-0008-improve-aggregate-root-structure",
       "registered_branch": "feature/MEMORIES-0008-improve-aggregate-root-structure",
-      "status": ""
+      "status": "M apps/api/test/catalog-inactive-terms.e2e-spec.ts\n M apps/api/test/products.e2e-spec.ts\n M apps/api/test/register-transaction-rollback.e2e-spec.ts\n M libs/modules/card-catalog/src/domain/card-template/card-template.repository.ts\n M libs/modules/card-catalog/src/domain/card-template/card-template.ts\n M libs/modules/card-catalog/src/infrastructure/persistence/card-template.mapper.ts\n M libs/modules/card-catalog/src/infrastructure/persistence/typeorm-card-template.repository.ts\n M libs/modules/card-catalog/test/list-card-templates.use-case.spec.ts\n M libs/modules/catalog/src/infrastructure/persistence/typeorm-catalog-term.repository.ts\n M libs/modules/catalog/test/list-catalog-terms.use-case.spec.ts\n M libs/modules/catalog/test/typeorm-catalog-term.repository.spec.ts\n M libs/modules/identity-access/src/domain/accounts/account.repository.ts\n M libs/modules/identity-access/src/domain/accounts/account.ts\n M libs/modules/identity-access/src/domain/auth-identities/auth-identity.repository.ts\n M libs/modules/identity-access/src/domain/auth-identities/auth-identity.ts\n M libs/modules/identity-access/src/domain/permissions/permission.repository.ts\n M libs/modules/identity-access/src/domain/permissions/permission.ts\n M libs/modules/identity-access/src/domain/roles/role.repository.ts\n M libs/modules/identity-access/src/domain/roles/role.ts\n M libs/modules/identity-access/src/infrastructure/persistence/account.mapper.ts\n M libs/modules/identity-access/src/infrastructure/persistence/auth-identity.mapper.ts\n M libs/modules/identity-access/src/infrastructure/persistence/permission.mapper.ts\n M libs/modules/identity-access/src/infrastructure/persistence/role.mapper.ts\n M libs/modules/identity-access/src/infrastructure/persistence/typeorm-account.repository.ts\n M libs/modules/identity-access/src/infrastructure/persistence/typeorm-auth-identity.repository.ts\n M libs/modules/identity-access/src/infrastructure/persistence/typeorm-permission.repository.ts\n M libs/modules/identity-access/src/infrastructure/persistence/typeorm-refresh-session.repository.ts\n M libs/modules/identity-access/src/infrastructure/persistence/typeorm-role.repository.ts\n M libs/modules/identity-access/src/infrastructure/security/account-lookup.service.ts\n M libs/modules/identity-access/test/auth-identity.spec.ts\n M libs/modules/media/src/infrastructure/persistence/typeorm-media-asset.repository.ts\n M libs/modules/product-catalog/src/domain/product/product.repository.ts\n M libs/modules/product-catalog/src/domain/product/product.ts\n M libs/modules/product-catalog/src/infrastructure/persistence/product.mapper.ts\n M libs/modules/product-catalog/src/infrastructure/persistence/typeorm-product.repository.ts\n M libs/modules/product-catalog/test/list-products.use-case.spec.ts\n M libs/modules/product-catalog/test/product.spec.ts\n M libs/modules/user-profiles/src/domain/user-profile.repository.ts\n M libs/modules/user-profiles/src/domain/user-profile.ts\n M libs/modules/user-profiles/src/infrastructure/persistence/typeorm-user-profile.repository.ts\n M libs/modules/user-profiles/src/infrastructure/persistence/user-profile.mapper.ts\n M libs/platform/database/src/public-api.ts\n M libs/shared/kernel/src/public-api.ts\n M libs/shared/kernel/src/repositories/repository.ts\n?? apps/api/test/soft-delete-query-modes.e2e-spec.ts\n?? libs/modules/card-catalog/test/typeorm-card-template.repository.deleted-mode.spec.ts\n?? libs/modules/identity-access/test/delete-account.use-case.spec.ts\n?? libs/modules/identity-access/test/typeorm-account.repository.spec.ts\n?? libs/modules/identity-access/test/typeorm-auth-identity.repository.spec.ts\n?? libs/modules/identity-access/test/typeorm-permission.repository.spec.ts\n?? libs/modules/identity-access/test/typeorm-role.repository.spec.ts\n?? libs/modules/product-catalog/test/typeorm-product.repository.deleted-mode.spec.ts\n?? libs/modules/user-profiles/test/typeorm-user-profile.repository.spec.ts\n?? libs/platform/database/src/audit-props.mapper.ts\n?? libs/platform/database/src/deleted-record-query.helper.ts\n?? libs/platform/database/test/audit-props.mapper.spec.ts\n?? libs/platform/database/test/deleted-record-query.helper.spec.ts\n?? libs/shared/kernel/src/aggregates/auditable-aggregate-root.ts\n?? libs/shared/kernel/src/repositories/auditable-repository.ts\n?? libs/shared/kernel/src/repositories/repository-query-options.ts\n?? libs/shared/kernel/test/auditable-aggregate-root.spec.ts"
     }
   },
   "codegraph": {
@@ -162,7 +162,7 @@
         "indexed": true,
         "ready": true,
         "command": "/Users/cmc/.local/bin/codegraph",
-        "status_text": "CodeGraph Status\n\nProject: /Users/cmc/Documents/Memories/worktrees/MEMORIES-0008/backend\n\nIndex Statistics:\n  Files:     429\n  Nodes:     3,885\n  Edges:     9,576\n  DB Size:   13.54 MB\n  Backend:   node:sqlite — built-in (full WAL)\n  Journal:   wal\n\nNodes by Kind:\n  import          1,588\n  method          624\n  file            424\n  property        407\n  class           248\n  constant        178\n  interface       175\n  function        148\n  enum_member     43\n  route           28\n  enum            13\n  type_alias      9\n\nFiles by Language:\n  typescript      419\n  javascript      5\n  yaml            5\n\n✓ Index is up to date"
+        "status_text": "CodeGraph Status\n\nProject: /Users/cmc/Documents/Memories/worktrees/MEMORIES-0008/backend\n\nIndex Statistics:\n  Files:     463\n  Nodes:     4,268\n  Edges:     11,748\n  DB Size:   17.26 MB\n  Backend:   node:sqlite — built-in (full WAL)\n  Journal:   wal\n\nNodes by Kind:\n  import          1,750\n  method          642\n  file            458\n  property        425\n  class           274\n  function        216\n  constant        214\n  interface       187\n  enum_member     43\n  route           33\n  enum            13\n  type_alias      11\n  variable        2\n\nFiles by Language:\n  typescript      453\n  javascript      5\n  yaml            5\n\n✓ Index is up to date"
       }
     }
   },
@@ -171,7 +171,11 @@
       "implement": [
         "decompose-implementation-task",
         "verify-implementation-handoff",
-        "validate-evidence-provenance"
+        "validate-evidence-provenance",
+        "implement-nestjs-vertical-slice",
+        "create-backend-migration",
+        "design-database-invariants",
+        "implement-auth-security-change"
       ],
       "review": [
         "review-code-change",
@@ -179,6 +183,20 @@
       ]
     },
     "locked": {
+      "create-backend-migration": {
+        "path": "ai/skills/create-backend-migration/SKILL.md",
+        "sha256": "a08ba955158d37512fa958db730f6c01aa4db29f72fcc454d2b18c8203da78db",
+        "files": [
+          {
+            "path": "ai/skills/create-backend-migration/SKILL.md",
+            "sha256": "a3a8045812e74d02e988538c4393e3f52ffea5ee3063ae459e79905755fcc18a"
+          },
+          {
+            "path": "ai/skills/create-backend-migration/agents/openai.yaml",
+            "sha256": "34330de18b16b2ef15cc22b073e57fbf2f8cd4be8c0157506e40ba4f5903124a"
+          }
+        ]
+      },
       "decompose-implementation-task": {
         "path": "ai/skills/decompose-implementation-task/SKILL.md",
         "sha256": "0d8e89a94111bd5679c8c5ef6c8f5ce250621909f51704bf676af966f2fd4673",
@@ -198,6 +216,96 @@
           {
             "path": "ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py",
             "sha256": "e7aee9f8bbd374ee7ccd909f09cb3a91adb963fb0fe4a40d974201cec867833c"
+          }
+        ]
+      },
+      "design-database-invariants": {
+        "path": "ai/skills/design-database-invariants/SKILL.md",
+        "sha256": "be72c2b32b011c21030c2c411b780bc3a45c9f47ef52b6f54ec05b0ca5008741",
+        "files": [
+          {
+            "path": "ai/skills/design-database-invariants/SKILL.md",
+            "sha256": "c44a427cf342ba9ab8644e4a52de480b261689865d6507ce7490923222e4c441"
+          },
+          {
+            "path": "ai/skills/design-database-invariants/agents/openai.yaml",
+            "sha256": "1d41bc27c747578addcb92a374cca735255119c947cfa36c206796263940d5b4"
+          },
+          {
+            "path": "ai/skills/design-database-invariants/references/mutation-matrix.md",
+            "sha256": "bc6a18346ecd042a6a13774a43ac83ecb8ac012ec5a2da866c0898893cb56d24"
+          },
+          {
+            "path": "ai/skills/design-database-invariants/scripts/check_invariant_matrix.py",
+            "sha256": "61b2b71960864210859cc4c07a098409be75271efebad5cd20b82165336ad3aa"
+          }
+        ]
+      },
+      "implement-auth-security-change": {
+        "path": "ai/skills/implement-auth-security-change/SKILL.md",
+        "sha256": "8de0236f5e04b9c74a738f6ffc71224070c4ddd230cbccbe88fe8e1144627332",
+        "files": [
+          {
+            "path": "ai/skills/implement-auth-security-change/SKILL.md",
+            "sha256": "dbb30f984b81b81f3d59a89e754e78f61de4dbd1271159df236fc3f90fc4ddd7"
+          },
+          {
+            "path": "ai/skills/implement-auth-security-change/agents/openai.yaml",
+            "sha256": "ca97db424a047e2e0ea74ad29a00d28a9482577a61213ee9d435d3487988187c"
+          },
+          {
+            "path": "ai/skills/implement-auth-security-change/references/identity-and-credentials.md",
+            "sha256": "4db762f3b851633808e3f267fe12ecf99d9a9b9788707d1263d384af60ee2be0"
+          },
+          {
+            "path": "ai/skills/implement-auth-security-change/references/security-verification.md",
+            "sha256": "2392d5d5b6684ec94c667f82fc8702255ab352111d01134079512e8172cf1759"
+          },
+          {
+            "path": "ai/skills/implement-auth-security-change/references/sessions-and-authorization.md",
+            "sha256": "65842379d2b8999e78df3a9a1b4ba8a5912cf932c04fa53c607b337470c9a086"
+          },
+          {
+            "path": "ai/skills/implement-auth-security-change/scripts/check_auth_invariants.py",
+            "sha256": "560becc3ce95ae28d86219fd6868ca85c236441a4c401f4616faaa5fb8f87648"
+          }
+        ]
+      },
+      "implement-nestjs-vertical-slice": {
+        "path": "ai/skills/implement-nestjs-vertical-slice/SKILL.md",
+        "sha256": "91b494f52ee898fec6f750ce10e5aa53de9e329de3728120fee87e7d666f33c8",
+        "files": [
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/SKILL.md",
+            "sha256": "d2fd8e3b76d834d1eebab0f6c483c8f8f4fd4719af59897bf17b910d47b30b09"
+          },
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/agents/openai.yaml",
+            "sha256": "94ac591ab17919e4a12c2f7ff9b86ada8f5369fc766eae18146491421f60ff19"
+          },
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/references/clean-architecture.md",
+            "sha256": "ef3b5a5cf6257ab7034e9cbd384cae91ace3be28188cc4c40a90711b07bb5bd8"
+          },
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/references/dependency-injection.md",
+            "sha256": "5b0735862d5e39a0d4e8cc5121eadb52b9038e825db53714ad571ef5d071043a"
+          },
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/references/persistence.md",
+            "sha256": "667dde60b930146821a4b8958a29a7340d5a081c44f2eb759fa4ec65f6c4101e"
+          },
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/references/testing.md",
+            "sha256": "83652fe179d6b695a58282e79e06321f0c6b406a3b53c565a4b0a41093a40129"
+          },
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/scripts/check_module_wiring.py",
+            "sha256": "40717005a2b7c64f9508bf96f08ad424a50686f89c4a02843d9b543e11fa9782"
+          },
+          {
+            "path": "ai/skills/implement-nestjs-vertical-slice/scripts/check_port_bindings.py",
+            "sha256": "50b16fb42abb1ad7012577aef0ec03d1e913a8e70fb0bac6737056c59480647f"
           }
         ]
       },
@@ -233,7 +341,7 @@
       },
       "review-vertical-slice-completeness": {
         "path": "ai/skills/review-vertical-slice-completeness/SKILL.md",
-        "sha256": "e81a7ff83e887692a56ff0dd8d1173b34410afacdb09e2c30011cf3c9d5de099",
+        "sha256": "f75956bd734c0cc576d24fffa9f30e209f4c5f3db6ef5b34ae3a9282b4243f52",
         "files": [
           {
             "path": "ai/skills/review-vertical-slice-completeness/SKILL.md",
@@ -253,13 +361,17 @@
           },
           {
             "path": "ai/skills/review-vertical-slice-completeness/scripts/build_evidence_matrix.py",
-            "sha256": "ddf9624d7b7ae57603a14a6c2cd1fcd62e2ab8eccf89d15fa641370a3ab7a95b"
+            "sha256": "a5df8b48576b5deb4bdffe981b4fa0e96004e3c2a1e27fd38820106d86f4133f"
+          },
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/scripts/check_evidence_freshness.py",
+            "sha256": "42b2cfb487b3ca96977b86ffd890a64af7e7cc98e234aff247528a026897588d"
           }
         ]
       },
       "validate-evidence-provenance": {
         "path": "ai/skills/validate-evidence-provenance/SKILL.md",
-        "sha256": "c52ff8bf85051c7b87ff758d3c0222d3816f3e02eaced48dd42a13bcc42b215c",
+        "sha256": "15aa1882c029c5343e4d4880fc43032028b5e4ec00854b4b1edbe0b94642caae",
         "files": [
           {
             "path": "ai/skills/validate-evidence-provenance/SKILL.md",
@@ -278,8 +390,12 @@
             "sha256": "ea3ce99b19e8d3c049a05b2809f2061d37ab869f887b7a223f7004a8a8903887"
           },
           {
+            "path": "ai/skills/validate-evidence-provenance/scripts/finalize_provenance_run.py",
+            "sha256": "c52dafd7af6e3864d26cfe9d45bed5ff925f3c8a1110ee2ff8d1601654a267a6"
+          },
+          {
             "path": "ai/skills/validate-evidence-provenance/scripts/refresh_validation_artifacts.py",
-            "sha256": "2015a63a5a0c9fd40a0ee4d108cc734a860eee896aacfdb563394f6c3a4b5d21"
+            "sha256": "a4ab79a0200e9d103472bd6eae59f0ba534c092c70bcd50a1ddcf1262c90dd5e"
           },
           {
             "path": "ai/skills/validate-evidence-provenance/scripts/sync_provenance.py",

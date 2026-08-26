@@ -1,0 +1,2 @@
+npm notice run @memories/backend@0.1.0 typecheck
+npm notice run tsc --build --pretty false && tsc -p .github/test/tsconfig.json --noEmit --pretty false

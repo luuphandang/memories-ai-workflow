@@ -1,0 +1,298 @@
+{
+  "task_id": "MEMORIES-0008",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "created_at": "2026-08-25T23:55:22+07:00",
+  "acceptance_criteria": [
+    "AC1 — One shared AuditableAggregateRoot; no soft-delete-specific hierarchy",
+    "AC2 — Seven in-scope aggregates migrated without duplicate implementations",
+    "AC3 — MediaAsset, RefreshSession, and CatalogTerm models/schemas unchanged",
+    "AC4 — Immutable audit view and correct protected touch behavior",
+    "AC5 — Strict first/second soft-delete metadata semantics",
+    "AC6 — Existing important errors and observable behavior preserved",
+    "AC7 — exclude/include/only options with exclude default",
+    "AC8 — TypeORM find and query-builder semantics for all three modes",
+    "AC9 — Every in-scope aggregate read, count, and custom query propagates mode",
+    "AC10 — findByIdIncludingDeleted removed and callers migrated",
+    "AC11 — Default/include/only row and count behavior",
+    "AC12 — Six-field audit mapper helpers and migrated mappers",
+    "AC13 — Physical-delete semantics explicitly named/documented",
+    "AC14 — No TypeORM, request context, or clock leakage into domain abstraction",
+    "AC15 — No HTTP API, schema, migration, or unrelated behavior change",
+    "AC16 — Required base, mode, mapper, exists, paginated-list, and cascade tests",
+    "AC17 — lint, typecheck, test, architecture test, and build pass",
+    "AC18 — Complete and accurate final handoff/evidence inventory"
+  ],
+  "risk_areas": [
+    {
+      "area": "Effective requirements and acceptance criteria",
+      "status": "reviewed",
+      "evidence": "Mapped AC1-AC18 from task.md; context.lock lists no unconsolidated addendum."
+    },
+    {
+      "area": "Domain invariants and state transitions",
+      "status": "reviewed",
+      "evidence": "Reviewed touch, first/second soft delete, aggregate-specific error overrides, status/token behavior, and seven migrated aggregates."
+    },
+    {
+      "area": "Persistence query semantics",
+      "status": "reviewed",
+      "evidence": "Reviewed every changed repository read, TypeORM helper, query-builder/raw SQL path, list total, join behavior, and facet-count branch."
+    },
+    {
+      "area": "Architecture and runtime wiring",
+      "status": "reviewed",
+      "evidence": "CodeGraph traced ports, adapters, modules, use cases, and callers; deterministic checks passed 32 port bindings and 39 wired classes."
+    },
+    {
+      "area": "Transactions, concurrency, and idempotency",
+      "status": "reviewed",
+      "evidence": "Transaction-aware repository resolution remains unchanged; account cascade and rollback paths were inspected. Real e2e execution evidence is missing and reported."
+    },
+    {
+      "area": "Security, authorization, injection, and sensitive data",
+      "status": "reviewed",
+      "evidence": "No HTTP/auth boundary changed. Every deletedRecordWhereSql consumer passes a repository-owned literal alias; no request input reaches SQL interpolation and no secrets/PII logging was added."
+    },
+    {
+      "area": "API and database compatibility",
+      "status": "reviewed",
+      "evidence": "No DTO, controller, HTTP contract, entity column, schema, or migration changed; build/typecheck/architecture evidence passed."
+    },
+    {
+      "area": "Regression and physical-delete compatibility",
+      "status": "reviewed",
+      "evidence": "All ten repository implementations and five concrete test callers plus mocks were inventoried; remaining .delete calls are unrelated TypeORM/collection/HTTP APIs."
+    },
+    {
+      "area": "Test quality and current-cycle evidence",
+      "status": "reviewed",
+      "evidence": "Inspected all new/changed tests and current summary/provenance. Five configured commands passed, but nested Date, facet-mode, and real-database cases remain unresolved."
+    }
+  ],
+  "test_contract": [
+    {
+      "sources": [
+        "requirement: AC1-AC3",
+        "diff-impact: libs/shared/kernel/src/aggregates/auditable-aggregate-root.ts#AuditableAggregateRoot"
+      ],
+      "target": "Aggregate hierarchy and migration inventory",
+      "test_level": "static",
+      "scenario": "Inventory all AggregateRoot subclasses after introducing the shared auditable base.",
+      "expected_result": "Exactly the seven in-scope aggregates use AuditableAggregateRoot; CatalogTerm, MediaAsset, and RefreshSession retain AggregateRoot."
+    },
+    {
+      "sources": [
+        "requirement: AC4",
+        "diff-impact: libs/shared/kernel/src/aggregates/auditable-aggregate-root.ts#audit"
+      ],
+      "target": "Audit view immutability",
+      "test_level": "static",
+      "scenario": "A caller mutates a Date obtained from aggregate.audit.",
+      "expected_result": "The aggregate's internal createdAt/updatedAt/deletedAt values remain unchanged."
+    },
+    {
+      "sources": [
+        "requirement: AC4",
+        "diff-impact: libs/shared/kernel/src/aggregates/auditable-aggregate-root.ts#touch"
+      ],
+      "target": "Protected touch transition",
+      "test_level": "unit",
+      "scenario": "A subclass mutation invokes touch with a new actor and time.",
+      "expected_result": "Only updatedBy and updatedAt change; creation metadata remains unchanged."
+    },
+    {
+      "sources": [
+        "requirement: AC5",
+        "diff-impact: libs/shared/kernel/src/aggregates/auditable-aggregate-root.ts#softDelete"
+      ],
+      "target": "First soft-delete transition",
+      "test_level": "unit",
+      "scenario": "Soft-delete an active aggregate once.",
+      "expected_result": "Delete and update metadata use the same actor/time and isDeleted becomes true."
+    },
+    {
+      "sources": [
+        "requirement: AC5-AC6",
+        "diff-impact: Account#alreadyDeletedError; UserProfile#alreadyDeletedError; AuthIdentity#softDelete"
+      ],
+      "target": "Strict repeated soft delete and observable errors",
+      "test_level": "unit",
+      "scenario": "Soft-delete an already deleted aggregate.",
+      "expected_result": "A conflict is raised without overwriting original metadata; existing Account/UserProfile codes are preserved."
+    },
+    {
+      "sources": [
+        "requirement: AC7-AC8",
+        "diff-impact: libs/platform/database/src/deleted-record-query.helper.ts"
+      ],
+      "target": "Deleted-mode helper translation",
+      "test_level": "unit",
+      "scenario": "Translate exclude, include, and only for TypeORM find conditions and SQL aliases.",
+      "expected_result": "IsNull, no condition/1=1, and Not(IsNull)/IS NOT NULL are produced respectively."
+    },
+    {
+      "sources": [
+        "requirement: AC9-AC11",
+        "diff-impact: seven TypeORM repository find/business-key/exists/list implementations"
+      ],
+      "target": "Standard repository reads",
+      "test_level": "contract",
+      "scenario": "Use omitted, include, and only options across findById, business-key lookup, exists, findAll, list, and total.",
+      "expected_result": "Every standard read consistently applies the selected main-aggregate mode."
+    },
+    {
+      "sources": [
+        "requirement: AC9-AC11",
+        "diff-impact: TypeOrmAccountRepository#list; TypeOrmUserProfileRepository#list; TypeOrmProductRepository#list; TypeOrmCardTemplateRepository#list"
+      ],
+      "target": "Paginated item and total consistency",
+      "test_level": "unit",
+      "scenario": "Run paginated list under each deleted mode.",
+      "expected_result": "Items and total/count share the same deleted predicate."
+    },
+    {
+      "sources": [
+        "requirement: AC9",
+        "diff-impact: ProductRepository#computeFacets; CardTemplateRepository#computeFacets"
+      ],
+      "target": "Facet-count deleted modes",
+      "test_level": "static",
+      "scenario": "Request include or only semantics for facet/count reads.",
+      "expected_result": "All main-aggregate facet counts honor the requested mode."
+    },
+    {
+      "sources": [
+        "requirement: AC9 join semantics",
+        "diff-impact: TypeOrmAccountRepository#list joins and catalog-term facet/list joins"
+      ],
+      "target": "Joined-record compatibility",
+      "test_level": "static",
+      "scenario": "Change the main aggregate deleted mode on a joined query.",
+      "expected_result": "Only the main aggregate mode changes; existing joined-record active/deleted semantics remain intact."
+    },
+    {
+      "sources": [
+        "requirement: AC10",
+        "diff-impact: AccountLookupService#exists and register-transaction-rollback.e2e-spec.ts"
+      ],
+      "target": "Removal of bespoke deleted-inclusive lookup",
+      "test_level": "static",
+      "scenario": "Inventory findByIdIncludingDeleted definitions and callers.",
+      "expected_result": "No executable reference remains; callers use findById(..., {deleted:'include'})."
+    },
+    {
+      "sources": [
+        "requirement: AC12",
+        "diff-impact: auditablePropsFromOrmEntity; applyAuditablePropsToOrmEntity; seven mappers"
+      ],
+      "target": "Audit mapper round trip",
+      "test_level": "unit",
+      "scenario": "Round-trip all six audit fields with null and non-null actors and deleted timestamps.",
+      "expected_result": "All values and nullability are preserved without bounded-context coupling."
+    },
+    {
+      "sources": [
+        "requirement: AC13",
+        "diff-impact: Repository#hardDelete and ten TypeORM implementations"
+      ],
+      "target": "Physical-delete rename compatibility",
+      "test_level": "static",
+      "scenario": "Inventory implementations, application callers, cleanup callers, and mocks after rename.",
+      "expected_result": "Physical semantics remain unchanged and no domain repository delete method/caller is missed."
+    },
+    {
+      "sources": [
+        "requirement: AC16 Account cascade",
+        "diff-impact: DeleteAccountUseCase#execute and inherited strict softDelete"
+      ],
+      "target": "Account cascade behavior",
+      "test_level": "unit",
+      "scenario": "Delete an account with active and already-deleted identities, then exercise not-found and repeated-delete paths.",
+      "expected_result": "Active records cascade once, already-deleted identities are skipped, and failures do not execute later side effects."
+    },
+    {
+      "sources": [
+        "requirement: transaction regression and locked definition-of-done",
+        "diff-impact: apps/api/test/register-transaction-rollback.e2e-spec.ts"
+      ],
+      "target": "Real transaction rollback regression",
+      "test_level": "e2e",
+      "scenario": "Execute the account transaction rollback test against real PostgreSQL and supporting services.",
+      "expected_result": "No active or deleted account/identity/profile/role row survives rollback."
+    },
+    {
+      "sources": [
+        "requirement: AC8, AC11, validation note prohibiting mock-only DB claims",
+        "diff-impact: all seven TypeORM repository mode adapters"
+      ],
+      "target": "Actual PostgreSQL deleted-mode semantics",
+      "test_level": "integration",
+      "scenario": "Persist active and deleted rows and execute exclude/include/only through a find path and a raw/query-builder list/count path.",
+      "expected_result": "Returned rows and totals match each mode in PostgreSQL."
+    },
+    {
+      "sources": [
+        "requirement: AC14 and security policy",
+        "diff-impact: deletedRecordWhereSql#alias and its consumers"
+      ],
+      "target": "SQL-injection boundary",
+      "test_level": "static",
+      "scenario": "Trace every alias supplied to the interpolating SQL helper.",
+      "expected_result": "Every alias is implementation-controlled and no request value reaches interpolation."
+    },
+    {
+      "sources": [
+        "requirement: boundary and default compatibility",
+        "diff-impact: resolveDeletedRecordMode and list empty-result branches"
+      ],
+      "target": "Omitted options and empty result boundaries",
+      "test_level": "unit",
+      "scenario": "Omit the options object/property and return no rows from list/count queries.",
+      "expected_result": "Mode defaults to exclude and list returns empty items with total zero."
+    },
+    {
+      "sources": [
+        "requirement: AC15",
+        "diff-impact: public exports, repository interfaces, ORM adapters"
+      ],
+      "target": "API/schema/architecture compatibility",
+      "test_level": "static",
+      "scenario": "Compile and build after internal contract changes without modifying HTTP DTOs, entities, or migrations.",
+      "expected_result": "No HTTP or schema change occurs and architectural boundaries remain valid."
+    },
+    {
+      "sources": [
+        "requirement: AC17",
+        "diff-impact: complete 60-file change"
+      ],
+      "target": "Configured validation commands",
+      "test_level": "static",
+      "scenario": "Run lint, typecheck, unit tests, architecture test, and build for the current cycle.",
+      "expected_result": "All configured commands exit successfully."
+    }
+  ],
+  "initial_findings": [
+    {
+      "severity": "major",
+      "repo": "backend",
+      "file": "libs/shared/kernel/src/aggregates/auditable-aggregate-root.ts",
+      "title": "The read-only audit snapshot still exposes mutable Date references",
+      "expected_fix": "Make every timestamp exposed by audit independent from internal mutable state and add regression coverage for Date mutation."
+    },
+    {
+      "severity": "major",
+      "repo": "backend",
+      "file": "libs/modules/product-catalog/src/domain/product/product.repository.ts",
+      "title": "Facet-count reads are excluded from the shared deleted-record mode contract",
+      "expected_fix": "Apply RepositoryQueryOptions consistently to Product and CardTemplate facet/count reads and all underlying main-aggregate predicates."
+    },
+    {
+      "severity": "major",
+      "repo": "backend",
+      "file": "package.json",
+      "title": "Required real-infrastructure e2e validation is absent for the persistence-contract change",
+      "expected_fix": "Add or run real database-backed coverage for the deleted-mode persistence paths and publish a current-cycle passing test:e2e artifact."
+    }
+  ]
+}

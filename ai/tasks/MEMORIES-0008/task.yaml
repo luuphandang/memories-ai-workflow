@@ -21,6 +21,10 @@ skills:
   - decompose-implementation-task
   - verify-implementation-handoff
   - validate-evidence-provenance
+  - implement-nestjs-vertical-slice
+  - create-backend-migration
+  - design-database-invariants
+  - implement-auth-security-change
   review:
   - review-code-change
   - review-vertical-slice-completeness

@@ -1,0 +1,87 @@
+{
+  "invariants": [
+    {
+      "invariant": "Soft delete lần đầu ghi đồng thời deletedBy, deletedAt, updatedBy và updatedAt; lần thứ hai trả conflict và không thay đổi metadata ban đầu.",
+      "enforcement": "AuditableAggregateRoot.softDelete kiểm tra isDeleted trước khi cập nhật các audit fields; aggregate cụ thể có thể override alreadyDeletedError để giữ error code.",
+      "cases": [
+        {
+          "operation": "Gọi softDelete lần đầu trên aggregate chưa bị xóa",
+          "expected": "Bốn trường delete/update nhận đúng actor và thời điểm được truyền vào",
+          "test": "libs/shared/kernel/test/auditable-aggregate-root.spec.ts > softDelete stamps delete and update metadata with the given actor/time"
+        },
+        {
+          "operation": "Gọi softDelete lần thứ hai",
+          "expected": "Domain conflict được phát sinh và deletedBy/deletedAt ban đầu không bị ghi đè",
+          "test": "libs/shared/kernel/test/auditable-aggregate-root.spec.ts > softDelete a second time raises a domain conflict and keeps original delete metadata"
+        },
+        {
+          "operation": "Account.softDelete lần thứ hai (aggregate cụ thể override alreadyDeletedError để giữ error code account_already_deleted)",
+          "expected": "Domain conflict với message 'already deleted', metadata ban đầu không đổi",
+          "test": "libs/modules/identity-access/test/account.spec.ts > rejects deleting an already-deleted account"
+        },
+        {
+          "operation": "UserProfile.softDelete lần thứ hai (override alreadyDeletedError để giữ error code user_profile_already_deleted)",
+          "expected": "Domain conflict với message 'already deleted', metadata ban đầu không đổi",
+          "test": "libs/modules/user-profiles/test/user-profile.spec.ts > rejects deleting an already-deleted profile"
+        },
+        {
+          "operation": "AuthIdentity.softDelete lần thứ hai (dùng error code mặc định aggregate_already_deleted của base class — trước migration AuthIdentity.softDelete không strict)",
+          "expected": "Domain conflict với message 'already deleted', metadata ban đầu không đổi",
+          "test": "libs/modules/identity-access/test/auth-identity.spec.ts > rejects deleting an already-deleted identity"
+        }
+      ]
+    },
+    {
+      "invariant": "Deleted-record query mode mặc định loại bản ghi đã xóa và hỗ trợ chính xác exclude, include, only.",
+      "enforcement": "RepositoryQueryOptions/resolveDeletedRecordMode (shared kernel, domain-safe) mặc định 'exclude'; mỗi TypeOrm*Repository trong 7 aggregate scope tự chuyển mode thành IsNull()/không filter/Not(IsNull()) (object where) hoặc 'alias.deleted_at IS [NOT] NULL'/'1=1' (query-builder/raw SQL) qua deletedWhere/deletedWhereSql riêng — hợp nhất thành helper dùng chung là slice typeorm-helpers kế tiếp.",
+      "cases": [
+        {
+          "operation": "findById khi không truyền options (Account) và list khi không truyền options (Account, UserProfile)",
+          "expected": "Chỉ trả bản ghi có deleted_at IS NULL, và count/total loại trừ deleted rows",
+          "test": "libs/modules/identity-access/test/typeorm-account.repository.spec.ts > findById defaults to excluding deleted rows when options are omitted; > list defaults to excluding deleted rows and still returns total"
+        },
+        {
+          "operation": "findById/findByProviderAndIdentifier/findByCode với { deleted: 'include' } (Account, AuthIdentity, Product, CardTemplate) và list với { deleted: 'include' } (Account, UserProfile, CardTemplate)",
+          "expected": "Điều kiện deleted_at bị loại bỏ hoàn toàn khỏi where/SQL — trả cả active và deleted",
+          "test": "libs/modules/identity-access/test/typeorm-account.repository.spec.ts > findById({ deleted: \"include\" }); libs/modules/identity-access/test/typeorm-auth-identity.repository.spec.ts > findByProviderAndIdentifier({ deleted: \"include\" }); libs/modules/product-catalog/test/typeorm-product.repository.deleted-mode.spec.ts > list({ deleted: \"include\" }); libs/modules/card-catalog/test/typeorm-card-template.repository.deleted-mode.spec.ts > list({ deleted: \"include\" })"
+        },
+        {
+          "operation": "findById/existsByProviderAndIdentifier/findByCode/list với { deleted: 'only' } (Account, AuthIdentity, UserProfile, Product, CardTemplate, Role, Permission)",
+          "expected": "Chỉ trả/đếm bản ghi có deleted_at IS NOT NULL",
+          "test": "libs/modules/identity-access/test/typeorm-account.repository.spec.ts > findById({ deleted: \"only\" }); libs/modules/identity-access/test/typeorm-auth-identity.repository.spec.ts > existsByProviderAndIdentifier({ deleted: \"only\" }); libs/modules/user-profiles/test/typeorm-user-profile.repository.spec.ts > existsByAccountId({ deleted: \"only\" }); libs/modules/product-catalog/test/typeorm-product.repository.deleted-mode.spec.ts > findByCode/list({ deleted: \"only\" }); libs/modules/identity-access/test/typeorm-role.repository.spec.ts and typeorm-permission.repository.spec.ts > list({ deleted: \"only\" })"
+        }
+      ]
+    },
+    {
+      "invariant": "Các method find, exists, list, count và business-key lookup áp dụng cùng deleted mode cho aggregate chính; caller không truyền options giữ nguyên behavior cũ.",
+      "enforcement": "Mọi repository trong 7-aggregate scope (Account, AuthIdentity, UserProfile, Product, CardTemplate, Role, Permission) extends AuditableRepository<T> (shared kernel) và nhận `options?: RepositoryQueryOptions` cuối cùng trên findById + mọi custom find/exists/list/business-key-lookup method; findByIdIncludingDeleted đã bị xóa, thay bằng findById(id, { deleted: 'include' }).",
+      "cases": [
+        {
+          "operation": "AccountLookupService.exists gọi accounts.findById(id, { deleted: 'include' }) thay cho findByIdIncludingDeleted đã xóa",
+          "expected": "Idempotency/account-exists check vẫn thấy Account đã soft-delete, hành vi không đổi",
+          "test": "libs/modules/identity-access/src/infrastructure/security/account-lookup.service.ts (exists); apps/api/test/register-transaction-rollback.e2e-spec.ts > rolls back Account ... (accounts.findById(id, { deleted: 'include' }))"
+        },
+        {
+          "operation": "findByProviderAndIdentifier (business-key lookup) và existsByProviderAndIdentifier (exists) trên AuthIdentity với default/include/only",
+          "expected": "Cùng semantics 3-mode như findById; default vẫn loại deleted rows khỏi preflight unique check",
+          "test": "libs/modules/identity-access/test/typeorm-auth-identity.repository.spec.ts (5 cases: findByProviderAndIdentifier x2, existsByProviderAndIdentifier x2, findAllByAccountId x1)"
+        },
+        {
+          "operation": "list (paginated, trả total) trên Account với join localIdentity",
+          "expected": "options.deleted áp dụng cho alias 'account' (aggregate chính); điều kiện join localIdentity.deleted_at IS NULL giữ nguyên business semantics không đổi theo mode; business filter (status) vẫn hoạt động cùng lúc",
+          "test": "libs/modules/identity-access/test/typeorm-account.repository.spec.ts > list default/include/only + status filter still applied alongside the deleted mode"
+        },
+        {
+          "operation": "list trên Product/CardTemplate (raw SQL / query-builder, ACTIVE-status public catalog browse)",
+          "expected": "options.deleted áp dụng cho alias 'p'/'template' (aggregate chính) độc lập với business status filter; computeFacets (không nhận options theo quyết định ghi trong product.repository.ts/card-template.repository.ts) giữ nguyên ACTIVE + not-deleted business semantics",
+          "test": "libs/modules/product-catalog/test/typeorm-product.repository.deleted-mode.spec.ts (list default/include/only); libs/modules/card-catalog/test/typeorm-card-template.repository.deleted-mode.spec.ts (list default/include)"
+        },
+        {
+          "operation": "list() không tham số trên Role/Permission (không có filter object)",
+          "expected": "options là tham số duy nhất, optional; mặc định vẫn loại deleted rows",
+          "test": "libs/modules/identity-access/test/typeorm-role.repository.spec.ts; libs/modules/identity-access/test/typeorm-permission.repository.spec.ts"
+        }
+      ]
+    }
+  ]
+}
