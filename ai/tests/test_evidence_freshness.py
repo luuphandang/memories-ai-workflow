@@ -27,7 +27,7 @@ class EvidenceFreshnessTest(unittest.TestCase):
         implementation = {"acceptance_criteria": [{"evidence": "[unit-tests: 1 suites / 1 tests]"}]}
         tags = module.collect_tags(implementation)
         self.assertIn("implementation-attempt", module.MANDATORY_TAGS - tags.keys())
-        self.assertIn("review-state", module.MANDATORY_TAGS - tags.keys())
+        self.assertNotIn("review-state", module.MANDATORY_TAGS)
 
     def test_attempt_and_handoff_ground_truth_come_from_state(self) -> None:
         module = load_module()
@@ -63,19 +63,43 @@ class EvidenceFreshnessTest(unittest.TestCase):
                 errors = module.freshness_errors(implementation, task_dir, evidence_dir)
             self.assertTrue(any("currently shows '28'" in error for error in errors), errors)
 
-    def test_prepared_handoff_remains_fresh_during_review_transition(self) -> None:
+    def test_phase_transient_handoff_facts_do_not_fail_during_review_transition(self) -> None:
         module = load_module()
         with tempfile.TemporaryDirectory() as temp:
             task_dir = Path(temp)
             evidence_dir = task_dir / "evidence"
             evidence_dir.mkdir()
             (task_dir / "state.yaml").write_text("status: reviewing\n", encoding="utf-8")
-            implementation = {"acceptance_criteria": [{"evidence": "[review-state: prepared]"}]}
+            implementation = {"acceptance_criteria": [{"evidence": "[review-state: implementing]"}]}
             with patch.dict(
                 module.GROUND_TRUTH,
                 {"review-state": module.ground_truth_review_state},
                 clear=True,
             ), patch.object(module, "MANDATORY_TAGS", frozenset({"review-state"})):
+                errors = module.freshness_errors(implementation, task_dir, evidence_dir)
+            self.assertEqual(errors, [])
+
+    def test_validation_and_review_phase_changes_do_not_invalidate_handoff(self) -> None:
+        module = load_module()
+        with tempfile.TemporaryDirectory() as temp:
+            task_dir = Path(temp)
+            evidence_dir = task_dir / "evidence"
+            evidence_dir.mkdir()
+            (task_dir / "state.yaml").write_text(
+                "review_cycle: 1\nstatus: reviewing\n", encoding="utf-8"
+            )
+            (evidence_dir / "provenance.json").write_text(
+                '{"generated_at":"2026-08-26T09:03:04+07:00","inputs":[],"artifacts":[]}'
+            )
+            implementation = {"acceptance_criteria": [{"evidence": (
+                "[resolved-review-cycles: 1] [review-state: implementing] "
+                "[provenance-generated-at: 2026-08-26T00:12:03+07:00]"
+            )}]}
+            with patch.dict(module.GROUND_TRUTH, {
+                "resolved-review-cycles": module.ground_truth_resolved_review_cycles,
+                "review-state": module.ground_truth_review_state,
+                "provenance-generated-at": module.ground_truth_provenance_generated_at,
+            }, clear=True), patch.object(module, "MANDATORY_TAGS", frozenset()):
                 errors = module.freshness_errors(implementation, task_dir, evidence_dir)
             self.assertEqual(errors, [])
 
@@ -172,6 +196,19 @@ class EvidenceFreshnessTest(unittest.TestCase):
             self.assertEqual(
                 module.ground_truth_resolved_review_cycles(task_dir, evidence_dir), "19"
             )
+
+    def test_task_without_characterization_or_e2e_artifacts_does_not_require_them(self) -> None:
+        module = load_module()
+        with tempfile.TemporaryDirectory() as temp:
+            task_dir = Path(temp)
+            evidence_dir = task_dir / "evidence"
+            evidence_dir.mkdir()
+            (task_dir / "state.yaml").write_text("implementation_attempt: 1\n", encoding="utf-8")
+            implementation = {"acceptance_criteria": [{"evidence": "[implementation-attempt: 1]"}]}
+            with patch.object(module, "MANDATORY_TAGS", frozenset({"implementation-attempt"})):
+                errors = module.freshness_errors(implementation, task_dir, evidence_dir)
+            self.assertFalse(any("e2e-tests" in error for error in errors), errors)
+            self.assertFalse(any("characterization" in error for error in errors), errors)
 
 
 if __name__ == "__main__":

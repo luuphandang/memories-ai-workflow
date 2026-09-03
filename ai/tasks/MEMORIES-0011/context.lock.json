@@ -1,0 +1,456 @@
+{
+  "generated_at": "2026-08-31T02:23:12+07:00",
+  "task_id": "MEMORIES-0011",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "active_change": null,
+  "requirement_precedence": "task.md then unconsolidated requirement addenda by ascending cycle (addenda from cycles at or below requirements_consolidated_through_cycle are already folded into task.md and excluded here); newest active unconsolidated addendum wins only for explicit conflicts",
+  "files": [
+    {
+      "path": "ai/shared/policies/security.md",
+      "sha256": "03b2bc8a21431383667f5d39127d23ce509cb47cdac767344e4f6805e13d2619",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/shared/policies/git-policy.md",
+      "sha256": "b2a34262a04fdf1e593db7980edbba4d0480b01d481c760e55e9a3503eaf99d3",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/shared/policies/worktree-policy.md",
+      "sha256": "dbf6a2a5a4666e7e7dcf990ec9afc3d29a423ac5332a0f88d927aaa17dc12416",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/shared/quality/definition-of-done.md",
+      "sha256": "42f4f66c4e9aa8a16fedef512280f3ef2f45ab3a5be75e4bbcc3c64bc05de2fe",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/shared/workflows/requirement-change.md",
+      "sha256": "88b06544caa84e0544a6142ef1cfcd36f0eb7ed02daee5ff6a4f4d644dc5c254",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/shared/workflows/user-acceptance.md",
+      "sha256": "81fcf1017b1677e7c9ccc5023a96cffbce496617d1ce57873f5286b19cc8e249",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/frontend/INDEX.md",
+      "sha256": "7a8c5b9e30c31d6c8bb836a12fe86c14047ed4e9ccbdf38a47595428a934d5f1",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/frontend/architecture.md",
+      "sha256": "90b7bf4135c4f584a0a81c729bd1ddd3219fb938e943089d102f2a85cee902f2",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/frontend/conventions.md",
+      "sha256": "9fcfc28642e67f97bf6a82020c41524bed39bfcb75e184ead65f9cba88df6d3c",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/frontend/testing.md",
+      "sha256": "41868d3fc307e3b53116913b2e41f2489cb14a9f3c5b0712322e1c28640fb546",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/frontend/source-map.md",
+      "sha256": "5007204941f741555046c91a439a16d5daf301ab8054a0fe688f53fa41a264e5",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/frontend/ui-rules.md",
+      "sha256": "3de5da2ec2d59c479ea9c6a72dae899be83cef4e0823bd208bf6a1a85183f388",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/frontend/api-client-rules.md",
+      "sha256": "c9ce9a26fb108fbcd45f9e6a6923c3430a8065602fd03a6610d2ea390443aad5",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/repos/frontend/commands.yaml",
+      "sha256": "ef9a81853044dac1c039b860492d4dbaf5fd5f61b87ea89fbc163b94f661b6ba",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/apps/public-web/app/(marketing)/page.tsx",
+      "sha256": "6c9265736062032b7399101a0e8a597c23e464576cb03f9328753dab37853a9e",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/apps/public-web/app/providers.tsx",
+      "sha256": "80bc8dd15dc4303bbb507e8799b9a4d0275d52ad46c48fa3951fe78acb7d0df2",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/apps/public-web/app/(marketing)/layout.tsx",
+      "sha256": "dc6e71bc84dfcf1a39985c229d34a2f4654d53a3c0d970e30e5abbe92d6648e4",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/apps/public-web/components/home/templates-teaser.tsx",
+      "sha256": "70651552c7d9cb560795c219ebda2e651e59648bbee58546929c6a89995359f8",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/apps/public-web/components/home/gifts-teaser.tsx",
+      "sha256": "4f6b04d333679dc3c52254f1164c698eb6a552151efac7bdbf5d0fc2c0261e22",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/apps/public-web/lib/queries/use-card-templates.ts",
+      "sha256": "02e72e5e7e3771cc1f39dbf97187f8a5e6256c67688c4725db7fb5a9a7352de2",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/apps/public-web/lib/queries/use-products.ts",
+      "sha256": "efdf94e066d0f1094af33048823aae5e7fdce0864d63f928376bb5598298ac4f",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/apps/public-web/lib/queries/query-keys.ts",
+      "sha256": "9446805e932159194b4ead8b20d266c672956ae40211a3d72b66cd6e7f448166",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/apps/public-web/lib/api/map-card-template.ts",
+      "sha256": "5625396a430197c858d058dc0f15573957af58dd60d06398a118e5ed97d17cc0",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/apps/public-web/lib/api/map-product.ts",
+      "sha256": "c8cd5416e5531f54ebe9b688715f0174997944ca815ef15f0b28ffd3e24533a2",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/packages/api-client/src/card-template-client.ts",
+      "sha256": "80e3b24649fa35793bb5744ec079caedb14e344bf48bfa673ad700e09ec7907d",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/packages/api-client/src/product-client.ts",
+      "sha256": "26826531ca753e49c608a1c92d1ec24317874ff572eeea942c09d2816eecce90",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/packages/api-client/src/generated/schema.d.ts",
+      "sha256": "f010704b45deb195d39781eb8a5dc39aac1e674778c438ec4773631561d0dc6b",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/apps/public-web/components/shop/template-card.tsx",
+      "sha256": "11ed51e4abdac60cdbc0994e4b01307a3875b3b8e9345eb33e1ca76a2a52f952",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/apps/public-web/components/shop/product-card.tsx",
+      "sha256": "52b874d2c7b675fb8332f8cc228188f086c1f43b8ff65cf452a80e4bb7a6cd3b",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/apps/public-web/lib/store/shop-store.tsx",
+      "sha256": "d73027733611ffe77d29b3e663b888e140479c70daa1b1f34d45e4016e9aeb99",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/apps/public-web/components/common/catalog-skeleton-grid.tsx",
+      "sha256": "86c53538ab7c436698b53ec49c055fcc3e16356b8eeaadbe65fa7ea68f9a801f",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/apps/public-web/components/common/error-state.tsx",
+      "sha256": "ccc6c0a38dea4c02060dcf8b00afee956aaf21f71b5b6f09ac1d3bf8bded1cfc",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/apps/public-web/components/common/empty-state.tsx",
+      "sha256": "7dcbc4eb449712fc928428b2c4bcfeb986a522300db12230942dd83b4a7f3819",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/apps/public-web/test/home-page.spec.tsx",
+      "sha256": "7c62a58623ad379e22c5221fabc089e558dd56dbcdb9da45bed02b671d127c43",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/apps/public-web/test/utils/api-fixtures.ts",
+      "sha256": "19614673faab6eed1622055173009923e862118ff495cac12032accffcc41f6f",
+      "load": "initial",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/apps/public-web/lib/mock/card-templates.ts",
+      "sha256": "2c6c054f03fc8813149140406534965d75920488f9a0d26ca29d2b80b0a5e6c4",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "worktrees/MEMORIES-0011/frontend/apps/public-web/lib/mock/gift-products.ts",
+      "sha256": "42a0629c2ea7e78356efd0eb5a3b06e49648d80afaabcf264364481c8b6c9e84",
+      "load": "on-demand",
+      "category": "knowledge"
+    },
+    {
+      "path": "ai/tasks/MEMORIES-0011/task.md",
+      "sha256": "2006494081c96ecc79e9b35b345be537afa9b7755130a466c41105ec14f8fe3e",
+      "load": "initial",
+      "category": "requirement"
+    }
+  ],
+  "requirements": [
+    "ai/tasks/MEMORIES-0011/task.md"
+  ],
+  "repositories": {
+    "frontend": {
+      "path": "worktrees/MEMORIES-0011/frontend",
+      "base_ref": "origin/master",
+      "head_sha": "e2252a8a5b93cb66025c5a8ee1c42638f2c6ed77",
+      "branch": "feature/MEMORIES-0011-intergration-api-to-homepage",
+      "registered_branch": "feature/MEMORIES-0011-intergration-api-to-homepage",
+      "status": ""
+    }
+  },
+  "codegraph": {
+    "mode": "optional",
+    "repositories": {
+      "frontend": {
+        "mode": "optional",
+        "path": "/Users/cmc/Documents/Memories/worktrees/MEMORIES-0011/frontend",
+        "available": true,
+        "indexed": false,
+        "ready": false,
+        "command": "/Users/cmc/.local/bin/codegraph",
+        "reason": "index is missing; run ai task codegraph <ID> --init"
+      }
+    }
+  },
+  "skills": {
+    "required": {
+      "implement": [
+        "decompose-implementation-task",
+        "implement-nextjs-vertical-slice",
+        "verify-implementation-handoff",
+        "validate-evidence-provenance"
+      ],
+      "review": [
+        "review-code-change",
+        "review-vertical-slice-completeness"
+      ]
+    },
+    "locked": {
+      "decompose-implementation-task": {
+        "path": "ai/skills/decompose-implementation-task/SKILL.md",
+        "sha256": "0d8e89a94111bd5679c8c5ef6c8f5ce250621909f51704bf676af966f2fd4673",
+        "files": [
+          {
+            "path": "ai/skills/decompose-implementation-task/SKILL.md",
+            "sha256": "e76360df532bcd2ca38cde438c7626d17330561e5299343400c0a6b746d152e3"
+          },
+          {
+            "path": "ai/skills/decompose-implementation-task/agents/openai.yaml",
+            "sha256": "c7bf833bcb990adf03cabfaddf25b463ad652bc6c69a385f094c4ab3d67a5d3f"
+          },
+          {
+            "path": "ai/skills/decompose-implementation-task/references/scope-thresholds.md",
+            "sha256": "b913b844e0371b7916c27e112a1e0c4d3a645dbc5659916bfdd6d6309107fe54"
+          },
+          {
+            "path": "ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py",
+            "sha256": "e7aee9f8bbd374ee7ccd909f09cb3a91adb963fb0fe4a40d974201cec867833c"
+          }
+        ]
+      },
+      "implement-nextjs-vertical-slice": {
+        "path": "ai/skills/implement-nextjs-vertical-slice/SKILL.md",
+        "sha256": "25827b18cf8482619030897189630b1dc404eacf1d974be8a42d14d2b7a70d9b",
+        "files": [
+          {
+            "path": "ai/skills/implement-nextjs-vertical-slice/SKILL.md",
+            "sha256": "8d8e4e5b620f32e7ff61ede9ef346f954f0f0d6998eb0e0e2a55417effe67eb9"
+          },
+          {
+            "path": "ai/skills/implement-nextjs-vertical-slice/agents/openai.yaml",
+            "sha256": "b3121fffc2cbb4089ade994a2b970eddcb88b17dac14890201381b10344fbd33"
+          },
+          {
+            "path": "ai/skills/implement-nextjs-vertical-slice/references/accessibility-and-testing.md",
+            "sha256": "b0dd89baf39155898f05a1379e96095355df3918cf256c61cc4ef2b45dd5c97b"
+          },
+          {
+            "path": "ai/skills/implement-nextjs-vertical-slice/references/data-and-forms.md",
+            "sha256": "fc4277a6cb0dee2c3d48ee751e1eeace502d5a9d12b7b3c68829109a543e5485"
+          },
+          {
+            "path": "ai/skills/implement-nextjs-vertical-slice/references/routing-and-rendering.md",
+            "sha256": "16f1e1972eda80e22d40cc8460d136f186cd3e12ec70f217bd486795b2ff696c"
+          },
+          {
+            "path": "ai/skills/implement-nextjs-vertical-slice/scripts/check_frontend_security.py",
+            "sha256": "78ec09be475518e271c4cf678c6390b19525698c9566529208e68f4e88538af4"
+          }
+        ]
+      },
+      "review-code-change": {
+        "path": "ai/skills/review-code-change/SKILL.md",
+        "sha256": "194eb62a12b70eb6efd922af05d797d4c0296efc8299ece3b9df5b156e8d6b9a",
+        "files": [
+          {
+            "path": "ai/skills/review-code-change/SKILL.md",
+            "sha256": "f914780e510e59951b32bbd8ec9c87002c27882be553698db38ae456294716b5"
+          },
+          {
+            "path": "ai/skills/review-code-change/agents/openai.yaml",
+            "sha256": "89bf0eb8d7d8c4c46768a8ef8a7ff6e0b884d138b6827faf6b20235f7f6da239"
+          },
+          {
+            "path": "ai/skills/review-code-change/references/findings-and-verdicts.md",
+            "sha256": "92eee3f8b1e985b6797915799e731f2ab6b3475a5619239d33a04eeb23efdd20"
+          },
+          {
+            "path": "ai/skills/review-code-change/references/review-passes.md",
+            "sha256": "32d7a4272ca4b27f6dcf82e610001d2df3da7a178d218feac826e3f6f2ce33c2"
+          },
+          {
+            "path": "ai/skills/review-code-change/references/test-matrix.md",
+            "sha256": "0e5113c2fd032589d08075564c1ce2b8e50775a4759a447cf8422a85bc3bd166"
+          },
+          {
+            "path": "ai/skills/review-code-change/scripts/validate_review.py",
+            "sha256": "9bc1889616268eaf6c099a3144215ecb31cbe4bc5540d07c658cd1b7c5b9a79d"
+          }
+        ]
+      },
+      "review-vertical-slice-completeness": {
+        "path": "ai/skills/review-vertical-slice-completeness/SKILL.md",
+        "sha256": "f75956bd734c0cc576d24fffa9f30e209f4c5f3db6ef5b34ae3a9282b4243f52",
+        "files": [
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/SKILL.md",
+            "sha256": "93eec980619cb1aa3834b189bac7af43abb448231c2339ca598e9a028fe9fead"
+          },
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/agents/openai.yaml",
+            "sha256": "e196bf2320746ec34429ae876a64884421aae76b9aae46369b016ea4e7744742"
+          },
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/references/evidence-matrix.md",
+            "sha256": "94c10689d431deb1d20bbfcebfeddf9479f1b28517ce2ccb653f71987614bf16"
+          },
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/references/review-gates.md",
+            "sha256": "49b2ec8c1b41687890f0434088b635e108d23765dd5dbf3bada9e3efd529c467"
+          },
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/scripts/build_evidence_matrix.py",
+            "sha256": "a5df8b48576b5deb4bdffe981b4fa0e96004e3c2a1e27fd38820106d86f4133f"
+          },
+          {
+            "path": "ai/skills/review-vertical-slice-completeness/scripts/check_evidence_freshness.py",
+            "sha256": "42b2cfb487b3ca96977b86ffd890a64af7e7cc98e234aff247528a026897588d"
+          }
+        ]
+      },
+      "validate-evidence-provenance": {
+        "path": "ai/skills/validate-evidence-provenance/SKILL.md",
+        "sha256": "15aa1882c029c5343e4d4880fc43032028b5e4ec00854b4b1edbe0b94642caae",
+        "files": [
+          {
+            "path": "ai/skills/validate-evidence-provenance/SKILL.md",
+            "sha256": "4b3c8734b043753630396547d22cb2d00152f36a198ff011e188f2fa6b4e7a62"
+          },
+          {
+            "path": "ai/skills/validate-evidence-provenance/agents/openai.yaml",
+            "sha256": "84e0d62d27ea824ba63a3ec2aaece7e19de2f89b700b95181eedd2c5c8fbe139"
+          },
+          {
+            "path": "ai/skills/validate-evidence-provenance/references/manifest.md",
+            "sha256": "72a44180f3f92a131cad7f3f5b233b84c9b34a1d2e7632e5a5fed9dcdef7eeef"
+          },
+          {
+            "path": "ai/skills/validate-evidence-provenance/scripts/check_provenance.py",
+            "sha256": "ea3ce99b19e8d3c049a05b2809f2061d37ab869f887b7a223f7004a8a8903887"
+          },
+          {
+            "path": "ai/skills/validate-evidence-provenance/scripts/finalize_provenance_run.py",
+            "sha256": "c52dafd7af6e3864d26cfe9d45bed5ff925f3c8a1110ee2ff8d1601654a267a6"
+          },
+          {
+            "path": "ai/skills/validate-evidence-provenance/scripts/refresh_validation_artifacts.py",
+            "sha256": "a4ab79a0200e9d103472bd6eae59f0ba534c092c70bcd50a1ddcf1262c90dd5e"
+          },
+          {
+            "path": "ai/skills/validate-evidence-provenance/scripts/sync_provenance.py",
+            "sha256": "8c7b222814185768ddde989d061f77034d4910d1ea51bdc22a1c807f828d1259"
+          }
+        ]
+      },
+      "verify-implementation-handoff": {
+        "path": "ai/skills/verify-implementation-handoff/SKILL.md",
+        "sha256": "570af30068f0ef579bd0538cb88368138530aa99852f3f0d0d531e082ce548a5",
+        "files": [
+          {
+            "path": "ai/skills/verify-implementation-handoff/SKILL.md",
+            "sha256": "e1d26530d15ad4e723ba68d980128aeb281845aa5ce45ef38e083364ac4e9916"
+          },
+          {
+            "path": "ai/skills/verify-implementation-handoff/agents/openai.yaml",
+            "sha256": "762a6330b1443adf98cc3e7098e81b9d42e44deae1252e9b6424f03130e7e2a2"
+          },
+          {
+            "path": "ai/skills/verify-implementation-handoff/scripts/check_handoff.py",
+            "sha256": "acb2f5152715741f18421cb54508b16ddf98c90f5d8566a90ab468664d1430c2"
+          }
+        ]
+      }
+    }
+  },
+  "execution_plan": "ai/tasks/MEMORIES-0011/execution-plan.json",
+  "scope_assessment": {
+    "acceptance_items": 26,
+    "risk_dimensions": [
+      "api",
+      "database",
+      "security",
+      "ui"
+    ],
+    "large": true
+  }
+}

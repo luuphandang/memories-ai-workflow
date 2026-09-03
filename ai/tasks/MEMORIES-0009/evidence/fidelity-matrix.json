@@ -1,0 +1,76 @@
+{
+  "task_id": "MEMORIES-0009",
+  "generated_at": "2026-08-28T05:52:14+07:00",
+  "method_notes": "Regenerated for review cycle 9 (review:9:1: capture-fidelity.mjs's outside-click dismissal check now drives a real CDP mousePressed+mouseReleased pointer sequence on a hit-tested inert header background point instead of dispatching a single synthetic `mousedown` event, and verifies via a one-time listener that the target's own `click` event actually completed; review:9:2: this matrix itself, republished from the same run) via ai/tasks/MEMORIES-0009/evidence/scripts/capture-fidelity.mjs + compare-fidelity.py — see that directory's README.md for exact prerequisites/invocation. These scripts replace every prior cycle's ad-hoc, uncommitted /tmp/mem0009-fidelity-v2 / -v3 scripts (review:5:2 finding: those could not be reproduced once /tmp was cleaned); they are dependency-free (Node's built-in fetch/WebSocket, Python's stdlib zlib/struct) and are hashed as provenance artifacts. Route '/' is captured full-page (captureBeyondViewport, clip height = document.scrollHeight) via headless Chrome CDP so every one of the 11 home sections is included, not only the top fold. Two techniques carried over from the diagnoses in review cycles 2-3 (both still required, now built into the durable script rather than a throwaway one): (1) default-state captures emulate `prefers-reduced-motion: reduce` via CDP `Emulation.setEmulatedMedia`, since both the prototype (prototype/index/index.html:850-854) and this app's `Reveal` component treat that as an immediate-visible fallback for their IntersectionObserver-driven scroll-reveal, which otherwise never fires for below-fold content in a non-scrolling capture; (2) the capture script scrolls the full document in viewport-height steps, clicks through every Testimonials-carousel dot (non-current slides sit outside the horizontal viewport inside a translateX track), and scrollIntoView-plus-awaits any `next/image` still incomplete before taking the screenshot, since `captureBeyondViewport` never itself scrolls the page and native `loading=\"lazy\"` would otherwise leave several below-fold photos unfetched. `reference` = prototype/index/index.html served file://; `actual` = a fresh `next build && next start -p 3100` of the current worktree. `mean_cell_color_distance` is a 16x16 grid-average-color-distance metric (documented, non-gating; compare-fidelity.py samples each image proportionally to its own height, since reference/actual document heights legitimately differ once real catalog content replaces the flat prototype mock) — `status` reflects an actual section-by-section visual inspection of the paired images (see `section_review` per entry), not a threshold on that number alone. `state=search-open` entries are validated via the numeric header/main geometry (headerHeight/headerBottom/mainTop/scrollWidth) AND `window.scrollY` in screenshots/geometry.log (not pixel color distance, since the static prototype's search button has no working overlay to compare against): the capture opens search from a deterministic non-zero scroll position (scrollY=600) and asserts scrollY plus header/main geometry are byte-identical after open and after each of the three dismissal paths (Escape, a real CDP click on an inert outside point, and the close button), with the dialog's DOM presence (`#site-header-search-popover`) explicitly asserted absent/present at every step rather than inferred from geometry alone; their `reference` field documents the closed-state default screenshot at the same viewport as the geometry/layout baseline the search-open state must not deviate from.",
+  "entries": [
+    {
+      "route": "/",
+      "viewport": "375x812",
+      "state": "default",
+      "reference": "ai/tasks/MEMORIES-0009/evidence/screenshots/fidelity/reference/home-375x812-default.png",
+      "actual": "ai/tasks/MEMORIES-0009/evidence/screenshots/fidelity/actual/home-375x812-default.png",
+      "status": "passed",
+      "comparison_method": "grid-average-color-distance (16x16 cells), prefers-reduced-motion:reduce emulated and every image forced to load (scroll + carousel-cycle + per-image scrollIntoView wait) so all 11 sections and their photos are visible in both captures",
+      "mean_cell_color_distance": 31.87,
+      "section_review": "Re-captured 2026-08-28 for review cycle 9 (outside-click evidence fix only — no source/test changes this cycle) via the durable capture-fidelity.mjs/compare-fidelity.py scripts. Visually confirmed all 11 sections present, in order, fully rendered (13/13 actual + 3/3 reference images complete per capture-report.json) at 375x15688 (ref) / 375x15552 (actual): hero, occasions (8 cards), templates (filter tabs + 6 cards with the prototype-equivalent 4:3 preview / tilted mini-card / top-left price-or-free pill / top-right favorite / a default-visible 'Dùng mẫu này' CTA below 1025px per the review-007 CTA-boundary fix), editor intro, gifts (6 cards with photos), QR story, how-it-works (3 steps), custom-order banner (2 CTAs), stories/testimonials, blog (3 cards), final CTA, footer. No blank bands, no overflow. Use-template CTA visibility boundary re-verified via the dedicated cta-boundary capture (see the search-open entry below and ai/tasks/MEMORIES-0009/evidence/screenshots/fidelity/cta-boundary-1024px.png / cta-boundary-1025px.png) rather than a per-viewport crop at this entry.",
+      "review_finding": "review:5:1,review:5:2"
+    },
+    {
+      "route": "/",
+      "viewport": "768x1024",
+      "state": "default",
+      "reference": "ai/tasks/MEMORIES-0009/evidence/screenshots/fidelity/reference/home-768x1024-default.png",
+      "actual": "ai/tasks/MEMORIES-0009/evidence/screenshots/fidelity/actual/home-768x1024-default.png",
+      "status": "passed",
+      "comparison_method": "grid-average-color-distance (16x16 cells), prefers-reduced-motion:reduce emulated and every image forced to load (scroll + carousel-cycle + per-image scrollIntoView wait) so all 11 sections and their photos are visible in both captures",
+      "mean_cell_color_distance": 33.87,
+      "section_review": "Re-captured 2026-08-28 for review cycle 9 via the durable scripts. Visually confirmed all 11 sections present, in order, fully rendered at 768x11538 (ref) / 768x10899 (actual), same section list and Templates-card composition as the 375px entry. No blank bands, no overflow. Distance unchanged from review cycle 6/8 (33.87) since no source changed this cycle.",
+      "review_finding": "review:5:1,review:5:2"
+    },
+    {
+      "route": "/",
+      "viewport": "1440x900",
+      "state": "default",
+      "reference": "ai/tasks/MEMORIES-0009/evidence/screenshots/fidelity/reference/home-1440x900-default.png",
+      "actual": "ai/tasks/MEMORIES-0009/evidence/screenshots/fidelity/actual/home-1440x900-default.png",
+      "status": "passed",
+      "comparison_method": "grid-average-color-distance (16x16 cells), prefers-reduced-motion:reduce emulated and every image forced to load (scroll + carousel-cycle + per-image scrollIntoView wait) so all 11 sections and their photos are visible in both captures",
+      "mean_cell_color_distance": 47.64,
+      "section_review": "Re-captured 2026-08-28 for review cycle 9 via the durable scripts. Visually confirmed all 11 sections present, in order, fully rendered at 1440x9609 (ref) / 1440x8350 (actual), same section list and Templates-card composition as the 375px entry. No blank bands, no overflow. Distance is higher than the 375/768 entries (as in every prior cycle's 1440 entry) reflecting the actual catalog's richer photo/rating/badge treatment on the Gifts and Testimonials cards vs. the flatter prototype mock at this larger viewport — a real content/styling difference, not a capture defect. At this desktop viewport the 'Dùng mẫu này' CTA correctly remains hidden until hover/focus above 1024px (see the cta-boundary capture referenced in the search-open entry below).",
+      "review_finding": "review:5:1,review:5:2"
+    },
+    {
+      "route": "/",
+      "viewport": "375x812",
+      "state": "search-open",
+      "reference": "ai/tasks/MEMORIES-0009/evidence/screenshots/fidelity/reference/home-375x812-default.png",
+      "actual": "ai/tasks/MEMORIES-0009/evidence/screenshots/fidelity/actual/home-375x812-search-open.png",
+      "status": "passed",
+      "comparison_method": "geometry-diff (headerHeight/headerBottom/mainTop/scrollWidth/scrollY from screenshots/geometry.log, plus explicit dialog-DOM-presence assertions; no prototype search overlay exists to pixel-compare against — see method_notes)",
+      "section_review": "Re-captured 2026-08-28 for review cycle 9. geometry.log: opened from a deterministic non-zero scroll position (scrollY=600, not 0); headerHeight/headerBottom/mainTop byte-identical and scrollWidth===innerWidth (both 375) before open, after open, and after each of the three dismissal paths. Dialog DOM presence (`#site-header-search-popover`) explicitly asserted open after opening and absent after each dismissal. The outside-click dismissal path now drives a genuine CDP mousePressed+mouseReleased sequence on a hit-tested inert header-background point (not a link/button, so the click cannot itself trigger an unrelated side effect like navigation), and the capture verifies the target's own `click` listener fired before treating the dismissal as proven (review:9:1) — scrollY remained exactly 600 through open and all three dismissals (closed=true at every step).",
+      "review_finding": "review:5:2,review:9:1,review:9:2"
+    },
+    {
+      "route": "/",
+      "viewport": "768x1024",
+      "state": "search-open",
+      "reference": "ai/tasks/MEMORIES-0009/evidence/screenshots/fidelity/reference/home-768x1024-default.png",
+      "actual": "ai/tasks/MEMORIES-0009/evidence/screenshots/fidelity/actual/home-768x1024-search-open.png",
+      "status": "passed",
+      "comparison_method": "geometry-diff (headerHeight/headerBottom/mainTop/scrollWidth/scrollY from screenshots/geometry.log, plus explicit dialog-DOM-presence assertions)",
+      "section_review": "Re-captured 2026-08-28 for review cycle 9. geometry.log: opened from a deterministic non-zero scroll position (scrollY=600); headerHeight/headerBottom/mainTop byte-identical and scrollWidth===innerWidth (both 768) before open, after open, and after each of the three dismissal paths, with dialog DOM presence explicitly asserted at every step. The outside-click path uses the same real CDP press+release sequence on an inert header-background point as the 375px entry (review:9:1) — scrollY remained exactly 600 through open and all three dismissals (closed=true at every step). Also captured the use-template CTA visibility boundary at this run: ai/tasks/MEMORIES-0009/evidence/screenshots/fidelity/cta-boundary-1024px.png shows the CTA visible/opaque/hittable by default; ai/tasks/MEMORIES-0009/evidence/screenshots/fidelity/cta-boundary-1025px.png shows it hidden by default and hover-revealed (geometry.log lines 19-22).",
+      "review_finding": "review:5:2,review:9:1,review:9:2"
+    },
+    {
+      "route": "/",
+      "viewport": "1440x900",
+      "state": "search-open",
+      "reference": "ai/tasks/MEMORIES-0009/evidence/screenshots/fidelity/reference/home-1440x900-default.png",
+      "actual": "ai/tasks/MEMORIES-0009/evidence/screenshots/fidelity/actual/home-1440x900-search-open.png",
+      "status": "passed",
+      "comparison_method": "geometry-diff (headerHeight/headerBottom/mainTop/scrollWidth/scrollY from screenshots/geometry.log, plus explicit dialog-DOM-presence assertions)",
+      "section_review": "Re-captured 2026-08-28 for review cycle 9. geometry.log: opened from a deterministic non-zero scroll position (scrollY=600); headerHeight/headerBottom/mainTop byte-identical and scrollWidth===innerWidth (both 1440) before open, after open, and after each of the three dismissal paths, with dialog DOM presence explicitly asserted at every step. The outside-click path uses the same real CDP press+release sequence on an inert header-background point as the 375px entry (review:9:1) — scrollY remained exactly 600 through open and all three dismissals (closed=true at every step).",
+      "review_finding": "review:5:2,review:9:1,review:9:2"
+    }
+  ]
+}

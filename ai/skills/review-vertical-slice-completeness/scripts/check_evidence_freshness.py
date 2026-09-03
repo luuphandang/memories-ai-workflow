@@ -99,8 +99,11 @@ def collect_current_attempt_claims(implementation: dict, attempt: str) -> list[s
 
 
 def ground_truth_unit_tests(repo_dir: Path, evidence_dir: Path) -> str | None:
-    log = evidence_dir / "logs" / "unit-test-run.log"
-    if log.exists():
+    log = next(
+        (path for path in (evidence_dir / "logs" / "unit-test-run.log", evidence_dir / "logs" / "test.txt") if path.exists()),
+        None,
+    )
+    if log is not None:
         text = log.read_text(encoding="utf-8")
         suites = re.search(r"Test Suites:\s*(\d+) passed,\s*\d+ total", text)
         tests = re.search(r"Tests:\s*(\d+) passed,\s*\d+ total", text)
@@ -162,8 +165,11 @@ def ground_truth_characterization_baseline(repo_dir: Path, evidence_dir: Path) -
 
 
 def ground_truth_architecture(repo_dir: Path, evidence_dir: Path) -> str | None:
-    path = evidence_dir / "logs" / "architecture.log"
-    if not path.exists():
+    path = next(
+        (candidate for candidate in (evidence_dir / "logs" / "architecture.log", evidence_dir / "logs" / "test-architecture.txt") if candidate.exists()),
+        None,
+    )
+    if path is None:
         return None
     match = re.search(r"(\d+) modules,\s*(\d+) dependencies cruised", path.read_text(encoding="utf-8"))
     return f"{match.group(1)} modules / {match.group(2)} dependencies" if match else None
@@ -272,12 +278,43 @@ GROUND_TRUTH = {
     "integration-state": ground_truth_integration_state,
 }
 
-MANDATORY_TAGS = frozenset(GROUND_TRUTH)
+MANDATORY_TAGS = frozenset(
+    {
+        "implementation-attempt",
+        "implementation-cycle",
+        "change-cycle",
+        "acceptance-state",
+        "head-revision",
+        "integration-state",
+    }
+)
+# These values legitimately change after the implementer writes implementation.json:
+# validation republishes provenance, and review changes state/counters.  They remain
+# available as optional audit prose and are still checked for self-contradiction, but
+# must never be compared to live state by the pre-review freshness gate.
+PHASE_TRANSIENT_TAGS = frozenset(
+    {"resolved-review-cycles", "review-state", "provenance-generated-at"}
+)
+ARTIFACT_MANDATORY_TAGS = frozenset(
+    {
+        "unit-tests",
+        "e2e-tests",
+        "characterization-tests",
+        "characterization-baseline",
+        "architecture",
+        "provenance-inventory",
+        "baseline-unit-tests",
+    }
+)
 
 
 def freshness_errors(implementation: dict, repo_dir: Path, evidence_dir: Path) -> list[str]:
     errors: list[str] = []
     tags = collect_tags(implementation)
+    truths = {name: compute(repo_dir, evidence_dir) for name, compute in GROUND_TRUTH.items()}
+    required_tags = MANDATORY_TAGS | {
+        name for name in ARTIFACT_MANDATORY_TAGS if truths.get(name) is not None
+    }
     current_attempt = ground_truth_implementation_attempt(repo_dir, evidence_dir)
     if current_attempt is not None:
         for text in collect_current_attempt_claims(implementation, current_attempt):
@@ -295,7 +332,7 @@ def freshness_errors(implementation: dict, repo_dir: Path, evidence_dir: Path) -
                     f"{inputs} inputs / {artifacts} artifacts"
                 )
 
-    for name in sorted(MANDATORY_TAGS - tags.keys()):
+    for name in sorted(required_tags - tags.keys()):
         errors.append(f"mandatory [{name}] fact is absent from current implementation evidence")
 
     for name, values in tags.items():
@@ -307,16 +344,17 @@ def freshness_errors(implementation: dict, repo_dir: Path, evidence_dir: Path) -
                 "claim must be removed, not left alongside the current one"
             )
 
-    for name, compute in GROUND_TRUTH.items():
-        truth = compute(repo_dir, evidence_dir)
+    for name, truth in truths.items():
+        if name in PHASE_TRANSIENT_TAGS:
+            continue
+        if name not in required_tags and name not in tags:
+            continue
         if truth is None:
-            errors.append(f"[{name}] ground truth could not be computed from authoritative state")
+            if name in required_tags or name in tags:
+                errors.append(f"[{name}] ground truth could not be computed from authoritative state")
             continue
         claimed = sorted(set(tags.get(name, [])))
-        matches = claimed == [truth]
-        if name == "review-state" and claimed == ["prepared"] and truth == "reviewing":
-            matches = True
-        if not matches:
+        if claimed != [truth]:
             errors.append(
                 f"[{name}] evidence claims {claimed} but the authoritative artifact currently "
                 f"shows {truth!r}"

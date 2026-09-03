@@ -1,0 +1,115 @@
+npm notice run @memories/public-web@0.1.0 test
+npm notice run vitest run --run
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v2.1.9 /Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/apps/public-web
+
+ ✓ test/use-card-editor.spec.ts (20 tests) 88ms
+ ✓ test/editor-element.spec.tsx (20 tests) 168ms
+ ✓ test/draft-storage.spec.ts (14 tests) 85ms
+ ✓ test/site-header.spec.tsx (13 tests) 989ms
+ ✓ test/auth-modal.spec.tsx (13 tests) 1135ms
+ ✓ test/card-catalog.spec.tsx (13 tests) 1884ms
+   ✓ CardCatalog filter/empty-state/preview (backed by the real API contract) > shows an empty state with a working "clear filters" action when search matches nothing 805ms
+ ✓ test/auth-provider.spec.tsx (5 tests) 183ms
+ ✓ test/home-page.spec.tsx (16 tests) 2083ms
+ ✓ test/oauth-redirect-handler.spec.tsx (8 tests) 432ms
+ ✓ test/gift-catalog.spec.tsx (25 tests) 2556ms
+   ✓ GiftCatalog filter/empty-state (backed by the real API contract) > shows an empty state with a working "clear filters" action when search matches nothing 914ms
+ ✓ test/canvas-geometry.spec.ts (13 tests) 6ms
+ ✓ test/editor-advanced-tools.spec.ts (11 tests) 21ms
+stderr | test/export-image.spec.ts > renderPageToCanvas / exportPagePngBlob > rejects with a clear message when the browser has no working 2D canvas context
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at Module.renderPageToCanvas (/Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/export-image.ts:469:22)
+    at /Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/apps/public-web/test/export-image.spec.ts:82:7
+    at file:///Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/node_modules/@vitest/runner/dist/index.js:1056:17)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5) undefined
+
+stderr | test/export-image.spec.ts > renderPageToCanvas / exportPagePngBlob > propagates the same failure through exportPagePngBlob
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at renderPageToCanvas (/Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/export-image.ts:469:22)
+    at Module.exportPagePngBlob (/Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/export-image.ts:539:10)
+    at /Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/apps/public-web/test/export-image.spec.ts:88:7
+    at file:///Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/node_modules/@vitest/runner/dist/index.js:1056:17) undefined
+
+ ✓ test/export-image.spec.ts (11 tests) 18ms
+ ✓ test/element-and-page-operations.spec.ts (17 tests) 6ms
+ ✓ test/login-form.spec.tsx (5 tests) 570ms
+ ✓ test/user-menu-trigger.spec.tsx (4 tests) 348ms
+ ✓ test/reveal.spec.tsx (4 tests) 72ms
+ ✓ test/login-page.spec.tsx (4 tests) 686ms
+   ✓ LoginPage > registers via registerLocal (not the legacy email login method) and navigates to /profile on success 302ms
+ ✓ test/register-form.spec.tsx (6 tests) 1721ms
+   ✓ RegisterForm > blocks submit and shows a field error when the confirm-password does not match 587ms
+ ✓ test/finish-checklist.spec.ts (3 tests) 3ms
+ ✓ test/routes.spec.tsx (6 tests) 644ms
+ ✓ test/privacy.spec.ts (4 tests) 9ms
+ ✓ test/cart-item-personalization.spec.tsx (3 tests) 883ms
+   ✓ CartItemRow wrap/gift-card picker modals and personalization edit > opens the wrap picker modal and updates the selected wrap 507ms
+ ✓ test/share-link.spec.ts (6 tests) 16ms
+ ✓ test/cart-view.spec.tsx (2 tests) 520ms
+   ✓ CartView quantity and remove > increases quantity with the stepper and removes an item after confirming 321ms
+ ✓ test/mobile-bottom-nav.spec.tsx (3 tests) 142ms
+ ✓ test/custom-order-form.spec.tsx (2 tests) 621ms
+   ✓ CustomOrderForm validation > advances to step 2 once step 1 is filled in validly 390ms
+stderr | test/editor-view.spec.tsx > EditorView finish flow > "Tải PDF để in" opens the download dialog with PNG preselected and PDF/print genuinely disabled, and a failed export shows an honest error
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at renderPageToCanvas (/Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/export-image.ts:469:22)
+    at Module.exportPagePngBlob (/Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/export-image.ts:539:10)
+    at runExport (/Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-download-dialog.tsx:87:28)
+    at HTMLUnknownElement.callCallback (/Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3) undefined
+
+ ✓ test/editor-view.spec.tsx (85 tests) 16779ms
+   ✓ EditorView editor actions > adds a text block to the canvas, selects it and deletes it via the properties panel 728ms
+   ✓ EditorView editor actions > supports undo after adding an element 545ms
+   ✓ EditorView editor actions > exposes the core add and properties workflow through the compact touch toolbar 412ms
+   ✓ EditorView top bar and editor frame > shows an accurate draft status via text and a live region, not color alone 583ms
+   ✓ EditorView top bar and editor frame > undoes and redoes via keyboard shortcuts with disabled state reflecting history 652ms
+   ✓ EditorView top bar and editor frame > saves via Ctrl/⌘+S the same real, on-device write as the manual save button 470ms
+   ✓ EditorView top bar and editor frame > duplicates the selected element via Ctrl/⌘+D, and is a no-op with nothing selected 410ms
+   ✓ EditorView top bar and editor frame > warns before leaving with unsaved changes and stops warning after a successful save 705ms
+   ✓ EditorView top bar and editor frame > does not announce success before the Ctrl/⌘+S save actually settles, then announces it once 548ms
+   ✓ EditorView top bar and editor frame > announces the real actionable error, not a false success, when the Ctrl/⌘+S write fails 507ms
+   ✓ EditorView top bar and editor frame > never announces a false success for a Ctrl/⌘+S save superseded by a later edit 502ms
+   ✓ EditorView unsaved navigation guard > blocks exit links while a save is still in flight (saving) or failed (error), not only unsaved 401ms
+   ✓ EditorView unsaved navigation guard > lets both exit links navigate immediately, with no dialog, once the draft is saved 420ms
+   ✓ EditorView canvas element interactions > duplicates, renames, locks and hides the selected element from the properties panel 415ms
+   ✓ EditorView video, QR, event and layers tools > validates a video link before adding it, and allows editing the link and deleting the block 327ms
+   ✓ EditorView video, QR, event and layers tools > lists layers in z-order, selects the matching canvas element, renames, hides/locks and reorders 389ms
+
+ Test Files  28 passed (28)
+      Tests  336 passed (336)
+   Start at  19:48:59
+   Duration  19.41s (transform 2.92s, setup 1.96s, collect 10.65s, tests 32.67s, environment 13.50s, prepare 1.94s)
+
+npm notice run @memories/editor-core@0.1.0 test
+npm notice run vitest run --run
+
+ RUN  v2.1.9 /Users/cmc/Documents/Memories/worktrees/MEMORIES-0010/frontend/packages/editor-core
+
+ ✓ test/card-document.spec.ts (31 tests) 4ms
+ ✓ test/document.spec.ts (2 tests) 3ms
+
+ Test Files  2 passed (2)
+      Tests  33 passed (33)
+   Start at  19:49:20
+   Duration  496ms (transform 106ms, setup 0ms, collect 127ms, tests 7ms, environment 0ms, prepare 182ms)
+

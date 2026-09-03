@@ -8,7 +8,7 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib.ai_common import ensure_task, read_yaml, requirement_documents, safe_workspace_path, write_json
+from lib.ai_common import ensure_task, now_iso, read_json, read_yaml, requirement_documents, safe_workspace_path, write_json
 
 
 HEADING_RE = re.compile(r"^###\s+(?:\d+\.?\s*)?(.+?)\s*$")
@@ -77,6 +77,24 @@ def main() -> None:
         "status": "ready",
         "slices": slices,
     })
+    progress_path = td / "implementation-progress.json"
+    progress = read_json(progress_path) if progress_path.exists() else {
+        "task_id": args.task_id, "implementation_cycle": int(state.get("implementation_cycle", 1)),
+        "change_cycle": int(state.get("change_cycle", 0)), "updated_at": None,
+        "completed_criteria": [], "changed_files": [], "decisions": [], "validation": [],
+        "current_slice": None, "current_step": "Ready to implement", "remaining_steps": [], "notes": [],
+    }
+    existing = {item.get("id"): item for item in progress.get("checklist", [])}
+    for item in slices:
+        checklist_id = f"slice:{item['id']}"
+        existing.setdefault(checklist_id, {
+            "id": checklist_id, "source": "execution_plan", "source_ref": item["id"],
+            "description": f"Implement and provide evidence for slice {item['title']}",
+            "status": "pending", "evidence": "", "updated_at": now_iso(),
+        })
+    progress["checklist"] = list(existing.values())
+    progress["updated_at"] = now_iso()
+    write_json(progress_path, progress)
     detail_count = sum(sum(len(values) for values in item["requirement_details"].values()) for item in slices)
     print(f"Execution plan ready: {len(slices)} slices, {len(slices)} primary criteria, {detail_count} detailed requirements")
 

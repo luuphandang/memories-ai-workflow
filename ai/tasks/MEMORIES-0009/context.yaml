@@ -53,8 +53,23 @@ repositories:
   - path: worktrees/MEMORIES-0009/frontend/apps/public-web/app/(marketing)/layout.tsx
     reason: Shared marketing shell containing header, main, footer and mobile navigation
     load: initial
-  - path: worktrees/MEMORIES-0009/frontend/apps/public-web/components/home
-    reason: Existing reduced homepage components to inventory, reuse and expand
+  - path: worktrees/MEMORIES-0009/frontend/apps/public-web/components/home/hero.tsx
+    reason: Existing homepage hero to inventory, reuse and expand
+    load: initial
+  - path: worktrees/MEMORIES-0009/frontend/apps/public-web/components/home/templates-teaser.tsx
+    reason: Existing homepage template section to inventory, reuse and expand
+    load: initial
+  - path: worktrees/MEMORIES-0009/frontend/apps/public-web/components/home/gifts-teaser.tsx
+    reason: Existing homepage gift section to inventory, reuse and expand
+    load: initial
+  - path: worktrees/MEMORIES-0009/frontend/apps/public-web/components/home/custom-order-banner.tsx
+    reason: Existing homepage custom-order section to inventory, reuse and expand
+    load: initial
+  - path: worktrees/MEMORIES-0009/frontend/apps/public-web/components/home/testimonials-section.tsx
+    reason: Existing homepage testimonials section to inventory, reuse and expand
+    load: initial
+  - path: worktrees/MEMORIES-0009/frontend/apps/public-web/components/home/final-cta.tsx
+    reason: Existing homepage final call-to-action to inventory, reuse and expand
     load: initial
   - path: worktrees/MEMORIES-0009/frontend/apps/public-web/components/site-header.tsx
     reason: Current in-flow search causing header height and page layout shift

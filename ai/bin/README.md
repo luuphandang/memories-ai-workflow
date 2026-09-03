@@ -12,7 +12,9 @@
   được sinh động theo task cho Claude và Codex, không sửa global agent config.
 - `run-claude`: gọi Claude implementer cho cycle hiện hành; lưu checkpoint/log theo attempt và resume phiên bị gián đoạn khi có session ID.
 - `run-claude` đồng thời bắt buộc skill hash, handoff skill evidence và các deterministic implementation checks.
-- `run-task`: tự động lặp implement → validate → review → request-fixes; tự xếp validation failure cho attempt sau và dừng ở user acceptance hoặc trạng thái cần can thiệp.
+- `run-task`: tự động lặp implement → validate → review → request-fixes; tự chuyển validation/
+  contract failure thành structured checklist + fix request cho attempt sau và dừng ở user
+  acceptance hoặc blocker bên ngoài thật sự.
 - `validate`: chạy command deterministic.
 - `run-codex-review`: chạy wiring/acceptance evidence gates rồi gọi Codex read-only với review skill bắt buộc.
 - `request-fixes`: tạo danh sách fix theo `review.fail_on` và acceptance/validation bị thiếu,
@@ -23,9 +25,10 @@
   nhạy cảm (auth/security/migration/...) hoặc không xác định được slice luôn fallback về
   full-plan, lý do được ghi vào `state.yaml` và metrics.
 - `finalize-task`: sinh báo cáo theo `report.*`, từ chối dry-run validation và chuyển task đạt gate sang `awaiting_user_acceptance`.
-- `accept-task`: ghi xác nhận người dùng và chuyển task sang `completed`.
+- `accept-task`: chỉ nhận report đã finalize cho đúng implementation/change/review cycle; ghi
+  xác nhận và report theo transaction có rollback nếu tái tạo report thất bại.
 - `request-change`: tạo correction hoặc post-completion requirement-change cycle, lưu baseline và tái sử dụng worktree đã đăng ký.
-- `update-knowledge`: lập kế hoạch hoặc áp dụng update sau khi task đã được người dùng xác nhận.
+- `update-knowledge`: lập kế hoạch hoặc áp dụng update sau khi task đã được người dùng xác nhận; `accept-task` tự gọi `--apply --strict` để áp dụng toàn bộ entry đã duyệt và rollback acceptance nếu preflight thất bại.
 - `consolidate-requirements`: khi task ở trạng thái `completed`, archive draft/manifest cũ
   (nếu có), gọi Claude soạn một `task.md` gộp các requirement addendum của các cycle đã
   được chấp nhận thành `requirements-consolidation-draft.md`, kèm
@@ -46,6 +49,9 @@ Chạy `./ai/bin/ai --help` để xem command.
 
 `ai task run` chạy đúng một execution-plan slice trong mỗi Claude session mới,
 dùng quick validation giữa các slice và chỉ chạy full validation trước review.
+Handoff slice thành công dùng trạng thái `implementation_ready_for_validation`; rerun/restart
+tự tiếp tục ở validation. Status của execution-plan thuộc quyền orchestrator và mọi thay đổi
+status do implementer tạo sẽ bị khôi phục trước khi pipeline tiếp tục.
 Session nhận compact slice-context bundle và không bị workflow áp đặt giới hạn số
 agent turn. Các ngưỡng context được cấu hình bằng `AI_WARN_CONTEXT_TOKENS` và
 `AI_MAX_CONTEXT_TOKENS`.

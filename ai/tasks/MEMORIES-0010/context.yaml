@@ -1,0 +1,93 @@
+version: 1
+mandatory:
+- path: ai/shared/policies/security.md
+  reason: Security boundaries
+  load: initial
+- path: ai/shared/policies/git-policy.md
+  reason: Git restrictions
+  load: initial
+- path: ai/shared/policies/worktree-policy.md
+  reason: Worktree restrictions
+  load: initial
+- path: ai/shared/quality/definition-of-done.md
+  reason: Completion criteria
+  load: initial
+- path: ai/shared/workflows/requirement-change.md
+  reason: Requirement precedence and change-cycle rules
+  load: initial
+- path: ai/shared/workflows/user-acceptance.md
+  reason: User acceptance gate
+  load: initial
+repositories:
+  frontend:
+  - path: ai/repos/frontend/INDEX.md
+    reason: Repository knowledge index
+    load: initial
+  - path: ai/repos/frontend/architecture.md
+    reason: Architecture and module boundaries
+    load: on-demand
+  - path: ai/repos/frontend/conventions.md
+    reason: Repository conventions
+    load: on-demand
+  - path: ai/repos/frontend/testing.md
+    reason: Testing requirements
+    load: on-demand
+  - path: ai/repos/frontend/source-map.md
+    reason: Source navigation map
+    load: on-demand
+  - path: ai/repos/frontend/ui-rules.md
+    reason: Frontend visual fidelity, responsive and accessibility conventions
+    load: initial
+  - path: prototype/tao-thiep/Tao-thiep.dc.html
+    reason: Canonical card-editor layout, styling and responsive behavior
+    load: initial
+  - path: prototype/tao-thiep/luumory-app.js
+    reason: Canonical card-editor interactions, tools, states and completion flows
+    load: initial
+  - path: prototype/tao-thiep/screenshots/editor.png
+    reason: Canonical desktop editor visual reference
+    load: initial
+  - path: prototype/tao-thiep/screenshots/01-flow.png
+    reason: Canonical onboarding and creation-flow visual reference
+    load: on-demand
+  - path: prototype/tao-thiep/screenshots/02-flow.png
+    reason: Canonical editor-flow visual reference
+    load: on-demand
+  - path: prototype/tao-thiep/screenshots/03-flow.png
+    reason: Canonical completion-flow visual reference
+    load: on-demand
+  - path: worktrees/MEMORIES-0010/frontend/apps/public-web/app/tao-thiep/page.tsx
+    reason: Current card-editor route entry point
+    load: initial
+  - path: worktrees/MEMORIES-0010/frontend/apps/public-web/app/tao-thiep/layout.tsx
+    reason: Current full-screen editor route layout
+    load: on-demand
+  - path: worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-view.tsx
+    reason: Current editor shell, tools, canvas and responsive UI
+    load: initial
+  - path: worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-element.tsx
+    reason: Current element rendering and pointer transformations
+    load: initial
+  - path: worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/use-card-editor.ts
+    reason: Current editor state, history and document operations
+    load: initial
+  - path: worktrees/MEMORIES-0010/frontend/apps/public-web/lib/types/editor.ts
+    reason: Current editor document and element contracts
+    load: initial
+  - path: worktrees/MEMORIES-0010/frontend/apps/public-web/test/editor-view.spec.tsx
+    reason: Existing editor behavior tests to extend
+    load: initial
+  - path: worktrees/MEMORIES-0010/frontend/packages/editor-core/src/document.ts
+    reason: Shared card-design document model to reconcile with the application editor
+    load: initial
+domains: []
+exclude:
+- ai/runtime/**
+- ai/tasks/*/changes/*/baseline/**
+- ai/tasks/*/final-report.md
+- ai/tasks/*/review.json
+- '**/node_modules/**'
+- '**/dist/**'
+- '**/build/**'
+- '**/.env*'
+- '**/secrets/**'

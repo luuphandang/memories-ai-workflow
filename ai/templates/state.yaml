@@ -3,6 +3,8 @@ status: ready
 implementation_cycle: 1
 review_cycle: 0
 review_cycles_total: 0
+fix_cycle: 0
+fix_cycles_total: 0
 change_cycle: 0
 active_change: null
 timestamps:

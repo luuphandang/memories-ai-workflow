@@ -1,0 +1,47 @@
+{
+  "generated_at": "2026-08-27T22:51:10.608Z",
+  "settleReport": [
+    {
+      "viewport": "375x812",
+      "side": "reference",
+      "total": 3,
+      "incomplete": 0,
+      "scrollHeight": 15688
+    },
+    {
+      "viewport": "375x812",
+      "side": "actual",
+      "total": 13,
+      "incomplete": 0,
+      "scrollHeight": 15552
+    },
+    {
+      "viewport": "768x1024",
+      "side": "reference",
+      "total": 3,
+      "incomplete": 0,
+      "scrollHeight": 11538
+    },
+    {
+      "viewport": "768x1024",
+      "side": "actual",
+      "total": 13,
+      "incomplete": 0,
+      "scrollHeight": 10899
+    },
+    {
+      "viewport": "1440x900",
+      "side": "reference",
+      "total": 3,
+      "incomplete": 0,
+      "scrollHeight": 9609
+    },
+    {
+      "viewport": "1440x900",
+      "side": "actual",
+      "total": 13,
+      "incomplete": 0,
+      "scrollHeight": 8350
+    }
+  ]
+}

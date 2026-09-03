@@ -5,7 +5,6 @@
     "HUSKY": "0"
   },
   "permissions": {
-    "defaultMode": "acceptEdits",
     "allow": [
       "Read",
       "Write",
@@ -113,7 +112,8 @@
       "Bash(docker image rm *)",
       "Bash(docker rmi *)",
       "Bash(rm -rf *)"
-    ]
+    ],
+    "defaultMode": "auto"
   },
   "hooks": {
     "PreToolUse": [
@@ -128,5 +128,6 @@
       }
     ]
   },
-  "theme": "dark"
+  "theme": "dark",
+  "agentPushNotifEnabled": true
 }

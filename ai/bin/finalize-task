@@ -63,7 +63,13 @@ def main() -> None:
     validate_json(review_path, AI_ROOT / "schemas" / "review.schema.json")
     implementation = read_json(implementation_path)
     review_data = read_json(review_path)
-    run_delivery_quality_gates(args.task_id, implementation, review_data)
+    # report-only is used by accept-task after that command has already run the
+    # complete delivery gate set and atomically changed acceptance state. Running
+    # freshness again here would compare the pre-acceptance implementation handoff
+    # with the newly accepted state and roll back an otherwise valid acceptance.
+    # Normal finalization still runs every delivery gate before opening acceptance.
+    if not args.report_only:
+        run_delivery_quality_gates(args.task_id, implementation, review_data)
 
     summary_path = runtime_dir(args.task_id) / "validation" / "summary.json"
     if not summary_path.exists() and not (args.report_only or args.force):
@@ -197,15 +203,21 @@ def main() -> None:
     }
     updates: list[dict] = []
     for item in implementation.get("knowledge_updates", []):
-        updates.append(
-            {
-                "target": item["target"],
-                "type": item.get("type", "proposal"),
-                "summary": item.get("summary", ""),
-                "content": item.get("content", ""),
-                "approved": item["target"] in approved_targets,
-            }
-        )
+        update = {
+            "target": item["target"],
+            "type": item.get("type", "proposal"),
+            "summary": item.get("summary", ""),
+            "content": item.get("content", ""),
+            "approved": item["target"] in approved_targets,
+        }
+        if update["approved"]:
+            content = update["content"].strip()
+            if update["type"] not in {"append", "replace", "create"} or not content or "[BỔ SUNG" in content:
+                raise SystemExit(
+                    "Approved knowledge update is not ready for automatic application: "
+                    f"{update['target']} (type={update['type']!r}, content must be complete)"
+                )
+        updates.append(update)
     write_json(td / "knowledge-updates.json", {"task_id": args.task_id, "updates": updates})
 
     acceptance = (
@@ -289,6 +301,9 @@ def main() -> None:
     if gates_passed and not args.report_only and state.get("status") != "completed":
         state["status"] = "awaiting_user_acceptance"
         state.setdefault("timestamps", {})["awaiting_user_acceptance_at"] = now_iso()
+        state["finalized_implementation_cycle"] = current_implementation_cycle
+        state["finalized_change_cycle"] = current_change_cycle
+        state["finalized_review_cycle"] = int(state.get("review_cycle", 0))
         state.setdefault("user_acceptance", {})["status"] = "pending"
         state["last_error"] = None
         write_yaml(td / "state.yaml", state)

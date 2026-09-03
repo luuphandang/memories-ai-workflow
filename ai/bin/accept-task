@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from copy import deepcopy
 from pathlib import Path
 import subprocess
 import sys
@@ -22,6 +23,14 @@ from lib.ai_common import (
 )
 
 
+def current_finalization_matches(state: dict) -> bool:
+    return (
+        state.get("finalized_implementation_cycle") == int(state.get("implementation_cycle", 1))
+        and state.get("finalized_change_cycle") == int(state.get("change_cycle", 0))
+        and state.get("finalized_review_cycle") == int(state.get("review_cycle", 0))
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Record explicit user acceptance and complete the current task cycle"
@@ -39,6 +48,11 @@ def main() -> None:
             "Task must be awaiting_user_acceptance, found: "
             f"{state.get('status')}\nNext: run the missing implement/validate/review/report steps first."
         )
+    report_path = require_file(
+        td / "final-report.md",
+        "current-cycle final report",
+        f"run ./ai/bin/ai task report {args.task_id}",
+    )
 
     implementation_path = require_file(
         td / "implementation.json",
@@ -88,6 +102,8 @@ def main() -> None:
         and cycles_match
         and not blocking_findings
         and last_review_mode == "full"
+        and current_finalization_matches(state)
+        and report_path.is_file()
     )
     if not gates_passed:
         reasons = []
@@ -99,12 +115,18 @@ def main() -> None:
             reasons.append("outputs belong to a different cycle")
         if last_review_mode != "full":
             reasons.append(f"last review mode was {last_review_mode!r}, not a passing full review")
+        if state.get("finalized_review_cycle") != int(state.get("review_cycle", 0)):
+            reasons.append("final report was not generated for the current review cycle")
         raise SystemExit(
             "Acceptance blocked: current review/validation gates are not satisfied"
             + (f" ({'; '.join(reasons)})" if reasons else "")
         )
 
     now = now_iso()
+    state_before_acceptance = deepcopy(state)
+    acceptance_path = td / "acceptance.yaml"
+    acceptance_before = acceptance_path.read_bytes() if acceptance_path.exists() else None
+    report_before = report_path.read_bytes() if report_path.exists() else None
     acceptance = {
         "task_id": args.task_id,
         "status": "accepted",
@@ -114,20 +136,10 @@ def main() -> None:
         "accepted_review_cycle": int(state.get("review_cycle", 0)),
         "note": args.note,
     }
-    write_yaml(td / "acceptance.yaml", acceptance)
-    validate_json(td / "acceptance.yaml", AI_ROOT / "schemas" / "user-acceptance.schema.json")
+    write_yaml(acceptance_path, acceptance)
+    validate_json(acceptance_path, AI_ROOT / "schemas" / "user-acceptance.schema.json")
 
     active_change = state.get("active_change") or {}
-    if active_change.get("path"):
-        metadata_path = Path(active_change["path"])
-        if not metadata_path.is_absolute():
-            metadata_path = AI_ROOT.parent / metadata_path
-        metadata_path = metadata_path / "metadata.yaml"
-        if metadata_path.exists():
-            metadata = read_yaml(metadata_path)
-            metadata["status"] = "accepted"
-            write_yaml(metadata_path, metadata)
-
     state["status"] = "completed"
     state["active_change"] = None
     state.setdefault("timestamps", {})["completed_at"] = now
@@ -148,11 +160,53 @@ def main() -> None:
         check=False,
     )
     if report_result.returncode != 0:
+        write_yaml(td / "state.yaml", state_before_acceptance)
+        if acceptance_before is None:
+            acceptance_path.unlink(missing_ok=True)
+        else:
+            acceptance_path.write_bytes(acceptance_before)
+        if report_before is not None:
+            report_path.write_bytes(report_before)
         raise SystemExit(
-            "Task was accepted, but final report regeneration failed:\n"
+            "Acceptance was rolled back because final report regeneration failed:\n"
             + report_result.stdout
         )
+    knowledge_result = subprocess.run(
+        [
+            str(AI_ROOT / "bin" / "update-knowledge"),
+            args.task_id,
+            "--apply",
+            "--strict",
+        ],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
+    )
+    if knowledge_result.returncode != 0:
+        write_yaml(td / "state.yaml", state_before_acceptance)
+        if acceptance_before is None:
+            acceptance_path.unlink(missing_ok=True)
+        else:
+            acceptance_path.write_bytes(acceptance_before)
+        if report_before is not None:
+            report_path.write_bytes(report_before)
+        raise SystemExit(
+            "Acceptance was rolled back because automatic knowledge application failed:\n"
+            + knowledge_result.stdout
+        )
+    if active_change.get("path"):
+        metadata_path = Path(active_change["path"])
+        if not metadata_path.is_absolute():
+            metadata_path = AI_ROOT.parent / metadata_path
+        metadata_path = metadata_path / "metadata.yaml"
+        if metadata_path.exists():
+            metadata = read_yaml(metadata_path)
+            metadata["status"] = "accepted"
+            write_yaml(metadata_path, metadata)
     subprocess.run([str(AI_ROOT / "bin" / "rebuild-indexes")], check=False)
+    if knowledge_result.stdout.strip():
+        print(knowledge_result.stdout.strip())
     print(f"Accepted and completed: {args.task_id}")
 
 

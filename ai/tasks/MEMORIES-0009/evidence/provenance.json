@@ -1,0 +1,233 @@
+{
+  "task_id": "MEMORIES-0009",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "generated_at": "2026-08-28T06:06:51+07:00",
+  "command": "Review cycle 9 fix (fix-request-review-009): finding review:9:1 — capture-fidelity.mjs's OUTSIDE_CLICK_SCRIPT dispatched only a synthetic mousedown event and never exercised or verified the rest of a real click; replaced it with a genuine CDP mousePressed+mouseReleased pointer sequence on a hit-tested inert header-background point (avoiding the header logo link, whose own click causes Next.js Link's scroll-to-top-on-navigate side effect even for a same-URL click, confirmed via a throwaway debug script) and added a one-time click listener assertion proving the target's full click lifecycle completed, not just the popover's mousedown-triggered dismissal. finding review:9:2 — fidelity-matrix.json was stale (generated_at from cycle 6, referenced 3 deleted templates-*-use-template-cta-visible/hover-reveal.png files superseded by cta-boundary-*.png, search entries omitted scrollY/closed-state description); republished from this cycle's fresh capture with corrected generated_at, review-cycle-9 method_notes, no dead artifact references (verified programmatically), and search-open section_review text describing the current scrollY=600-preserved/dialog-DOM-presence assertions. Recaptured all default/search-open fidelity screenshots, geometry.log, capture-report.json and cta-boundary-*.png against a fresh next build && next start -p 3100 server + headless Chrome; recomputed fidelity-matrix.json scores via compare-fidelity.py (unchanged from cycle 8, since no source changed). No implementation source or test files were modified (evidence/handoff-only correction per this cycle's scope).",
+  "preconditions": [
+    {
+      "name": "public-web workspace dependencies installed",
+      "passed": true
+    },
+    {
+      "name": "next build && next start -p 3100 serving the current worktree for CDP capture",
+      "passed": true
+    },
+    {
+      "name": "headless Chrome running with --remote-debugging-port for CDP capture",
+      "passed": true
+    },
+    {
+      "name": "capture-fidelity.mjs's outside-click check drives a real CDP press+release sequence on an inert target and verifies the target's click event fired, not a mousedown-only synthetic event",
+      "passed": true
+    },
+    {
+      "name": "fidelity-matrix.json contains no artifact path unresolvable on disk (verified programmatically)",
+      "passed": true
+    },
+    {
+      "name": "./ai/bin/ai task validate-code MEMORIES-0009 --tier full passed before finalizing",
+      "passed": true
+    }
+  ],
+  "inputs": [
+    {
+      "path": "../../../../prototype/index/index.html",
+      "sha256": "cc867ac599efc91ba18fc2a421f1ef5464713d91c494536f48b9c4181fc746e9"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/docs/prototype-inventory.md",
+      "sha256": "162d448a4e22120accb1af31ffe43863ec4d77ca5137e585a7690a3a8aff0bbb"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/app/(marketing)/page.tsx",
+      "sha256": "6c9265736062032b7399101a0e8a597c23e464576cb03f9328753dab37853a9e"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/components/home/hero.tsx",
+      "sha256": "9880f4805df1a70f39e66a839d2bd01ea3ff6163899a07494b0e3b6f98b62129"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/components/home/hero-collage.tsx",
+      "sha256": "0edde957ad99aa385c2426555a3068aa61fe427cc4ffd3aaac7ee14bdc86c7ea"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/components/home/templates-teaser.tsx",
+      "sha256": "70651552c7d9cb560795c219ebda2e651e59648bbee58546929c6a89995359f8"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/components/home/gifts-teaser.tsx",
+      "sha256": "4f6b04d333679dc3c52254f1164c698eb6a552151efac7bdbf5d0fc2c0261e22"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/components/home/final-cta.tsx",
+      "sha256": "7003d0fdda10599c52a34009129a9869c44650039d93065b4f8e9e669424ff30"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/components/home/testimonials-section.tsx",
+      "sha256": "b72788a80d94c0f671e6e1c8b8ecb0474999a6042aef6b89aed3a0be7212c197"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/components/site-footer.tsx",
+      "sha256": "3be4ca3026369564867dd122a1691b2e3196cfaaabd1c9c3beff730b1f86e1bb"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/test/routes.spec.tsx",
+      "sha256": "4da1286c3a1056b8b70795b4a715e14017089e9b738de0a0b514cf11f04e01bf"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/components/home/occasions-section.tsx",
+      "sha256": "430137ba192b85a36f2325c52d37e04522da233089ae33c89803ba237d253232"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/components/home/editor-intro-section.tsx",
+      "sha256": "a8e4f670fa44a4f38f98627058b91b0c6a9b433900164b4ec752b8b1a136252b"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/components/home/qr-story-section.tsx",
+      "sha256": "6eea2db41788ec15429c6242db45f9dc585dbc1a660b0eb2561ea677b5dcb932"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/components/home/how-it-works-section.tsx",
+      "sha256": "26917d405a77572e67f516e32dc3ce7a5f93b99bf3b853421750cfa223e3a5c1"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/components/home/blog-teaser.tsx",
+      "sha256": "79805a57e4e9a4f89886704aeb7e1605acc36f99ea721f4777abf36c7ac370c1"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/components/home/custom-order-banner.tsx",
+      "sha256": "c89841394e00ba89196362202b56b6408b7cd28d0235fc9257ce431747fdf4f5"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/components/common/reveal.tsx",
+      "sha256": "23471257a5e360546d65c25d1de1bac31cb360ee837607da11501bb7429e7067"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/test/reveal.spec.tsx",
+      "sha256": "9172b32c440d3e7b9e3cfec9d430ac394c231a477d02090f49aea70ae73897a0"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/components/site-header.tsx",
+      "sha256": "a3f741d8cf558e11daed8623b7f4c153216847ca183f8c7fd89e54b10363dbc4"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/test/site-header.spec.tsx",
+      "sha256": "b90352d04c13361f9a697327546b4f719074bc61a06171d4a564970c8bfb6e51"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/packages/ui/src/components/popover.tsx",
+      "sha256": "0e01967e49fa3ebfbadf14576adcd91bb3106ea904ab19b64ca35f8f52365c99"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/packages/ui/src/hooks/use-dismissable-layer.ts",
+      "sha256": "742acbbd2139dbb3b97c77af2c0c7436e2f7e485fd5819ee7aae7bb30604a82a"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/packages/ui/test/popover.spec.tsx",
+      "sha256": "406ab8b31d9ae78bf4d77d8f84703c9ab07afa0a475b09a5bb8e438d6566dc53"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/lib/mock/card-templates.ts",
+      "sha256": "2c6c054f03fc8813149140406534965d75920488f9a0d26ca29d2b80b0a5e6c4"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/lib/types/card-template.ts",
+      "sha256": "4ece58efb7ea16dd3e183f4640c2096d23ded90efa355124cbc4673c275be8e1"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/components/shop/template-card.tsx",
+      "sha256": "11ed51e4abdac60cdbc0994e4b01307a3875b3b8e9345eb33e1ca76a2a52f952"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/frontend/apps/public-web/test/home-page.spec.tsx",
+      "sha256": "7c62a58623ad379e22c5221fabc089e558dd56dbcdb9da45bed02b671d127c43"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/.ai/validation/frontend.json",
+      "sha256": "59ab9f4e1aff2bda921e53440a3946b96c56a2cfa9388d3466d732e1f1649d17"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0009/.ai/validation/summary.json",
+      "sha256": "61d590d1e341d24bf4a68985c55f11dc2b72b331f6ff991cf8f8faa5e6c6d031"
+    },
+    {
+      "path": "fidelity-matrix.json",
+      "sha256": "bb9560351b007e7b581f0fa8363ca0cecd30d8f739b4c760b5e5310a2d5a3e70"
+    },
+    {
+      "path": "screenshots/geometry.log",
+      "sha256": "848cf5ca5361d029f4d4decda74f009fc00740ab7eb30faee4142cf28b688f5a"
+    },
+    {
+      "path": "screenshots/fidelity/reference/home-375x812-default.png",
+      "sha256": "07c80c56d6715f654727e13d6646689cbe2330dd24a9df1afd8cc88e836faa7a"
+    },
+    {
+      "path": "screenshots/fidelity/reference/home-768x1024-default.png",
+      "sha256": "c0cb4c044d8a821c72a0e7f0ae0cccab9b8a925a3331c084cb13cbca9b1ebd0d"
+    },
+    {
+      "path": "screenshots/fidelity/reference/home-1440x900-default.png",
+      "sha256": "ea688585f97a9619bfb987b67993b3b9af7ab1990e712af5ecf600864f6c8957"
+    },
+    {
+      "path": "screenshots/fidelity/actual/home-375x812-default.png",
+      "sha256": "a40a40ec0df0c8968d4dcbf7b5501c20a58cf7ea5d8d12aedc962f787c46c124"
+    },
+    {
+      "path": "screenshots/fidelity/actual/home-768x1024-default.png",
+      "sha256": "d0e214d4c187ab539d290606eb4cd195f450b4f37cc87c0ae451ef0024095518"
+    },
+    {
+      "path": "screenshots/fidelity/actual/home-1440x900-default.png",
+      "sha256": "439e944fe3a764c65f188089c66024d1ccc43c078aac4ebfe1a62204040ed04b"
+    },
+    {
+      "path": "screenshots/fidelity/actual/home-375x812-search-open.png",
+      "sha256": "389960266d760ed061779ad45254ab947b7da59b388fad451bc940ae900fe4d1"
+    },
+    {
+      "path": "screenshots/fidelity/actual/home-768x1024-search-open.png",
+      "sha256": "0266cebd9dba93f355c893a2593264f9b06bf47ced02e775d9285d75c8aac937"
+    },
+    {
+      "path": "screenshots/fidelity/actual/home-1440x900-search-open.png",
+      "sha256": "a413163bfa6c2ddd7b2f5e6afc949453812d142874ec4e8ecac454f835c3eb54"
+    },
+    {
+      "path": "screenshots/capture-report.json",
+      "sha256": "6feb2db1fa95b8cdf4211f490bb8f5283a008175b15b838b6959aa36b7e558ca"
+    },
+    {
+      "path": "scripts/capture-fidelity.mjs",
+      "sha256": "bfe2ba5e0c57b2b29480bba02fba66c29f3f6ac3e5e55bc3885417f8b35fe192"
+    },
+    {
+      "path": "scripts/compare-fidelity.py",
+      "sha256": "b8ef1c08b9ab07672f7f92c33f84591f10bc79e7d042d0054ebcd1e0201fd6fd"
+    },
+    {
+      "path": "scripts/README.md",
+      "sha256": "f53bd9fc9859afd6608ea62b2c3fc635fbf84a35fa7d750a2aefaa7c9942c10f"
+    },
+    {
+      "path": "screenshots/fidelity/cta-boundary-1024px.png",
+      "sha256": "fb3051e8af90f547a8536e353abd70abfe53a8b1362f167be52512e9a9c5583a"
+    },
+    {
+      "path": "screenshots/fidelity/cta-boundary-1025px.png",
+      "sha256": "0f22f4f7d5aedfbf2d5f69862502f0b293feb8f01d61f5294431690d244557cf"
+    }
+  ],
+  "validation_artifact_refresh": {
+    "command": "./ai/bin/ai task validate-code MEMORIES-0009 --tier full",
+    "generated_at": "2026-08-28T06:06:51+07:00",
+    "artifacts": [
+      "frontend.json",
+      "summary.json"
+    ]
+  }
+}

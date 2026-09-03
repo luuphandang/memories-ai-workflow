@@ -1,0 +1,3 @@
+npm notice run @memories/public-web@0.1.0 lint
+npm notice run next lint --max-warnings 0
+✔ No ESLint warnings or errors

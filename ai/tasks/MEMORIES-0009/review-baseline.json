@@ -1,0 +1,355 @@
+{
+  "task_id": "MEMORIES-0009",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "created_at": "2026-08-26T16:21:06+07:00",
+  "acceptance_criteria": [
+    "AC1 — `/` renders all 11 sections in order without omitted prototype element groups.",
+    "AC2 — Content, hierarchy, styling and visual composition closely follow the prototype across viewports.",
+    "AC3 — Hero copy, CTAs, trust points and collage are complete without destructive overlap.",
+    "AC4 — Occasions has 8 items; Templates and Gifts have 6 cards with required metadata/controls.",
+    "AC5 — Editor, QR Story, How it works and Blog are complete mandatory sections.",
+    "AC6 — Template filters work accessibly without breaking the section.",
+    "AC7 — Favorite/add-to-cart use shared ShopProvider state and update shared badges consistently.",
+    "AC8 — Slider controls/dots and newsletter invalid/success feedback work.",
+    "AC9 — Search opening does not change header/content geometry or scroll.",
+    "AC10 — Search is responsive, autofocuses, dismisses correctly, restores focus and submits the current query.",
+    "AC11 — Search button remains available and the form is out of normal flow.",
+    "AC12 — The full page is usable without overflow/clipping/overlap/hidden controls at all three required viewports.",
+    "AC13 — Semantics, accessible state/focus and reduced motion meet repository baseline.",
+    "AC14 — Completeness/search regression tests and lint/typecheck/test/build pass.",
+    "AC15 — Handoff includes accurate mapping and reproducible before/after visual evidence at all three viewports."
+  ],
+  "risk_areas": [
+    {
+      "area": "prototype fidelity and content hierarchy",
+      "status": "reviewed",
+      "evidence": "Full 2,018-line prototype, all changed section sources, and persisted screenshots were inspected; material layout/control mismatches are findings."
+    },
+    {
+      "area": "responsive layout and viewport states",
+      "status": "reviewed",
+      "evidence": "Tailwind breakpoints were compared with prototype media queries and 375/768/1440 artifacts; mobile search and full-page evidence gaps are identified."
+    },
+    {
+      "area": "accessibility, keyboard, focus and reduced motion",
+      "status": "reviewed",
+      "evidence": "Search/Popover/Carousel/Reveal behavior and tests were inspected; focus and reduced-motion paths pass, while HowItWorks has invalid list structure."
+    },
+    {
+      "area": "shared cart and favorite state",
+      "status": "reviewed",
+      "evidence": "CodeGraph traces HomePage through MarketingLayout/ShopProvider to SiteHeader badges; tests assert independent favorite/cart updates."
+    },
+    {
+      "area": "shared Popover/useDismissableLayer compatibility",
+      "status": "reviewed",
+      "evidence": "All CodeGraph consumers and current UI tests were inspected; default menu role and scroll locking remain unchanged for existing callers."
+    },
+    {
+      "area": "routing and client compatibility",
+      "status": "reviewed",
+      "evidence": "All changed CTAs/search submissions were checked against PUBLIC_ROUTES and Next router behavior; encoded and empty search queries are tested."
+    },
+    {
+      "area": "input validation, XSS, secrets and PII",
+      "status": "reviewed",
+      "evidence": "Newsletter/search inputs are rendered as React text and URL-encoded; no secret-bearing file, HTML injection, credential storage, auth boundary, or external write was introduced."
+    },
+    {
+      "area": "API, database, migration, transaction and concurrency",
+      "status": "not_applicable",
+      "evidence": "The diff is presentation-only and uses in-memory mock ShopProvider state; no API/database/persistence contract or transactional boundary changed."
+    },
+    {
+      "area": "current-cycle validation and evidence provenance",
+      "status": "reviewed",
+      "evidence": "summary.json reports lint/typecheck/test/build passed and provenance covers 26 artifacts; the required UI fidelity matrix/reference evidence is nevertheless absent."
+    },
+    {
+      "area": "adjacent shell regression",
+      "status": "reviewed",
+      "evidence": "Announcement, mobile drawer, account popover, footer and mobile bottom navigation dependencies/tests were inspected; no code regression found beyond missing mobile search access."
+    }
+  ],
+  "test_contract": [
+    {
+      "sources": [
+        "requirement: AC1",
+        "diff-impact: apps/public-web/app/(marketing)/page.tsx#HomePage"
+      ],
+      "target": "Home page section composition",
+      "test_level": "unit",
+      "scenario": "Render `/` and enumerate labelled section landmarks.",
+      "expected_result": "Exactly 11 sections render in prototype order with one h1 and per-section h2 headings."
+    },
+    {
+      "sources": [
+        "requirement: Scope 1 no omitted controls",
+        "diff-impact: apps/public-web/components/home/custom-order-banner.tsx#CustomOrderBanner"
+      ],
+      "target": "Custom-order section completeness",
+      "test_level": "static",
+      "scenario": "Compare the banner's CTA group with the prototype.",
+      "expected_result": "Both `Gửi ý tưởng của bạn` and `Xem sản phẩm đã thực hiện` affordances are retained with valid route/fallback semantics."
+    },
+    {
+      "sources": [
+        "requirement: AC2",
+        "diff-impact: apps/public-web/components/home/templates-teaser.tsx#TemplatesTeaser"
+      ],
+      "target": "Desktop prototype fidelity",
+      "test_level": "manual",
+      "scenario": "Compare all changed sections with the prototype at 1440x900.",
+      "expected_result": "Content hierarchy, card composition, section surfaces, typography and controls closely match the prototype."
+    },
+    {
+      "sources": [
+        "requirement: AC2",
+        "requirement: AC12",
+        "diff-impact: apps/public-web/components/home/occasions-section.tsx#OccasionsSection",
+        "diff-impact: apps/public-web/components/home/how-it-works-section.tsx#HowItWorksSection"
+      ],
+      "target": "Mobile responsive fidelity",
+      "test_level": "manual",
+      "scenario": "Compare section adaptations at 375x812.",
+      "expected_result": "Occasions becomes the prototype snap scroller and HowItWorks retains a clear vertical connected flow without overlap/overflow."
+    },
+    {
+      "sources": [
+        "requirement: AC3",
+        "diff-impact: apps/public-web/components/home/hero-collage.tsx#HeroCollage"
+      ],
+      "target": "Hero completeness and top-fold layout",
+      "test_level": "manual",
+      "scenario": "Inspect hero copy, CTAs, trust points and all collage pieces at required viewports.",
+      "expected_result": "All required elements render without clipping or covering operable content."
+    },
+    {
+      "sources": [
+        "requirement: AC4",
+        "diff-impact: apps/public-web/components/home/occasions-section.tsx#OCCASIONS",
+        "diff-impact: apps/public-web/components/home/templates-teaser.tsx#FEATURED",
+        "diff-impact: apps/public-web/components/home/gifts-teaser.tsx#FEATURED"
+      ],
+      "target": "Required item/card counts and metadata",
+      "test_level": "unit",
+      "scenario": "Render Occasions, Templates and Gifts in their default states.",
+      "expected_result": "8 occasion items and 6 template/gift articles render with required controls/metadata."
+    },
+    {
+      "sources": [
+        "requirement: AC6",
+        "diff-impact: apps/public-web/components/home/templates-teaser.tsx#activeStyle"
+      ],
+      "target": "Template filter state",
+      "test_level": "unit",
+      "scenario": "Select a non-default style filter.",
+      "expected_result": "aria-pressed moves to the selected tab and only matching cards remain without replacing the section landmark."
+    },
+    {
+      "sources": [
+        "requirement: AC7",
+        "diff-impact: apps/public-web/components/home/templates-teaser.tsx#toggleFavorite",
+        "diff-impact: apps/public-web/lib/store/shop-store.tsx#ShopProvider"
+      ],
+      "target": "Shared favorite state",
+      "test_level": "integration",
+      "scenario": "Favorite a template from HomePage.",
+      "expected_result": "The shared SiteHeader favorites badge increments and the card reports pressed state."
+    },
+    {
+      "sources": [
+        "requirement: AC7",
+        "diff-impact: apps/public-web/components/home/gifts-teaser.tsx#addProductToCart",
+        "diff-impact: apps/public-web/lib/store/shop-store.tsx#cartCount"
+      ],
+      "target": "Shared cart state",
+      "test_level": "integration",
+      "scenario": "Add a featured gift to cart from HomePage.",
+      "expected_result": "Shared cart count increases by one without mutating favorites."
+    },
+    {
+      "sources": [
+        "requirement: AC8",
+        "diff-impact: apps/public-web/components/home/testimonials-section.tsx#Carousel"
+      ],
+      "target": "Stories carousel navigation",
+      "test_level": "unit",
+      "scenario": "Use previous, next, dot and keyboard navigation across boundaries.",
+      "expected_result": "Slides wrap correctly and active dot/slide accessible state stays synchronized."
+    },
+    {
+      "sources": [
+        "requirement: AC8",
+        "diff-impact: apps/public-web/components/site-footer.tsx#EMAIL_PATTERN"
+      ],
+      "target": "Newsletter validation and feedback",
+      "test_level": "unit",
+      "scenario": "Submit invalid then valid email input.",
+      "expected_result": "Invalid input announces an error; valid input announces success and clears the field."
+    },
+    {
+      "sources": [
+        "requirement: AC9",
+        "diff-impact: apps/public-web/components/site-header.tsx#Popover"
+      ],
+      "target": "Search no-layout-shift geometry",
+      "test_level": "e2e",
+      "scenario": "Open search at tablet and desktop while recording header/main geometry and scroll.",
+      "expected_result": "Header height/bottom and main position/scroll are unchanged."
+    },
+    {
+      "sources": [
+        "requirement: AC10",
+        "requirement: AC11",
+        "diff-impact: apps/public-web/components/site-header.tsx:132"
+      ],
+      "target": "Mobile search availability",
+      "test_level": "e2e",
+      "scenario": "At 375x812, locate, open, dismiss and submit search.",
+      "expected_result": "A visible operable trigger opens a responsive out-of-flow surface and supports the full search contract."
+    },
+    {
+      "sources": [
+        "requirement: AC10",
+        "diff-impact: apps/public-web/components/site-header.tsx#onSearchSubmit",
+        "diff-impact: packages/ui/src/hooks/use-dismissable-layer.ts#useDismissableLayer"
+      ],
+      "target": "Search focus, dismissal and query submission",
+      "test_level": "unit",
+      "scenario": "Open search, autofocus input, dismiss by Escape/outside/control, restore focus, and submit encoded/empty query.",
+      "expected_result": "All paths work and body scroll remains unlocked."
+    },
+    {
+      "sources": [
+        "diff-impact: packages/ui/src/components/popover.tsx#Popover",
+        "diff-impact: packages/ui/src/hooks/use-dismissable-layer.ts#useDismissableLayer"
+      ],
+      "target": "Shared layer backward compatibility",
+      "test_level": "unit",
+      "scenario": "Existing menu Popovers, Dialogs and Drawers use the extended hook without new props.",
+      "expected_result": "Default menu role and scroll lock remain unchanged; focus/dismiss suites stay green."
+    },
+    {
+      "sources": [
+        "requirement: AC13",
+        "diff-impact: apps/public-web/components/common/reveal.tsx#Reveal"
+      ],
+      "target": "Reduced-motion and progressive reveal",
+      "test_level": "unit",
+      "scenario": "Run with missing observer, reduced-motion preference, and normal intersection.",
+      "expected_result": "Content is always available in fallbacks and animates only in the supported normal path."
+    },
+    {
+      "sources": [
+        "requirement: AC13",
+        "diff-impact: apps/public-web/components/home/how-it-works-section.tsx:34"
+      ],
+      "target": "List and landmark semantics",
+      "test_level": "static",
+      "scenario": "Validate semantic structure of the three-step ordered list.",
+      "expected_result": "The ol contains valid list-item children and assistive technology receives an ordered three-step list."
+    },
+    {
+      "sources": [
+        "requirement: AC12",
+        "requirement: AC15",
+        "diff-impact: all changed home section layout symbols"
+      ],
+      "target": "Full-page responsive inspection",
+      "test_level": "manual",
+      "scenario": "Inspect every section for overflow, clipping, overlap and hidden controls at 375x812, 768x1024 and 1440x900.",
+      "expected_result": "Durable artifacts demonstrate every section is usable at all three viewports."
+    },
+    {
+      "sources": [
+        "requirement: AC15",
+        "diff-impact: ai/tasks/MEMORIES-0009/evidence/screenshots"
+      ],
+      "target": "Route × viewport × state fidelity evidence",
+      "test_level": "contract",
+      "scenario": "Validate a matrix of same-viewport prototype/reference and implementation captures, including default and search-open states.",
+      "expected_result": "Matrix covers mobile/tablet/desktop and all required states and passes check_fidelity_matrix.py."
+    },
+    {
+      "sources": [
+        "requirement: AC14",
+        "diff-impact: complete frontend tracked/untracked inventory"
+      ],
+      "target": "Repository validation",
+      "test_level": "integration",
+      "scenario": "Run configured lint, typecheck, test and build across workspaces for implementation cycle 1/change cycle 0.",
+      "expected_result": "Every required command exits successfully."
+    },
+    {
+      "sources": [
+        "requirement: shell regression",
+        "diff-impact: apps/public-web/components/site-header.tsx#SiteHeader",
+        "diff-impact: apps/public-web/components/site-footer.tsx#SiteFooter"
+      ],
+      "target": "Adjacent shell interactions",
+      "test_level": "integration",
+      "scenario": "Close announcement, open/dismiss mobile menu/account surface, and use newsletter after HomePage changes.",
+      "expected_result": "Shared shell interactions remain reachable and keyboard-operable."
+    },
+    {
+      "sources": [
+        "requirement: security baseline",
+        "diff-impact: apps/public-web/components/site-footer.tsx#email",
+        "diff-impact: apps/public-web/components/site-header.tsx#searchValue"
+      ],
+      "target": "Frontend input and sensitive-data boundary",
+      "test_level": "static",
+      "scenario": "Review new user inputs and state for injection, secret/PII persistence and unsafe storage.",
+      "expected_result": "Values are encoded/rendered safely, no dangerous HTML or credential storage is introduced, and state remains in memory."
+    },
+    {
+      "sources": [
+        "requirement: concurrency/transaction applicability",
+        "diff-impact: apps/public-web/lib/store/shop-store.tsx#ShopProvider"
+      ],
+      "target": "Concurrency and transaction risk",
+      "test_level": "static",
+      "scenario": "Determine whether the UI-only mock-state change crosses a persistence/transaction boundary.",
+      "expected_result": "No transaction, retry, idempotency or concurrent persistence case is applicable."
+    }
+  ],
+  "initial_findings": [
+    {
+      "severity": "major",
+      "repo": "frontend",
+      "file": "apps/public-web/components/site-header.tsx",
+      "title": "The search workflow is unavailable at the required 375px mobile viewport",
+      "expected_fix": "Provide an operable mobile search trigger/surface with the same focus, dismiss, submit and no-layout-shift contract at 375x812."
+    },
+    {
+      "severity": "major",
+      "repo": "frontend",
+      "file": "apps/public-web/components/home/templates-teaser.tsx",
+      "title": "Multiple changed sections materially diverge from the prototype's required responsive composition",
+      "expected_fix": "Align the changed sections' desktop/tablet/mobile composition, content and control hierarchy with the prototype while retaining accessible React architecture."
+    },
+    {
+      "severity": "major",
+      "repo": "frontend",
+      "file": "apps/public-web/components/home/custom-order-banner.tsx",
+      "title": "Custom order drops the prototype's second CTA",
+      "expected_fix": "Render both prototype custom-order CTA affordances using an available route or an explicitly documented accessible fallback."
+    },
+    {
+      "severity": "major",
+      "repo": "frontend",
+      "file": "ai/tasks/MEMORIES-0009/evidence/screenshots/geometry.log",
+      "title": "Required reproducible UI fidelity evidence is missing",
+      "expected_fix": "Provide a complete, reproducible fidelity matrix and durable reference/actual evidence for all required viewports and states."
+    },
+    {
+      "severity": "minor",
+      "repo": "frontend",
+      "file": "apps/public-web/components/home/how-it-works-section.tsx",
+      "title": "How-it-works renders invalid ordered-list structure",
+      "expected_fix": "Keep every direct ol child semantically valid while rendering the decorative connector outside the list-item content model."
+    }
+  ]
+}

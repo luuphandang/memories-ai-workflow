@@ -177,10 +177,15 @@ def main() -> None:
         implementation_cycle=next_implementation_cycle,
         change_cycle=cycle,
     )
+    (td / "review-baseline.json").unlink(missing_ok=True)
 
     state["change_cycle"] = cycle
     state["implementation_cycle"] = next_implementation_cycle
     state["review_cycle"] = 0
+    state["fix_cycle"] = 0
+    state.pop("finalized_implementation_cycle", None)
+    state.pop("finalized_change_cycle", None)
+    state.pop("finalized_review_cycle", None)
     state["implementation_attempt"] = 0
     state.pop("claude_session_id", None)
     state.pop("last_implementation_log", None)

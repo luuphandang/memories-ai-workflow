@@ -38,7 +38,8 @@ ai/tasks/MEMORIES-ID/task.yaml
 ai/tasks/MEMORIES-ID/context.yaml
 ```
 
-Mặc định task mới có `review.max_cycles: 5`.
+Mặc định task mới có giới hạn fix request; ưu tiên cấu hình `review.max_fix_cycles: 5`.
+`review.max_cycles` cũ chỉ còn là fallback tương thích.
 
 ## 3. Tạo và đăng ký worktree
 
@@ -114,14 +115,22 @@ Thực thi:
 Luồng tự động:
 
 ```text
-implement → validate-code → review
-   ↑                            │
-   └──── request-fixes ─────────┘
+implement → implementation_ready_for_validation → validate-code → review
+   ↑                                                               │
+   └──────────────── request-fixes/checklist ──────────────────────┘
 ```
 
 - Validation fail được ghi thành fix request cho attempt tiếp theo.
 - Review có finding chặn sẽ tự tạo request-fixes và implement lại.
-- Vòng lặp dừng tối đa theo `review.max_cycles` (mặc định `5`) và giới hạn attempt.
+- Sau handoff, trạng thái là `implementation_ready_for_validation`; nếu command bị restart,
+  pipeline tiếp tục validation thay vì gọi Claude lại cho cùng slice.
+- Chỉ orchestrator được đổi status trong `execution-plan.json`; Claude chỉ cập nhật
+  `implementation-progress.json`, checklist, handoff, source/test/evidence.
+- Validation/review findings được ghi thành structured checklist có status và evidence.
+- Correction được phân loại code/test, evidence/handoff hoặc validation. Evidence-only
+  correction không được sửa source vì sẽ tự làm stale evidence vừa tạo.
+- Vòng lặp dừng tối đa theo `review.max_fix_cycles` (mặc định `5`) và giới hạn attempt.
+- Full review đầu tiên khóa `review-baseline.json`; review sau không được âm thầm mở rộng contract.
 - Khi pass, report được sinh và task dừng ở `awaiting_user_acceptance`.
 - Pipeline không tự accept thay người dùng.
 
@@ -131,9 +140,14 @@ Có thể đặt giới hạn riêng cho lần chạy:
 ./ai/bin/ai task run MEMORIES-ID --max-attempts 5
 ```
 
-## 6. Xử lý khi Agent bị gián đoạn
+## 6. Xử lý khi Agent bị gián đoạn hoặc restart giữa implement/validation
 
 Nếu Claude hết token, timeout, quota hoặc session limit, trạng thái chuyển thành `interrupted`. Kết quả không bị chạy lại mù quáng: attempt sau ưu tiên resume session; nếu không thể, Agent dùng `implementation-progress.json` và Git diff để tiếp tục từ phần đã làm.
+
+Nếu Claude đã handoff thành công nhưng validation chưa chạy, trạng thái phải là
+`implementation_ready_for_validation`. Chỉ cần chạy lại `task run`; không gọi `task implement`
+thủ công. Workflow sẽ kiểm tra handoff/evidence và chạy quick/full validation. Với task cũ,
+slice bị đánh dấu completed sớm nhưng thiếu evidence sẽ tự được đưa về `in_progress`.
 
 Sau khi nguyên nhân quota/availability đã được xử lý:
 
@@ -163,17 +177,31 @@ git -C worktrees/MEMORIES-ID/<repo> status --short
 
 Sau `request-fixes`, quay lại bước `implement`. Dùng luồng thủ công khi cần can thiệp từng gate; vận hành thông thường nên dùng `task run`.
 
+Không gọi `implement` lần nữa nếu state đang `implementation_ready_for_validation`; chạy
+`validate-code` hoặc quay lại `task run`. Khi correction chỉ yêu cầu evidence/handoff, giữ
+nguyên source fingerprint và chỉ refresh artifact được yêu cầu.
+
 ## 8. Nghiệm thu
 
 Khi trạng thái là `awaiting_user_acceptance`, người dùng kiểm tra chức năng, acceptance criteria, edge cases, Git diff và `final-report.md`.
 
 ```bash
+# Cách tối giản (`--accepted-by` mặc định là `user`)
+./ai/bin/ai task accept MEMORIES-ID
+
+# Hoặc ghi rõ người nghiệm thu và ghi chú
 ./ai/bin/ai task accept MEMORIES-ID \
   --accepted-by "Tên người xác nhận" \
   --note "Đã kiểm tra trên local/dev"
 ```
 
 Chỉ lệnh này mới chuyển task sang `completed`.
+
+Ví dụ với một task cụ thể:
+
+```bash
+./ai/bin/ai task accept MEMORIES-0009
+```
 
 ## 9. Correction hoặc requirement change
 
@@ -210,6 +238,8 @@ Dừng pipeline và kiểm tra artifact khi task ở một trong các trạng th
 - `needs_input`: bổ sung thông tin còn thiếu.
 - `blocked`: đã chạm policy/giới hạn hoặc không thể tiếp tục an toàn.
 - `interrupted`: xử lý quota, timeout hoặc availability trước khi resume.
+- `implementation_ready_for_validation`: không cần Claude; resume từ validation.
+- `changes_requested_by_validation`: lỗi validation đã được đưa vào checklist cho attempt kế tiếp.
 - `awaiting_user_acceptance`: người dùng nghiệm thu; không chạy implement tiếp.
 
 Không dùng validation cũ, baseline của cycle trước hoặc report cũ để accept cycle hiện hành.

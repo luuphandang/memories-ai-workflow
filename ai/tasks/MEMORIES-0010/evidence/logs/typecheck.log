@@ -1,0 +1,2 @@
+npm notice run @memories/public-web@0.1.0 typecheck
+npm notice run tsc --noEmit

@@ -37,7 +37,9 @@ Task không `completed` chỉ vì Codex pass; phải có user acceptance.
 
 Skill lock dùng aggregate SHA-256 của `SKILL.md`, references, scripts và `agents/openai.yaml`; sửa bất kỳ file skill nào đều yêu cầu chạy lại `prepare-context`.
 
-Chạy pipeline tự động bằng `./ai/bin/ai task run <ID>`. Command không tự accept và không thay đổi requirement/max cycle.
+Chạy pipeline tự động bằng `./ai/bin/ai task run <ID>`. Command không tự accept và không thay
+đổi requirement/max cycle. `review.max_fix_cycles` giới hạn số fix request thực tế; trường
+`max_cycles` cũ vẫn được dùng làm fallback tương thích, không còn đếm delta/full review invocation.
 
 ## CodeGraph trong agent workflow
 

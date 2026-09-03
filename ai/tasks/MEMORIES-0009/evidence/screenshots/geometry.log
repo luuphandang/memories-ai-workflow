@@ -1,0 +1,22 @@
+375x812 before (scrolled): {"headerHeight":69,"headerBottom":69,"mainTop":-471,"scrollWidth":375,"innerWidth":375,"scrollY":600}
+375x812 after-open: {"headerHeight":69,"headerBottom":69,"mainTop":-471,"scrollWidth":375,"innerWidth":375,"scrollY":600}
+375x812 after-escape-close: closed=true {"headerHeight":69,"headerBottom":69,"mainTop":-471,"scrollWidth":375,"innerWidth":375,"scrollY":600}
+375x812 after-outside-click-close: closed=true {"headerHeight":69,"headerBottom":69,"mainTop":-471,"scrollWidth":375,"innerWidth":375,"scrollY":600}
+375x812 after-close-button-close: closed=true {"headerHeight":69,"headerBottom":69,"mainTop":-471,"scrollWidth":375,"innerWidth":375,"scrollY":600}
+375x812 geometry-identical=true no-horizontal-overflow=true scroll-preserved=true (scrollY=600)
+768x1024 before (scrolled): {"headerHeight":69,"headerBottom":69,"mainTop":-491,"scrollWidth":768,"innerWidth":768,"scrollY":600}
+768x1024 after-open: {"headerHeight":69,"headerBottom":69,"mainTop":-491,"scrollWidth":768,"innerWidth":768,"scrollY":600}
+768x1024 after-escape-close: closed=true {"headerHeight":69,"headerBottom":69,"mainTop":-491,"scrollWidth":768,"innerWidth":768,"scrollY":600}
+768x1024 after-outside-click-close: closed=true {"headerHeight":69,"headerBottom":69,"mainTop":-491,"scrollWidth":768,"innerWidth":768,"scrollY":600}
+768x1024 after-close-button-close: closed=true {"headerHeight":69,"headerBottom":69,"mainTop":-491,"scrollWidth":768,"innerWidth":768,"scrollY":600}
+768x1024 geometry-identical=true no-horizontal-overflow=true scroll-preserved=true (scrollY=600)
+1440x900 before (scrolled): {"headerHeight":69,"headerBottom":69,"mainTop":-491,"scrollWidth":1440,"innerWidth":1440,"scrollY":600}
+1440x900 after-open: {"headerHeight":69,"headerBottom":69,"mainTop":-491,"scrollWidth":1440,"innerWidth":1440,"scrollY":600}
+1440x900 after-escape-close: closed=true {"headerHeight":69,"headerBottom":69,"mainTop":-491,"scrollWidth":1440,"innerWidth":1440,"scrollY":600}
+1440x900 after-outside-click-close: closed=true {"headerHeight":69,"headerBottom":69,"mainTop":-491,"scrollWidth":1440,"innerWidth":1440,"scrollY":600}
+1440x900 after-close-button-close: closed=true {"headerHeight":69,"headerBottom":69,"mainTop":-491,"scrollWidth":1440,"innerWidth":1440,"scrollY":600}
+1440x900 geometry-identical=true no-horizontal-overflow=true scroll-preserved=true (scrollY=600)
+cta-boundary 1024px default: opacity=1 pointerEvents=auto hittable=true
+cta-boundary 1025px default: opacity=0 pointerEvents=none hittable=false
+cta-boundary 1025px hovered: opacity=1 pointerEvents=auto hittable=true
+cta-boundary-ok=true

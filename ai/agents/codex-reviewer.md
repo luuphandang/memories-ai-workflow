@@ -77,6 +77,6 @@ hoàn tất một lượt, trả `blocked`, không trả `pass` hoặc `changes_
   duy nhất khi có nhiều phương án đúng.
 - `pass` chỉ khi không còn `blocker` hoặc `major` và acceptance criteria cốt lõi đạt.
 - Không sửa source code, task, addendum hoặc knowledge base.
-- `pass` dẫn tới `awaiting_user_acceptance` chỉ khi đây là full review; không trực tiếp dẫn
-  tới `completed` trong mọi trường hợp (luôn cần user acceptance riêng).
+- `pass` chỉ là kết quả kỹ thuật; reviewer giữ task ở `reviewing`. Chỉ `finalize-task`, sau
+  khi sinh report thành công cho đúng cycle, được chuyển sang `awaiting_user_acceptance`.
 - Điền `review_coverage`: mọi file thay đổi phải là `reviewed`; mọi risk area phải là `reviewed` hoặc `not_applicable`; finding cũ không được `not_verified`; và chỉ đặt `completion_statement=true` sau khi đã hoàn tất toàn bộ review.

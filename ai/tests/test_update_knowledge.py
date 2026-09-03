@@ -98,13 +98,20 @@ class UpdateKnowledgeTest(unittest.TestCase):
         ]
         (task_dir / "knowledge-updates.json").write_text(json.dumps(data), encoding="utf-8")
 
-        first = self.run_command("--apply")
-        second = self.run_command("--apply")
+        first = self.run_command("--apply", "--strict")
+        second = self.run_command("--apply", "--strict")
 
         self.assertEqual(first.returncode, 0, first.stdout)
         self.assertEqual(second.returncode, 0, second.stdout)
         self.assertEqual(target.read_text(encoding="utf-8").count("## Stable section"), 1)
         self.assertIn("Already applied; skipped duplicate append", second.stdout)
+
+    def test_strict_apply_rejects_unresolved_approved_proposals_before_writing(self) -> None:
+        result = self.run_command("--apply", "--strict")
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertIn("not ready for automatic application", result.stdout)
+        proposal_dir = self.root / "ai" / "tasks" / "TEST-1" / "knowledge-proposals"
+        self.assertFalse(proposal_dir.exists())
 
 
 if __name__ == "__main__":

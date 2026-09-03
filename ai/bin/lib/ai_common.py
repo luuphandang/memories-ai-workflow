@@ -293,6 +293,39 @@ def active_execution_slice(task_id: str) -> dict[str, Any] | None:
     return None
 
 
+def reconcile_execution_plan_evidence(task_id: str) -> list[str]:
+    """Downgrade completed slices whose two required evidence records are absent.
+
+    This repairs legacy/interrupted runs where an agent marked a plan slice completed
+    before the orchestrator's quick-validation transition.
+    """
+    td = ensure_task(task_id)
+    task = read_yaml(td / "task.yaml")
+    plan_path = td / "execution-plan.json"
+    if not task.get("scope", {}).get("execution_plan_required", False) or not plan_path.exists():
+        return []
+    progress_path = td / "implementation-progress.json"
+    handoff_path = td / "implementation.json"
+    progress = read_json(progress_path) if progress_path.exists() else {}
+    handoff = read_json(handoff_path) if handoff_path.exists() else {}
+    progress_keys = set(progress.get("completed_criteria", []))
+    handoff_keys = {
+        item.get("criterion") for item in handoff.get("acceptance_criteria", [])
+        if item.get("status") == "passed" and item.get("evidence")
+    }
+    current_slice = progress.get("current_slice")
+    plan = read_json(plan_path)
+    repaired: list[str] = []
+    for item in plan.get("slices", []):
+        key = f"slice:{item.get('id')}"
+        if item.get("status") == "completed" and (key not in progress_keys or key not in handoff_keys):
+            item["status"] = "in_progress" if item.get("id") == current_slice else "pending"
+            repaired.append(str(item.get("id")))
+    if repaired:
+        write_json(plan_path, plan)
+    return repaired
+
+
 def task_risk_level(task: dict[str, Any], context_lock: dict[str, Any]) -> str:
     """Choose economical reasoning unless the locked scope has material risk."""
     dimensions = set(context_lock.get("scope_assessment", {}).get("risk_dimensions", []))

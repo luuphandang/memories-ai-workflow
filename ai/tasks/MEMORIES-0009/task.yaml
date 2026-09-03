@@ -19,10 +19,11 @@ agents:
 skills:
   implement:
   - decompose-implementation-task
-  - implement-nextjs-vertical-slice
-  - migrate-prototype-nextjs-page
   - verify-implementation-handoff
   - validate-evidence-provenance
+  - implement-nextjs-vertical-slice
+  - establish-frontend-design-system
+  - migrate-prototype-nextjs-page
   review:
   - review-code-change
   - review-vertical-slice-completeness

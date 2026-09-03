@@ -18,7 +18,9 @@
 2. Đọc danh sách yêu cầu trong `context.lock.json`, gồm active change cycle.
 3. Kiểm tra branch, trạng thái Git và thay đổi sẵn có của từng worktree.
 4. Lập kế hoạch ngắn gọn gắn với acceptance criteria hiệu lực.
-5. Ghi kế hoạch vào `implementation-progress.json`; cập nhật checkpoint ngắn gọn sau mỗi milestone, validation hoặc quyết định quan trọng.
+5. Ghi kế hoạch vào `implementation-progress.json`; cập nhật checkpoint và trạng thái từng
+   checklist item sau mỗi milestone, validation hoặc quyết định quan trọng. Không handoff khi
+   checklist được giao còn mở; item hoàn tất phải có evidence cụ thể.
 6. Thực hiện code theo convention thực tế của repo.
 7. Chạy command validation đã cấu hình; không tự bịa command.
 8. Sau edit cuối cùng, cập nhật và sync provenance manifest theo skill đã khóa; xác minh runtime

@@ -31,6 +31,7 @@ from lib.ai_common import (
     run_delivery_quality_gates,
     validate_json,
     write_yaml,
+    write_json,
     task_risk_level,
 )
 from lib.codegraph import codex_mcp_overrides, prompt_guidance
@@ -95,6 +96,12 @@ def main() -> None:
     state = read_yaml(td / "state.yaml")
     runtime = runtime_dir(args.task_id)
     review_path = td / "review.json"
+    baseline_path = td / "review-baseline.json"
+    baseline_instruction = (
+        f"- ai/tasks/{args.task_id}/review-baseline.json (locked review scope; do not silently expand its input contract)"
+        if baseline_path.exists() else
+        "- No review baseline exists yet; this full review must establish one exhaustive, bounded contract."
+    )
     implementation_path = require_file(
         td / "implementation.json",
         "Claude implementation handoff",
@@ -189,8 +196,12 @@ def main() -> None:
         matrix_path = skill_check_dir / "acceptance-evidence.json"
         matrix = run([sys.executable, str(matrix_script), str(execution_plan_path), str(implementation_path), "--output", str(matrix_path)], cwd=ROOT, timeout=120)
         if matrix.returncode != 0:
-            evidence = read_json(matrix_path)
-            raise SystemExit("Pre-review acceptance-evidence gate failed; missing/non-passing criteria: " + ", ".join(evidence.get("missing", [])))
+            if matrix_path.is_file():
+                evidence = read_json(matrix_path)
+                detail = "missing/non-passing criteria: " + ", ".join(evidence.get("missing", []))
+            else:
+                detail = matrix.stdout.strip() or "evidence matrix builder failed without producing output"
+            raise SystemExit("Pre-review acceptance-evidence gate failed; " + detail)
 
     requirements = requirement_documents(args.task_id, include_user_request=True)
     requirement_lines = "\n".join(f"- {path}" for path in requirements)
@@ -264,6 +275,12 @@ Deterministic skill evidence:
 Prior Codex findings that must each be retested against the current code:
 {prior_fix_lines}
 
+Review baseline:
+{baseline_instruction}
+New findings outside an existing baseline must be explicitly attributable to code changed by
+the latest fix. If they instead require a broader input/behavior contract, report `blocked`
+as a requirement gap rather than silently moving the implementation goalposts.
+
 Review mode: {review_mode}.
 Evaluate only current-cycle validation. {review_pass_instruction}
 In delta mode, inventory every file affected by the latest correction and its direct dependencies;
@@ -286,6 +303,9 @@ changed file, applicable risk area, or prior finding remains unverified. Return
 changes_requested when coverage is complete and at least one finding has a configured
 blocking severity, an acceptance criterion fails, or required validation evidence is
 missing. A pass means technically ready for user acceptance, not completed.
+Approve a knowledge update only when its target is appropriate and its implementation entry has
+type `append`, `replace`, or `create` plus complete canonical content with no placeholders. Do not
+approve proposal-only or empty-content entries; they cannot be deferred to human editing.
 """
     (runtime / "input" / "codex-review-prompt.md").write_text(prompt, encoding="utf-8")
 
@@ -321,6 +341,9 @@ missing. A pass means technically ready for user acceptance, not completed.
             return
 
     state["status"] = "reviewing"
+    state.pop("finalized_implementation_cycle", None)
+    state.pop("finalized_change_cycle", None)
+    state.pop("finalized_review_cycle", None)
     state["last_review_mode"] = review_mode
     state["review_cycle"] = int(state.get("review_cycle", 0)) + 1
     state["review_cycles_total"] = int(state.get("review_cycles_total", 0)) + 1
@@ -434,14 +457,36 @@ missing. A pass means technically ready for user acceptance, not completed.
             state["status"] = "blocked"
             state["last_error"] = review.get("summary") or "Codex review is blocked"
         elif verdict == "pass":
-            state["status"] = "awaiting_user_acceptance"
+            # A passing review is only a technical result.  finalize-task owns the
+            # transition to awaiting_user_acceptance after it has successfully
+            # rendered and recorded the current-cycle report.
+            state["status"] = "reviewing"
             state["last_error"] = None
-            state.setdefault("timestamps", {})["awaiting_user_acceptance_at"] = now_iso()
         else:
             state["status"] = "failed"
             state["last_error"] = f"Unsupported Codex verdict: {verdict}"
             effective_returncode = 5
     state.setdefault("timestamps", {})["review_finished_at"] = now_iso()
+    if (
+        review is not None and review_mode == "full" and not baseline_path.exists()
+        and review.get("review_coverage", {}).get("completion_statement") is True
+    ):
+        write_json(baseline_path, {
+            "task_id": args.task_id,
+            "implementation_cycle": current_implementation_cycle,
+            "change_cycle": current_change_cycle,
+            "created_at": now_iso(),
+            "acceptance_criteria": [item.get("criterion") for item in review.get("acceptance_criteria", [])],
+            "risk_areas": review.get("review_coverage", {}).get("risk_areas", []),
+            "test_contract": [
+                {key: item.get(key) for key in ("sources", "target", "test_level", "scenario", "expected_result")}
+                for item in review.get("test_matrix", [])
+            ],
+            "initial_findings": [
+                {key: item.get(key) for key in ("severity", "repo", "file", "title", "expected_fix")}
+                for item in review.get("findings", [])
+            ],
+        })
     write_yaml(td / "state.yaml", state)
     extracted_usage, final_message = codex_stream_metadata(result.stdout)
     usage = {

@@ -20,3 +20,8 @@ Codex review theo thứ tự:
 Nếu bất kỳ file/pass/risk/finding cũ nào chưa được kiểm tra, verdict phải là `blocked`. `changes_requested` có nghĩa review đã hoàn tất và danh sách finding là danh sách tổng hợp của vòng hiện tại, không phải danh sách tạm thời.
 
 Không dùng kết quả review/validation của cycle trước để kết luận cycle mới đã đạt. Không yêu cầu thay đổi chỉ vì sở thích cá nhân nếu code phù hợp convention của repo.
+
+Full review đầu tiên khóa requirement/risk/test contract vào `review-baseline.json`. Review
+sau không được âm thầm mở rộng input hoặc behavior contract. Finding mới ngoài baseline phải
+chứng minh do correction diff tạo ra; nếu là requirement gap thì trả `blocked` để workflow
+phân loại lại, không đẩy một goalpost mới vào vòng implement.

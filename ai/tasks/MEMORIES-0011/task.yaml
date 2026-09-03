@@ -1,0 +1,47 @@
+version: 1
+id: MEMORIES-0011
+title: Tích hợp API card và product vào trang chủ
+jira:
+  type: epic
+  parent_id: null
+  epic_id: MEMORIES-0011
+priority: high
+status: ready
+children: []
+worktrees:
+- repo: frontend
+  path: worktrees/MEMORIES-0011/frontend
+  base_ref: origin/master
+  writable: true
+agents:
+  implementer: claude
+  reviewer: codex
+skills:
+  implement:
+  - decompose-implementation-task
+  - implement-nextjs-vertical-slice
+  - verify-implementation-handoff
+  - validate-evidence-provenance
+  review:
+  - review-code-change
+  - review-vertical-slice-completeness
+scope:
+  execution_plan_required: true
+review:
+  max_cycles: 5
+  fail_on:
+  - blocker
+  - major
+validation:
+  frontend:
+  - lint
+  - typecheck
+  - test
+  - build
+report:
+  language: vi
+  include_diff_stat: true
+  include_changed_files: true
+  include_test_results: true
+  include_review_findings: true
+  include_knowledge_updates: true

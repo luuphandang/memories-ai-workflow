@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib.ai_common import AI_ROOT, ROOT, ensure_task, now_iso, read_json, read_yaml, runtime_dir, write_yaml
+from lib.ai_common import AI_ROOT, ROOT, ensure_task, now_iso, read_json, read_yaml, runtime_dir, write_json, write_yaml
 
 
 def invoke(args: list[str]) -> int:
@@ -53,13 +53,82 @@ def repository_fingerprint(task: dict, task_dir: Path | None = None) -> str:
     return digest.hexdigest()
 
 
+def source_fingerprint(task: dict) -> str:
+    """Fingerprint repository source only, excluding task handoff/checkpoint artifacts."""
+    return repository_fingerprint(task, None)
+
+
 def is_no_progress_failure(code: int, status: str | None, before: str, after: str) -> bool:
     return (code != 0 or status == "failed") and before == after
 
 
+def complete_validated_execution_slice(task_dir: Path, state: dict) -> str:
+    """Advance exactly one slice after its implementation and quick validation pass."""
+    slice_id = state.get("last_completed_slice")
+    if not slice_id:
+        raise SystemExit("Quick validation passed, but implementation did not record last_completed_slice")
+
+    plan_path = task_dir / "execution-plan.json"
+    progress_path = task_dir / "implementation-progress.json"
+    handoff_path = task_dir / "implementation.json"
+    plan = read_json(plan_path)
+    progress = read_json(progress_path)
+    handoff = read_json(handoff_path)
+
+    slices = plan.get("slices", [])
+    matching = [item for item in slices if item.get("id") == slice_id]
+    if len(matching) != 1:
+        raise SystemExit(f"Cannot complete unknown or duplicate execution-plan slice: {slice_id}")
+    slice_item = matching[0]
+    evidence_key = f"slice:{slice_id}"
+    completed_criteria = set(progress.get("completed_criteria", []))
+    passed_handoff_criteria = {
+        item.get("criterion")
+        for item in handoff.get("acceptance_criteria", [])
+        if item.get("status") == "passed" and item.get("evidence")
+    }
+    if evidence_key not in completed_criteria or evidence_key not in passed_handoff_criteria:
+        raise SystemExit(
+            f"Refusing to complete {slice_id}: missing passed evidence key {evidence_key} "
+            "from implementation-progress.json or implementation.json"
+        )
+
+    # The implementer may have already advanced the plan before returning its
+    # handoff. Treat that transition as idempotent once the same evidence guards
+    # pass, then reconcile the checkpoint instead of selecting the slice again.
+    slice_item["status"] = "completed"
+    completed_ids = {item["id"] for item in slices if item.get("status") == "completed"}
+    next_slice = next(
+        (
+            item
+            for item in slices
+            if item.get("status") in {"pending", "in_progress", "blocked"}
+            and set(item.get("depends_on", [])).issubset(completed_ids)
+        ),
+        None,
+    )
+    expected_next_id = next_slice.get("id") if next_slice else None
+    # Slice selection is single-writer: run-claude restores the orchestrator-owned
+    # active slice after the implementer exits, and only this transition advances it.
+    if progress.get("current_slice") != slice_id:
+        raise SystemExit(
+            f"Refusing to complete {slice_id}: implementation-progress current_slice is "
+            f"{progress.get('current_slice')!r}; expected orchestrator-owned slice {slice_id!r}"
+        )
+    progress["current_slice"] = expected_next_id
+    progress["current_step"] = (
+        f"Ready to implement slice {next_slice['id']}" if next_slice else "All execution-plan slices completed"
+    )
+    progress["updated_at"] = now_iso()
+
+    write_json(plan_path, plan)
+    write_json(progress_path, progress)
+    return slice_id
+
+
 def can_resume_after_implementation(task: dict, task_dir: Path, state: dict) -> bool:
     """Return whether orchestration can continue without calling Claude again."""
-    if state.get("status") != "prepared":
+    if state.get("status") not in {"prepared", "implementation_ready_for_validation"}:
         return False
 
     handoff_path = task_dir / "implementation.json"
@@ -84,8 +153,26 @@ def can_resume_after_implementation(task: dict, task_dir: Path, state: dict) -> 
             slices = read_json(plan_path).get("slices", [])
         except (OSError, ValueError, json.JSONDecodeError):
             return False
-        if not slices or not all(item.get("status") == "completed" for item in slices):
+        if not slices:
             return False
+        if not all(item.get("status") == "completed" for item in slices):
+            slice_id = state.get("last_completed_slice")
+            matching = [item for item in slices if item.get("id") == slice_id]
+            if len(matching) != 1 or matching[0].get("status") not in {"pending", "in_progress", "completed"}:
+                return False
+            progress_path = task_dir / "implementation-progress.json"
+            if not progress_path.exists():
+                return False
+            progress = read_json(progress_path)
+            evidence_key = f"slice:{slice_id}"
+            if evidence_key not in set(progress.get("completed_criteria", [])):
+                return False
+            handoff_criteria = {
+                item.get("criterion") for item in handoff.get("acceptance_criteria", [])
+                if item.get("status") == "passed" and item.get("evidence")
+            }
+            if evidence_key not in handoff_criteria:
+                return False
     return True
 
 
@@ -105,6 +192,31 @@ def validation_fix_request(task_id: str, attempt: int) -> Path:
                 lines.extend([f"## {repo.get('repo')} — {item.get('name')}", "", f"- Command: `{item.get('command', '')}`", f"- Status: {item.get('status')}", f"- Full log: `{summary_path.relative_to(ROOT)}`", f"- Relevant output (last {len(tail)} lines):\n\n```text\n" + "\n".join(tail) + "\n```", ""])
     path = runtime / "input" / f"fix-request-validation-attempt-{attempt:03d}.md"
     path.write_text("\n".join(lines), encoding="utf-8")
+    task_dir = ensure_task(task_id)
+    progress_path = task_dir / "implementation-progress.json"
+    if progress_path.exists():
+        progress = read_json(progress_path)
+        checklist = {
+            item.get("id"): item for item in progress.get("checklist", []) if item.get("id")
+        }
+        for repo in summary.get("repositories", []):
+            for item in repo.get("commands", []):
+                if item.get("required") and item.get("status") not in {"passed", "planned"}:
+                    item_id = f"validation:{attempt}:{repo.get('repo')}:{item.get('name')}"
+                    checklist[item_id] = {
+                        "id": item_id, "source": "validation",
+                        "source_ref": f"{repo.get('repo')}:{item.get('name')}",
+                        "description": f"Resolve and rerun {repo.get('repo')} {item.get('name')}",
+                        "status": "pending", "evidence": "", "updated_at": now_iso(),
+                    }
+        progress["checklist"] = list(checklist.values())
+        progress["updated_at"] = now_iso()
+        write_json(progress_path, progress)
+    state_path = task_dir / "state.yaml"
+    state = read_yaml(state_path)
+    state["status"] = "changes_requested_by_validation"
+    state["last_error"] = "Required validation failed; structured fix checklist queued"
+    write_yaml(state_path, state)
     return path
 
 
@@ -134,6 +246,21 @@ def delivery_gate_fix_request(task_id: str, attempt: int) -> Path | None:
     return path
 
 
+def implementation_contract_fix_request(task_id: str, attempt: int, error: str) -> Path:
+    """Queue malformed/missing handoff or checklist work without human intervention."""
+    path = runtime_dir(task_id) / "input" / f"fix-request-implementation-contract-attempt-{attempt:03d}.md"
+    path.write_text(
+        "\n".join([
+            f"# Implementation contract fix request — {task_id} — attempt {attempt}", "",
+            "Repair the implementation handoff/checkpoint contract below, then continue the assigned work.",
+            "Do not weaken schemas or gates. Mark checklist items completed only with concrete evidence.", "",
+            "## Gate output", "", error,
+        ]) + "\n",
+        encoding="utf-8",
+    )
+    return path
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Autonomously run implement/validate/review/fix cycles")
     parser.add_argument("task_id")
@@ -148,7 +275,7 @@ def main() -> None:
     plan_path = td / "execution-plan.json"
     if task.get("scope", {}).get("execution_plan_required", False) and plan_path.exists():
         pending_slices = sum(item.get("status") != "completed" for item in read_json(plan_path).get("slices", []))
-    correction_budget = int(task.get("review", {}).get("max_cycles", 5))
+    correction_budget = int(task.get("review", {}).get("max_fix_cycles", task.get("review", {}).get("max_cycles", 5)))
     max_attempts = args.max_attempts or max(correction_budget, pending_slices + correction_budget)
     if max_attempts <= 0 or args.max_interrupted_retries < 0:
         raise SystemExit("max attempts/retries must be positive/non-negative")
@@ -180,14 +307,13 @@ def main() -> None:
         if resume_after_implementation:
             resume_after_implementation = False
             code = 0
-            print(
-                "Implementation handoff is already prepared for the current cycle; "
-                "resuming at validation without another implementer session."
-            )
+            print("Current slice handoff is ready; resuming at validation without another implementer session.")
         else:
             before_fingerprint = repository_fingerprint(task, td)
+            before_source_fingerprint = source_fingerprint(task)
             code = invoke([str(AI_ROOT / "bin" / "run-claude"), args.task_id])
             after_fingerprint = repository_fingerprint(task, td)
+            after_source_fingerprint = source_fingerprint(task)
             state = read_yaml(td / "state.yaml")
             if state.get("status") == "interrupted":
                 if args.resume_interrupted and interrupted_retries < args.max_interrupted_retries:
@@ -206,6 +332,18 @@ def main() -> None:
                 state.setdefault("automation", {}).update({"status": "blocked", "finished_at": now_iso()})
                 write_yaml(td / "state.yaml", state)
                 raise SystemExit(state["last_error"])
+            scope_state = state.get("last_correction_scope") or {}
+            scope_cycle = scope_state.get("review_cycle")
+            if scope_cycle is not None:
+                scope_path = runtime_dir(args.task_id) / "input" / f"correction-scope-review-{int(scope_cycle):03d}.json"
+                if scope_path.exists():
+                    scope = read_json(scope_path)
+                    if scope.get("source_change_expected") is False and before_source_fingerprint != after_source_fingerprint:
+                        state["status"] = "failed"
+                        state["last_error"] = "Evidence/handoff-only correction modified source; stopped to prevent an evidence-invalidating loop"
+                        state.setdefault("automation", {}).update({"status": "stopped", "finished_at": now_iso()})
+                        write_yaml(td / "state.yaml", state)
+                        raise SystemExit(state["last_error"])
 
         state = read_yaml(td / "state.yaml")
         if (
@@ -214,11 +352,8 @@ def main() -> None:
         ):
             request = delivery_gate_fix_request(args.task_id, attempt)
             if request is None:
-                state.setdefault("automation", {}).update({"status": "stopped", "finished_at": now_iso()})
-                write_yaml(td / "state.yaml", state)
-                raise SystemExit(
-                    "Implementation reported required-skill failures, but delivery-gates.json "
-                    "is passing or contains no failures; refusing to queue an empty fix request"
+                request = implementation_contract_fix_request(
+                    args.task_id, attempt, str(state.get("last_error", "Implementation contract failed"))
                 )
             print(f"Delivery quality gates failed; queued for next implementation attempt: {request}")
             if attempt < max_attempts:
@@ -242,8 +377,14 @@ def main() -> None:
                 if attempt < max_attempts:
                     continue
                 break
-            print("Slice passed quick validation; continuing with a fresh bounded implementation session.")
-            continue
+            state = read_yaml(td / "state.yaml")
+            completed_slice = complete_validated_execution_slice(td, state)
+            plan = read_json(plan_path)
+            plan_complete = all(item.get("status") == "completed" for item in plan.get("slices", []))
+            print(f"Slice {completed_slice} passed quick validation and was marked completed.")
+            if not plan_complete:
+                print("Continuing with a fresh bounded implementation session.")
+                continue
 
         code = invoke([str(AI_ROOT / "bin" / "validate"), args.task_id, "--tier", "full"])
         if code != 0:
@@ -299,7 +440,12 @@ def main() -> None:
                     raise SystemExit(state["last_error"])
             code = invoke([str(AI_ROOT / "bin" / "finalize-task"), args.task_id])
             state = read_yaml(td / "state.yaml")
-            state.setdefault("automation", {}).update({"status": "awaiting_user_acceptance", "finished_at": now_iso()})
+            automation_status = (
+                "awaiting_user_acceptance"
+                if code == 0 and state.get("status") == "awaiting_user_acceptance"
+                else "stopped"
+            )
+            state.setdefault("automation", {}).update({"status": automation_status, "finished_at": now_iso()})
             write_yaml(td / "state.yaml", state)
             raise SystemExit(code)
         if review.get("verdict") == "changes_requested":

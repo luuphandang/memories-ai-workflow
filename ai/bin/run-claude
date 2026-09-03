@@ -29,7 +29,9 @@ from lib.ai_common import (
     validate_json,
     run_delivery_quality_gates,
     write_yaml,
+    write_json,
     active_execution_slice,
+    reconcile_execution_plan_evidence,
     token_budget,
 )
 from lib.codegraph import claude_mcp_config, prompt_guidance
@@ -153,6 +155,24 @@ def timeout_output(exc: subprocess.TimeoutExpired) -> str:
     return value.decode(errors="replace") if isinstance(value, bytes) else value
 
 
+def restore_execution_plan_statuses(before: dict, current: dict) -> tuple[dict, bool]:
+    """Restore orchestrator-owned statuses; return (plan, identity_changed)."""
+    before_by_id = {item.get("id"): item.get("status") for item in before.get("slices", [])}
+    current_ids = {item.get("id") for item in current.get("slices", [])}
+    if current_ids != set(before_by_id):
+        return before, True
+    for item in current.get("slices", []):
+        item["status"] = before_by_id[item.get("id")]
+    return current, False
+
+
+def restore_orchestrator_checkpoint_slice(checkpoint_path: Path, slice_id: str | None) -> None:
+    """Keep slice selection single-writer while preserving implementer evidence."""
+    checkpoint = read_json(checkpoint_path)
+    checkpoint["current_slice"] = slice_id
+    write_json(checkpoint_path, checkpoint)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run Claude implementer")
     parser.add_argument("task_id")
@@ -170,8 +190,18 @@ def main() -> None:
     context_lock = read_json(td / "context.lock.json")
     codegraph_guidance = prompt_guidance(ROOT, context_lock)
     budget = token_budget()
+    repaired_slices = reconcile_execution_plan_evidence(args.task_id)
+    if repaired_slices:
+        state["last_plan_reconciliation"] = {
+            "repaired_slices": repaired_slices,
+            "reason": "completed status lacked progress/handoff evidence",
+            "at": now_iso(),
+        }
+        write_yaml(td / "state.yaml", state)
     active_slice = active_execution_slice(args.task_id)
     slice_id = active_slice.get("id") if active_slice else None
+    plan_path = td / "execution-plan.json"
+    plan_before = read_json(plan_path) if plan_path.exists() else None
     required_skills = task.get("skills", {}).get("implement", [])
     locked_skills = context_lock.get("skills", {}).get("locked", {})
     verify_locked_skills(context_lock)
@@ -197,6 +227,28 @@ def main() -> None:
             json.dumps(checkpoint, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
         )
+    # Backfill the structured checklist for tasks prepared before the checklist
+    # contract existed, and deterministically assign the active slice before the
+    # agent starts. This keeps old in-flight tasks autonomous and enforceable.
+    checkpoint = read_json(checkpoint_path)
+    checkpoint.setdefault("checklist", [])
+    # Slice selection is orchestrator-owned. The implementer may update evidence,
+    # checklist status and recovery notes, but must not advance workflow state.
+    checkpoint["current_slice"] = slice_id
+    if active_slice:
+        item_id = f"slice:{active_slice['id']}"
+        if not any(item.get("id") == item_id for item in checkpoint["checklist"]):
+            checkpoint["checklist"].append({
+                "id": item_id,
+                "source": "execution_plan",
+                "source_ref": active_slice["id"],
+                "description": f"Implement and provide evidence for slice {active_slice.get('title', active_slice['id'])}",
+                "status": "pending",
+                "evidence": "",
+                "updated_at": now_iso(),
+            })
+    checkpoint["updated_at"] = now_iso()
+    write_json(checkpoint_path, checkpoint)
 
     attempt = int(state.get("implementation_attempt", 0)) + 1
     resume_context_path = runtime / "input" / f"resume-context-attempt-{attempt:03d}.md"
@@ -223,6 +275,7 @@ def main() -> None:
     correction_scope_reason: str | None = None
     correction_scope_slices: list[str] = []
     bundle_slices: list = []
+    source_change_expected: bool | None = None
     if task.get("scope", {}).get("execution_plan_required", False):
         execution_plan = read_json(td / "execution-plan.json")
         plan_slices = execution_plan.get("slices", [])
@@ -243,6 +296,7 @@ def main() -> None:
                 )
                 if scope_path.is_file():
                     scope_manifest = read_json(scope_path)
+                    source_change_expected = scope_manifest.get("source_change_expected")
 
             impacted_ids = [
                 sid for sid in (scope_manifest or {}).get("impacted_slices", []) if sid in plan_by_id
@@ -350,6 +404,11 @@ Execution plan:
 - Required slice evidence keys for this exact plan are:
 {evidence_key_lines}
 {evidence_check_command}
+- For each durable knowledge update, write a complete directly-applicable entry in
+  implementation.json: `type` must be `append`, `replace`, or `create`; `content` must contain
+  the final canonical text with no placeholder marker. Use an empty knowledge_updates list when
+  no durable update is warranted; never emit an empty/proposal-only entry for later human editing.
+{('- This is an evidence/handoff-only correction. Do not modify implementation source or tests; refresh only the requested proof and machine-readable artifacts.' if source_change_expected is False else '')}
 
 Session execution:
 - Continue until the assigned implementation work is complete; there is no workflow-imposed agent-turn limit.
@@ -364,6 +423,13 @@ Continuation protocol:
 - Update implementation-progress.json before coding and after each meaningful milestone,
   validation run, decision, or newly discovered remaining step. Keep it concise and valid
   against ai/schemas/implementation-progress.schema.json.
+- Update every applicable checklist item status. Before handoff, assigned execution-plan,
+  review-finding, and validation items must be `completed` with concrete non-empty evidence;
+  use `blocked` only when autonomous progress is genuinely impossible.
+- Do not modify execution-plan.json status fields. Slice status transitions are owned
+  exclusively by the orchestrator after deterministic validation.
+- Do not modify implementation-progress.json `current_slice`; slice selection and
+  advancement are owned exclusively by the orchestrator.
 - The checkpoint is a recovery aid, not the final implementation handoff.
 {f'- Read and resolve the latest fix request: {latest_fix_request}' if latest_fix_request else '- No fix request is pending.'}
 
@@ -434,6 +500,7 @@ Use these exact slice evidence keys for completed execution-plan slices:
     except subprocess.TimeoutExpired as exc:
         partial_output = timeout_output(exc)
         log_path.write_text(partial_output, encoding="utf-8")
+        restore_orchestrator_checkpoint_slice(checkpoint_path, slice_id)
         state = read_yaml(td / "state.yaml")
         detected_session_id, _, usage = stream_metadata(partial_output)
         if detected_session_id:
@@ -451,6 +518,7 @@ Use these exact slice evidence keys for completed execution-plan slices:
         raise SystemExit(state["last_error"])
 
     log_path.write_text(result.stdout, encoding="utf-8")
+    restore_orchestrator_checkpoint_slice(checkpoint_path, slice_id)
     state = read_yaml(td / "state.yaml")
     detected_session_id, final_text, usage = stream_metadata(result.stdout)
     if detected_session_id:
@@ -484,6 +552,22 @@ Use these exact slice evidence keys for completed execution-plan slices:
                     checker_failures.append("handoff required skills missing=" + ",".join(missing_applied) + "; stale=" + ",".join(stale_applied))
             except Exception as exc:
                 checker_failures.append(f"invalid implementation handoff: {exc}")
+        try:
+            validate_json(checkpoint_path, AI_ROOT / "schemas" / "implementation-progress.schema.json")
+            checkpoint = read_json(checkpoint_path)
+            relevant = [
+                item for item in checkpoint.get("checklist", [])
+                if item.get("source") in {"review_finding", "validation"}
+                or (item.get("source") == "execution_plan" and item.get("source_ref") == slice_id)
+            ]
+            open_items = [
+                item.get("id", "unknown") for item in relevant
+                if item.get("status") != "completed" or not str(item.get("evidence", "")).strip()
+            ]
+            if open_items:
+                checker_failures.append("implementation checklist remains open: " + ",".join(open_items))
+        except Exception as exc:
+            checker_failures.append(f"invalid implementation progress/checklist: {exc}")
         if "implement-nestjs-vertical-slice" in required_skills:
             checker = AI_ROOT / "skills" / "implement-nestjs-vertical-slice" / "scripts" / "check_port_bindings.py"
             for item in task.get("worktrees", []):
@@ -536,9 +620,22 @@ Use these exact slice evidence keys for completed execution-plan slices:
             state["last_error"] = "Required skill checks failed: " + " | ".join(checker_failures)
             result = subprocess.CompletedProcess(result.args, 3, result.stdout)
         else:
-            state["status"] = "prepared"
+            state["status"] = "implementation_ready_for_validation"
             state["last_error"] = None
             state["last_completed_slice"] = slice_id
+    if plan_before is not None:
+        # Agents may update handoff/checkpoint artifacts, but only the orchestrator may
+        # transition execution-plan status. Restore status-only drift deterministically
+        # so an interrupted agent cannot skip an unvalidated slice.
+        current_plan = read_json(plan_path)
+        restored_plan, identity_changed = restore_execution_plan_statuses(plan_before, current_plan)
+        if identity_changed:
+            state["status"] = "failed"
+            state["last_error"] = "Implementer changed execution-plan slice identity; orchestrator restored the locked plan"
+            write_json(plan_path, restored_plan)
+            result = subprocess.CompletedProcess(result.args, 3, result.stdout)
+        else:
+            write_json(plan_path, restored_plan)
     if post_review_correction:
         # Record the scoping decision (and fallback reason, if any) in state, not only
         # in metrics, so it's visible without digging through agent-attempts.jsonl.

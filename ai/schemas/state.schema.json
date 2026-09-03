@@ -23,10 +23,12 @@
         "ready",
         "prepared",
         "implementing",
+        "implementation_ready_for_validation",
         "interrupted",
         "validating",
         "reviewing",
         "changes_requested_by_codex",
+        "changes_requested_by_validation",
         "awaiting_user_acceptance",
         "changes_requested_by_user",
         "completed",
@@ -45,6 +47,14 @@
       "minimum": 0
     },
     "review_cycles_total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "fix_cycle": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "fix_cycles_total": {
       "type": "integer",
       "minimum": 0
     },

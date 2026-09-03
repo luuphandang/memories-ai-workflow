@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 import re
 import sys
@@ -47,6 +48,7 @@ def main() -> None:
             break
     plan["status"] = "completed" if all(item["status"] == "completed" for item in plan["slices"]) else "in_progress"
     (task_dir / "execution-plan.json").write_text(json.dumps(plan, indent=2) + "\n", encoding="utf-8")
+
     required = task["skills"]["implement"]
     applied = [] if mode == "missing-skill" else [
         {"name": name, "sha256": lock["skills"]["locked"][name]["sha256"], "checks_completed": ["fake-agent-e2e"]}
@@ -67,6 +69,28 @@ def main() -> None:
         {"criterion": f"slice:{item['id']}", "status": "passed", "evidence": "fake-agent-e2e"}
         for item in plan["slices"] if item["id"] in in_scope_ids
     ]
+
+    # Mirror the real implementer contract: before handoff, assigned execution-plan
+    # (in-scope only), review-finding, and validation checklist items must be
+    # `completed` with concrete evidence, and completed_criteria must record the
+    # matching evidence keys.
+    progress_path = task_dir / "implementation-progress.json"
+    if progress_path.is_file():
+        progress = json.loads(progress_path.read_text(encoding="utf-8"))
+        now = datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+        for item in progress.get("checklist", []):
+            in_scope = item.get("source") == "execution_plan" and item.get("source_ref") in in_scope_ids
+            if in_scope or item.get("source") in {"review_finding", "validation"}:
+                if item.get("status") != "completed":
+                    item["status"] = "completed"
+                    item["evidence"] = "fake-agent-e2e"
+                    item["updated_at"] = now
+        completed_criteria = set(progress.get("completed_criteria", []))
+        completed_criteria.update(item["criterion"] for item in new_criteria)
+        progress["completed_criteria"] = sorted(completed_criteria)
+        progress["updated_at"] = now
+        progress_path.write_text(json.dumps(progress, indent=2) + "\n", encoding="utf-8")
+
     artifact = {
         "task_id": task_id,
         "status": "implemented",

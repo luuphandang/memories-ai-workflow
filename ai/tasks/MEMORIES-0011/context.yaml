@@ -1,0 +1,126 @@
+version: 1
+mandatory:
+- path: ai/shared/policies/security.md
+  reason: Security boundaries
+  load: initial
+- path: ai/shared/policies/git-policy.md
+  reason: Git restrictions
+  load: initial
+- path: ai/shared/policies/worktree-policy.md
+  reason: Worktree restrictions
+  load: initial
+- path: ai/shared/quality/definition-of-done.md
+  reason: Completion criteria
+  load: initial
+- path: ai/shared/workflows/requirement-change.md
+  reason: Requirement precedence and change-cycle rules
+  load: initial
+- path: ai/shared/workflows/user-acceptance.md
+  reason: User acceptance gate
+  load: initial
+repositories:
+  frontend:
+  - path: ai/repos/frontend/INDEX.md
+    reason: Repository knowledge index
+    load: initial
+  - path: ai/repos/frontend/architecture.md
+    reason: Next.js component, provider and state boundaries
+    load: on-demand
+  - path: ai/repos/frontend/conventions.md
+    reason: Frontend implementation conventions
+    load: initial
+  - path: ai/repos/frontend/testing.md
+    reason: Vitest and Testing Library requirements
+    load: initial
+  - path: ai/repos/frontend/source-map.md
+    reason: Source navigation map
+    load: on-demand
+  - path: ai/repos/frontend/ui-rules.md
+    reason: Responsive and accessibility rules to preserve
+    load: initial
+  - path: ai/repos/frontend/api-client-rules.md
+    reason: Typed API client, generated contract, auth, query and error conventions
+    load: initial
+  - path: ai/repos/frontend/commands.yaml
+    reason: Deterministic frontend validation commands
+    load: initial
+  - path: worktrees/MEMORIES-0011/frontend/apps/public-web/app/(marketing)/page.tsx
+    reason: Homepage composition and section order that must not regress
+    load: initial
+  - path: worktrees/MEMORIES-0011/frontend/apps/public-web/app/providers.tsx
+    reason: Existing QueryProvider and ApiClientProvider wiring
+    load: initial
+  - path: worktrees/MEMORIES-0011/frontend/apps/public-web/app/(marketing)/layout.tsx
+    reason: Existing ShopProvider boundary for homepage interactions
+    load: on-demand
+  - path: worktrees/MEMORIES-0011/frontend/apps/public-web/components/home/templates-teaser.tsx
+    reason: Mock-backed template teaser to integrate with card-template API
+    load: initial
+  - path: worktrees/MEMORIES-0011/frontend/apps/public-web/components/home/gifts-teaser.tsx
+    reason: Mock-backed gift teaser to integrate with product API
+    load: initial
+  - path: worktrees/MEMORIES-0011/frontend/apps/public-web/lib/queries/use-card-templates.ts
+    reason: Existing typed TanStack Query hook for card templates
+    load: initial
+  - path: worktrees/MEMORIES-0011/frontend/apps/public-web/lib/queries/use-products.ts
+    reason: Existing typed TanStack Query hook for products
+    load: initial
+  - path: worktrees/MEMORIES-0011/frontend/apps/public-web/lib/queries/query-keys.ts
+    reason: Shared query-key contract
+    load: on-demand
+  - path: worktrees/MEMORIES-0011/frontend/apps/public-web/lib/api/map-card-template.ts
+    reason: Existing API-to-homepage card-template view-model mapper
+    load: initial
+  - path: worktrees/MEMORIES-0011/frontend/apps/public-web/lib/api/map-product.ts
+    reason: Existing API-to-homepage product view-model mapper
+    load: initial
+  - path: worktrees/MEMORIES-0011/frontend/packages/api-client/src/card-template-client.ts
+    reason: Typed card-template endpoint and query contract
+    load: initial
+  - path: worktrees/MEMORIES-0011/frontend/packages/api-client/src/product-client.ts
+    reason: Typed product endpoint and query contract
+    load: initial
+  - path: worktrees/MEMORIES-0011/frontend/packages/api-client/src/generated/schema.d.ts
+    reason: Generated OpenAPI response truth for nullable fields and list metadata
+    load: on-demand
+  - path: worktrees/MEMORIES-0011/frontend/apps/public-web/components/shop/template-card.tsx
+    reason: Existing template presentation and interaction contract
+    load: on-demand
+  - path: worktrees/MEMORIES-0011/frontend/apps/public-web/components/shop/product-card.tsx
+    reason: Existing safe unavailable, image and rating product behavior to reuse or match
+    load: on-demand
+  - path: worktrees/MEMORIES-0011/frontend/apps/public-web/lib/store/shop-store.tsx
+    reason: Shared favorite and cart state contract
+    load: on-demand
+  - path: worktrees/MEMORIES-0011/frontend/apps/public-web/components/common/catalog-skeleton-grid.tsx
+    reason: Existing accessible catalog loading primitive
+    load: on-demand
+  - path: worktrees/MEMORIES-0011/frontend/apps/public-web/components/common/error-state.tsx
+    reason: Existing retryable error state
+    load: on-demand
+  - path: worktrees/MEMORIES-0011/frontend/apps/public-web/components/common/empty-state.tsx
+    reason: Existing empty-result state
+    load: on-demand
+  - path: worktrees/MEMORIES-0011/frontend/apps/public-web/test/home-page.spec.tsx
+    reason: Homepage regression suite to update with API-backed behavior
+    load: initial
+  - path: worktrees/MEMORIES-0011/frontend/apps/public-web/test/utils/api-fixtures.ts
+    reason: Existing typed fetch fixtures for real provider and query integration tests
+    load: initial
+  - path: worktrees/MEMORIES-0011/frontend/apps/public-web/lib/mock/card-templates.ts
+    reason: Legacy source whose homepage runtime dependency must be removed
+    load: on-demand
+  - path: worktrees/MEMORIES-0011/frontend/apps/public-web/lib/mock/gift-products.ts
+    reason: Legacy source whose homepage runtime dependency must be removed
+    load: on-demand
+domains: []
+exclude:
+- ai/runtime/**
+- ai/tasks/*/changes/*/baseline/**
+- ai/tasks/*/final-report.md
+- ai/tasks/*/review.json
+- '**/node_modules/**'
+- '**/dist/**'
+- '**/build/**'
+- '**/.env*'
+- '**/secrets/**'

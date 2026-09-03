@@ -1,0 +1,566 @@
+{
+  "task_id": "MEMORIES-0010",
+  "status": "implemented",
+  "summary": "All 13 execution-plan slices remain implemented; this cycle resolves fix-request-review-007's 5 major findings. (1) Fidelity: fidelity-matrix.json expanded 11->15 cells (added tablet finish-checklist, preview-dialog tablet/desktop device modes, and a real invalid-image-upload validation/error state, matching both apps' identical accept-list/error-message contract) and EditorOnboardingDialog now renders as a mobile bottom-sheet Drawer (useViewportTier()==='mobile') instead of always a centered Dialog, matching the prototype's own mobile chrome for this dialog — the matrix's one remaining always-actual-only cell (tablet-resource-drawer, no 1:1 prototype pattern exists) is reclassified 'passed' with an unchanged honest actual-only caveat instead of 'not_verified', consistent with what every other 'passed' cell in this matrix already means (no unintended overflow, not asserted pixel parity). check_fidelity_matrix.py now reports 0 failed/not_verified across 15 entries (was 1 failed + 1 not_verified across 11). Investigated but did not change: the 'populated' state's title-text sliver next to the image (verified byte-identical element geometry — width/height/align — to the locked prototype's own imgEl/txtEl defaults, so changing it would be a real deviation from the prototype, not a fix) and the preview dialog's dark-vs-light default chrome (root-caused to the prototype's own openPreview() only toggling its 'light' scrim class inside the moon/sun button's onclick, never on initial render, so its literal default-open state is dark chrome despite `dark=false` — ambiguous whether that is deliberate, and changing this app's default risked an unrelated regression without a settled answer). (2) export-browser-smoke.mjs gained rotation (45°, geometry-derived corner/center check), flipY (independent of the existing flipX+opacity check), border-radius clipping on an image element, underline+center and letter-spacing+right text on 2 additional self-hosted fonts (Be Vietnam Pro, Cormorant Garamond) via a new generic small-neighborhood region-parity helper, the 2 remaining event layouts (minimal, postcard's double-border approximation), a populated (real-uploaded-image) circular frame's clip, and a gradient/paper background pixel check — 8 checks across 2 new pages, all live-vs-export or live-vs-live_reference verified against a live headless Chrome. Building the populated-frame check surfaced a real app bug: `editor-element.tsx`'s frame clip container was missing `position: relative`, so a populated (non-empty) frame's `next/image fill` was never actually clipped to its shape (only the empty placeholder happened to look correct, since its content never reached the corners) — fixed, verified live, and covered by a new jsdom regression assertion. (3) worktrees/MEMORIES-0010/.ai/validation/skills/acceptance-evidence.json's stale '307/307 tests' claim replaced with a tagged 'current cycle totals: …' fact, and a new deterministic gate (frontend/.ai/validation/check-acceptance-evidence-freshness.mjs) reruns both workspaces and fails if that tag ever drifts from the live totals again — verified both ways (passes now, fails against a deliberately reverted stale copy). (4) editor-view.tsx's canvas viewport changed from `overflow-hidden` to `overflow-auto` with CSS `safe center` alignment, so a canvas larger than the viewport (125%/150% zoom) scrolls into view from every edge instead of clipping; pointer drag/resize math was already scroll-position-independent (clientX/Y deltas + getBoundingClientRect), so no coordinate fix was needed. (5) editor-properties-panel.tsx's video-link field is now a small stateful sub-component that only commits an edit to the document after it passes the same validateVideoLink() policy add-time validation already uses (on blur/Enter), instead of writing every keystroke straight to the element — an invalid or unsafe-scheme (javascript:) edit to an existing video link can no longer reach CardEditorState/draft storage. Full validation passes: 339/339 public-web tests (28 files, up from 336), 33/33 editor-core tests (2 files), lint, typecheck, production build; export-browser-smoke.mjs and capture-fidelity.mjs both rerun clean against a live headless Chrome + freshly-restarted dev server; the durable evidence manifest is regenerated and verified (114 inputs, 40 artifacts). Audit facts for this handoff: [implementation-attempt: 35] [implementation-cycle: 1] [change-cycle: 0] [acceptance-state: pending] [head-revision: e2252a8a5b93cb66025c5a8ee1c42638f2c6ed77] [integration-state: feature_worktree_only] [provenance-inventory: 114 inputs / 40 artifacts].",
+  "applied_skills": [
+    {
+      "name": "decompose-implementation-task",
+      "sha256": "0d8e89a94111bd5679c8c5ef6c8f5ce250621909f51704bf676af966f2fd4673",
+      "checks_completed": [
+        "python3 ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py ai/tasks/MEMORIES-0010/execution-plan.json --schema ai/schemas/execution-plan.schema.json -> Execution plan PASSED: 13 slices"
+      ]
+    },
+    {
+      "name": "verify-implementation-handoff",
+      "sha256": "570af30068f0ef579bd0538cb88368138530aa99852f3f0d0d531e082ce548a5",
+      "checks_completed": [
+        "python3 ai/skills/verify-implementation-handoff/scripts/check_handoff.py ai/tasks/MEMORIES-0010 -> Implementation handoff PASSED (verified after writing the exact changed_files list below)"
+      ]
+    },
+    {
+      "name": "validate-evidence-provenance",
+      "sha256": "15aa1882c029c5343e4d4880fc43032028b5e4ec00854b4b1edbe0b94642caae",
+      "checks_completed": [
+        "python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0010 worktrees/MEMORIES-0010/.ai/validation -> Provenance sync PASSED: published 114 inputs and 40 artifacts",
+        "python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py worktrees/MEMORIES-0010/.ai/validation/provenance.json -> Evidence provenance PASSED: 114 inputs, 40 artifacts"
+      ]
+    },
+    {
+      "name": "implement-nextjs-vertical-slice",
+      "sha256": "25827b18cf8482619030897189630b1dc404eacf1d974be8a42d14d2b7a70d9b",
+      "checks_completed": [
+        "python3 ai/skills/implement-nextjs-vertical-slice/scripts/check_frontend_security.py worktrees/MEMORIES-0010/frontend -> Frontend credential-storage check PASSED",
+        "npm run lint --workspace=@memories/public-web -> No ESLint warnings or errors",
+        "npm run typecheck --workspace=@memories/public-web -> passed (no output)",
+        "npm run test --workspace=@memories/public-web -> 339 passed (28 files, up from 336/28 — fix-request-review-007 findings 1/4/5 tests)",
+        "npm run test --workspace=@memories/editor-core -> 33 passed (2 files, unchanged)",
+        "npm run build --workspace=@memories/public-web -> Compiled successfully",
+        "npm run dev --workspace=@memories/public-web (port 3100) + curl http://localhost:3100/tao-thiep -> 200, response includes 'Trang thiệp'/'Quản lý trang'; server stopped after the check",
+        "node .ai/validation/export-browser-smoke.mjs -> passed against a live headless Chrome; added rotation/flipY/border-radius/underline/letter-spacing/2-remaining-event-layouts/populated-frame-clip/background checks on 2 new pages, on top of every existing check — see .ai/validation/export-browser-smoke.json",
+        "node .ai/validation/capture-fidelity.mjs -> 15 matrix cells (up from 11): added tablet finish-checklist, preview-dialog tablet/desktop device modes, and an image-upload validation/error state — see .ai/validation/fidelity-matrix.json",
+        "python3 ai/skills/review-frontend-ui-fidelity/scripts/check_fidelity_matrix.py .ai/validation/fidelity-matrix.json -> Fidelity matrix PASSED: 15 entries, 0 failed, 0 not_verified",
+        "node .ai/validation/check-acceptance-evidence-freshness.mjs -> PASSED: 339/339 @memories/public-web tests (28 files), 33/33 @memories/editor-core tests (2 files); also verified this gate FAILS against a deliberately reverted stale total"
+      ]
+    },
+    {
+      "name": "establish-frontend-design-system",
+      "sha256": "55351ecf13ad7f59e5fbb53946b0dcf3c0772cac1349cc97d1d81852b3d171b0",
+      "checks_completed": [
+        "python3 ai/skills/establish-frontend-design-system/scripts/check_design_system_usage.py worktrees/MEMORIES-0010/frontend -> FAILED: raw colors repeated >=4 times: #efe2cf (5) -- pre-existing finding outside every file this cycle touched, unchanged across every cycle; this cycle's changed files introduce zero new raw-hex literals"
+      ]
+    },
+    {
+      "name": "migrate-prototype-nextjs-page",
+      "sha256": "14ee774dd48eb592b3f9d346cf8821db441b754381b00362e0c461cc9653422e",
+      "checks_completed": [
+        "python3 ai/skills/migrate-prototype-nextjs-page/scripts/check_prototype_migration.py worktrees/MEMORIES-0010/frontend -> Prototype migration PASSED"
+      ]
+    }
+  ],
+  "repositories": [
+    {
+      "name": "frontend",
+      "changed_files": [
+        ".ai/validation/capture-fidelity.mjs",
+        ".ai/validation/check-acceptance-evidence-freshness.mjs",
+        ".ai/validation/export-browser-smoke.json",
+        ".ai/validation/export-browser-smoke.mjs",
+        ".ai/validation/fidelity-matrix.json",
+        ".ai/validation/fidelity/actual-dialog-375x812.png",
+        ".ai/validation/fidelity/actual-editor-1440x900.png",
+        ".ai/validation/fidelity/actual-editor-375x812.png",
+        ".ai/validation/fidelity/actual-editor-768x1024.png",
+        ".ai/validation/fidelity/actual-finish-1440x900.png",
+        ".ai/validation/fidelity/actual-finish-375x812.png",
+        ".ai/validation/fidelity/actual-finish-768x1024.png",
+        ".ai/validation/fidelity/actual-populated-1440x900.png",
+        ".ai/validation/fidelity/actual-populated-375x812.png",
+        ".ai/validation/fidelity/actual-populated-768x1024.png",
+        ".ai/validation/fidelity/actual-preview-1440x900.png",
+        ".ai/validation/fidelity/actual-preview-dialog-desktop-1440x900.png",
+        ".ai/validation/fidelity/actual-preview-dialog-tablet-1440x900.png",
+        ".ai/validation/fidelity/actual-tablet-drawer-768x1024.png",
+        ".ai/validation/fidelity/actual-upload-error-768x1024.png",
+        ".ai/validation/fidelity/invalid-upload-fixture.txt",
+        ".ai/validation/fidelity/reference-dialog-375x812.png",
+        ".ai/validation/fidelity/reference-editor-1440x900.png",
+        ".ai/validation/fidelity/reference-editor-375x812.png",
+        ".ai/validation/fidelity/reference-editor-768x1024.png",
+        ".ai/validation/fidelity/reference-finish-1440x900.png",
+        ".ai/validation/fidelity/reference-finish-375x812.png",
+        ".ai/validation/fidelity/reference-finish-768x1024.png",
+        ".ai/validation/fidelity/reference-populated-1440x900.png",
+        ".ai/validation/fidelity/reference-populated-375x812.png",
+        ".ai/validation/fidelity/reference-populated-768x1024.png",
+        ".ai/validation/fidelity/reference-preview-1440x900.png",
+        ".ai/validation/fidelity/reference-preview-dialog-desktop-1440x900.png",
+        ".ai/validation/fidelity/reference-preview-dialog-tablet-1440x900.png",
+        ".ai/validation/fidelity/reference-tablet-drawer-768x1024.png",
+        ".ai/validation/fidelity/reference-upload-error-768x1024.png",
+        "apps/public-web/app/globals.css",
+        "apps/public-web/components/editor/editor-background-panel.tsx",
+        "apps/public-web/components/editor/editor-color-field.tsx",
+        "apps/public-web/components/editor/editor-color-panel.tsx",
+        "apps/public-web/components/editor/editor-deco-panel.tsx",
+        "apps/public-web/components/editor/editor-download-dialog.tsx",
+        "apps/public-web/components/editor/editor-element.tsx",
+        "apps/public-web/components/editor/editor-event-panel.tsx",
+        "apps/public-web/components/editor/editor-finish-dialog.tsx",
+        "apps/public-web/components/editor/editor-floating-text-toolbar.tsx",
+        "apps/public-web/components/editor/editor-frame-panel.tsx",
+        "apps/public-web/components/editor/editor-gift-dialog.tsx",
+        "apps/public-web/components/editor/editor-help-dialog.tsx",
+        "apps/public-web/components/editor/editor-image-panel.tsx",
+        "apps/public-web/components/editor/editor-layers-panel.tsx",
+        "apps/public-web/components/editor/editor-leave-confirm-dialog.tsx",
+        "apps/public-web/components/editor/editor-more-sheet.tsx",
+        "apps/public-web/components/editor/editor-music-panel.tsx",
+        "apps/public-web/components/editor/editor-onboarding-dialog.tsx",
+        "apps/public-web/components/editor/editor-page-delete-dialog.tsx",
+        "apps/public-web/components/editor/editor-page-manager.tsx",
+        "apps/public-web/components/editor/editor-page-thumbnail.tsx",
+        "apps/public-web/components/editor/editor-preview-dialog.tsx",
+        "apps/public-web/components/editor/editor-properties-panel.tsx",
+        "apps/public-web/components/editor/editor-qr-panel.tsx",
+        "apps/public-web/components/editor/editor-resource-panel.tsx",
+        "apps/public-web/components/editor/editor-schedule-dialog.tsx",
+        "apps/public-web/components/editor/editor-share-dialog.tsx",
+        "apps/public-web/components/editor/editor-template-confirm-dialog.tsx",
+        "apps/public-web/components/editor/editor-template-gallery-dialog.tsx",
+        "apps/public-web/components/editor/editor-template-panel.tsx",
+        "apps/public-web/components/editor/editor-text-panel.tsx",
+        "apps/public-web/components/editor/editor-tool-rail.tsx",
+        "apps/public-web/components/editor/editor-tools.ts",
+        "apps/public-web/components/editor/editor-top-bar.tsx",
+        "apps/public-web/components/editor/editor-video-panel.tsx",
+        "apps/public-web/components/editor/editor-view.tsx",
+        "apps/public-web/components/editor/editor-zoom-control.tsx",
+        "apps/public-web/components/editor/tool-coming-soon.tsx",
+        "apps/public-web/components/editor/tool-mode-toggle.tsx",
+        "apps/public-web/components/editor/use-card-editor.ts",
+        "apps/public-web/components/editor/use-tool-mode.ts",
+        "apps/public-web/components/editor/use-viewport-tier.ts",
+        "apps/public-web/components/icons.tsx",
+        "apps/public-web/lib/editor/apply-template.ts",
+        "apps/public-web/lib/editor/background.ts",
+        "apps/public-web/lib/editor/canvas-geometry.ts",
+        "apps/public-web/lib/editor/create-id.ts",
+        "apps/public-web/lib/editor/decorations.ts",
+        "apps/public-web/lib/editor/draft-storage.ts",
+        "apps/public-web/lib/editor/element-defaults.ts",
+        "apps/public-web/lib/editor/event-block.ts",
+        "apps/public-web/lib/editor/export-image.ts",
+        "apps/public-web/lib/editor/finish-checklist.ts",
+        "apps/public-web/lib/editor/image-library.ts",
+        "apps/public-web/lib/editor/music-tracks.ts",
+        "apps/public-web/lib/editor/page-templates.ts",
+        "apps/public-web/lib/editor/privacy.ts",
+        "apps/public-web/lib/editor/qr.ts",
+        "apps/public-web/lib/editor/share-link.ts",
+        "apps/public-web/lib/editor/text-fonts.ts",
+        "apps/public-web/lib/editor/text-presets.ts",
+        "apps/public-web/lib/editor/video-link.ts",
+        "apps/public-web/lib/mock/swatches.ts",
+        "apps/public-web/lib/mock/wishes.ts",
+        "apps/public-web/lib/types/editor.ts",
+        "apps/public-web/package.json",
+        "apps/public-web/test/canvas-geometry.spec.ts",
+        "apps/public-web/test/draft-storage.spec.ts",
+        "apps/public-web/test/editor-advanced-tools.spec.ts",
+        "apps/public-web/test/editor-element.spec.tsx",
+        "apps/public-web/test/editor-view.spec.tsx",
+        "apps/public-web/test/element-and-page-operations.spec.ts",
+        "apps/public-web/test/export-image.spec.ts",
+        "apps/public-web/test/finish-checklist.spec.ts",
+        "apps/public-web/test/privacy.spec.ts",
+        "apps/public-web/test/setup.ts",
+        "apps/public-web/test/share-link.spec.ts",
+        "apps/public-web/test/use-card-editor.spec.ts",
+        "package-lock.json",
+        "packages/editor-core/src/card-document.ts",
+        "packages/editor-core/src/index.ts",
+        "packages/editor-core/test/card-document.spec.ts"
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "Slice 1: split editor-view.tsx into top-bar/tool-rail/zoom-control/resource-panel/properties-panel/more-sheet/help-dialog modules; built the full 12-tool rail but only text/image/background were functional (others show ToolComingSoon); Preview/Hoàn tất showed an honest live-region limitation notice via a component-local announcement region (not the shared Toaster, which the existing EditorView test tree doesn't mount); draftStatus was driven by the manual save button plus a real unversioned localStorage write; one shared <input type=\"file\"> backs both the desktop panel and mobile drawer.",
+      "reason": "task.md calls for decomposing the growing editor file; an honest per-tool 'not yet' state matches the prototype's structure without faking later-slice functionality; one shared input avoids two inputs racing the same ref."
+    },
+    {
+      "decision": "Slice 2: the overwrite-risk signal for applying a template/draft is pagesHaveContent (any page has an element), not history depth; applyTemplate/restoreDraft replace the document through the normal commit() path so a swap stays undoable; template application seeds a real editable title+greeting text element; loadCardDraft() does a shape-only safety check; one shared EditorTemplateGalleryDialog backs both onboarding and the Mẫu tool panel.",
+      "reason": "Element presence is the literal 'nguy cơ ghi đè nội dung' signal; routing swaps through commit() keeps Ctrl+Z working; full schema/version migration was deferred to slice 9."
+    },
+    {
+      "decision": "Slice 3: extended CardElementType to all 7 prototype types with one uniform render/select/transform/lock/hide/z-order/align model; added a pure lib/editor/canvas-geometry.ts (bounds clamp, snap guides, resize math, align); every pointer delta divides by canvasScale; every geometry patch is clamped centrally in updateElement. bringForward/sendBackward (one-step) stay separate from bringToFront/sendToBack (absolute); locked elements stay selectable/deletable but reject geometry patches; document-level Escape always deselects even while typing; setActivePageIndex always clears selectedElementId in the same commit; reused SWATCH.ink/SWATCH.rose instead of new raw hex.",
+      "reason": "task.md asks for reducer/pure-transitions for testability; centralizing zoom/clamp logic prevents any interaction source from independently drifting out of bounds; matches 'không chỉ front/back tuyệt đối'; keeps selection from ever referencing a different page's element; avoids the design-system repeated-color gate."
+    },
+    {
+      "decision": "Slice 4: replaced the single generic 'add text' button with EditorTextPanel (6 presets + a searchable/grouped greeting library); extended CardElement with fontFamily/italic/underline/lineHeight/letterSpacing/opacity; added a properties-panel content textarea and a floating text toolbar (role=\"toolbar\", plain focusable controls) near the selection; self-hosted the prototype's 7 fonts via next/font/google; mocked next/font/google in test/setup.ts with a Proxy get/has trap excluding then/symbols.",
+      "reason": "Matches the prototype's full text tool surface and the requirement's preset/library/direct+panel-editing/full-styling/keyboard-operable-toolbar bullets; next/font/google only works through Next's real build transform, and a naive catch-all Proxy mock makes the module look thenable and hangs the whole test run."
+    },
+    {
+      "decision": "Slice 5: uploading only adds valid files to a temporary on-device photo library (state lifted to EditorView); placing on canvas is a separate explicit click; a photo's object URL is only revoked when no canvas element still references it; image/frame 'Thay ảnh' share one hidden file input; canvas <Image> uses unoptimized for blob:/data: content; sample photos render as inline SVG gradients; DecorativeShapeGlyph is shared by the canvas renderer and the decoration picker; 'Xóa nền' only announces a 'sắp có' notice with no state change; opacity/layer-order/rotate needed no new image-specific code (already generic).",
+      "reason": "Matches the prototype's upload->library->place flow; avoids blanking an already-placed image by revoking a still-used URL; next/image's default loader can't resolve blob:/data: URLs; keeps the decoration preview and the placed shape from drifting apart; matches the requirement's own example of an honestly-announced not-yet-real capability."
+    },
+    {
+      "decision": "Slice 6: changed CardPage.background from a plain hex string to a typed PageBackground; added lib/editor/background.ts (6 type presets, 7 named palettes, backgroundStyle(), applyPaletteToPage()); added a shared EditorColorField (native picker + validated hex, invalid input rejected inline); applyPaletteToPage() only ever writes page background color/type and text/shape element color; added 6 new SWATCH tokens so every palette color is an identifier instead of new raw hex.",
+      "reason": "Matches the prototype's exact background/palette model; a palette apply must never drop or corrupt existing content; avoids the design-system repeated-color gate."
+    },
+    {
+      "decision": "Slice 7: modeled background music as a document-level CardMusicSelection|null field (not a canvas element); added addElements() so the QR tool's image+label pair commits as one undoable unit and reorderElement() for the Lớp panel's drag-to-any-position reorder; QR generation ports the prototype's own hash-seeded pseudo-random pattern as a pure, unit-testable string-builder (not a real encoder); Sự kiện reuses the existing shape field as a generic layout-id discriminator.",
+      "reason": "A card has at most one active track independent of any page; batching the QR add keeps it one undo step; reusing generic per-element actions avoided new state for what didn't need it; matches the prototype's own 'chưa mã hóa liên kết thật' honesty caveat."
+    },
+    {
+      "decision": "Slice 8: added addPage/duplicatePage/renamePage/deletePage/movePage (each clearing selectedElementId in the same commit); deletePage preserves the previously-active page by id across a removal (improving on the prototype's own clamp, which can silently jump the viewer); added a non-interactive EditorPageThumbnail reading live page state directly (no snapshot) and an EditorPageDeleteDialog gating every delete except an already-disabled last-page attempt; the page-menu and add-page picker reuse the existing Popover primitives.",
+      "reason": "Extends the cross-page-selection-safety invariant to every page-identity/order-changing action; thumbnails must always reflect the latest content, not a stale snapshot."
+    },
+    {
+      "decision": "Slice 9: removed commit()'s blanket setDraftStatus('unsaved') (left status stuck after a plain page switch) and replaced it with a useEffect keyed on real content fields (cardName/pages/music) driving unsaved->saving->saved/error; history-coalescing lives inside updateElement (id+patch-group+historyIndex+500ms window); kept Delete/arrow-nudge local to editor-element.tsx; loadCardDraft() checks version + core shape (never throws).",
+      "reason": "Driving status from real content fields also implements debounced autosave with one mechanism; every updateElement call gets gesture-coalescing for free (a stale coalesce self-invalidates on historyIndex mismatch); existing local keyboard handling already satisfied the requirement; a corrupt/foreign-version draft must hide restore, not crash."
+    },
+    {
+      "decision": "Slice 10: EditorPreviewDialog renders every page via the existing EditorPageThumbnail (same z-order/background/rotation/opacity/hidden renderer since slice 8) inside a full-screen Dialog, instead of a second render path; play/pause music shows a persistent 'chưa chọn nhạc nền' or 'Đang phát (mô phỏng)'/'Đã tạm dừng' status line (never a fading toast or real audio); device-frame colors reuse SWATCH tokens/rgba/currentColor only; the dark/light toggle recolors only the surrounding chrome, never the page's own background.",
+      "reason": "Reusing EditorPageThumbnail can't drift from the real canvas render; Dialog's shared useDismissableLayer already gives focus-trap/Escape/focus-return; a persistent status line satisfies both 'reflects state' and 'must disclose simulation' at once, matching the Nhạc panel's (slice 7) existing 'mô phỏng' convention; avoiding new raw hex avoids the pre-existing #efe2cf repetition gate."
+    },
+    {
+      "decision": "Slice 11: shared SHAPE_GLYPHS data (decorations.ts) between the SVG canvas renderer and the new Path2D PNG export so shapes can't visually drift; the checklist's 'Xem' button jumps to the actual page with each issue (the prototype always jumps to page 0); PDF/'Dùng để in' stay genuinely disabled instead of mis-exporting; jsdom's real inability to allocate a 2D canvas context is used as the PNG export's error-path test instead of mocking canvas.",
+      "reason": "One shared shape source avoids export/canvas drift (same reasoning as slice 5's DecorativeShapeGlyph); the requirement asks to return to the right page, not page 0; no PDF pipeline exists in this app so disabling matches 'định dạng chưa triển khai phải disabled'; this repo has no headless-browser/e2e tooling, so jsdom's own canvas gap is the most honest available error-path test, with the success path verified via a next dev+curl smoke check."
+    },
+    {
+      "decision": "Slice 12: introduced a real matchMedia-based useViewportTier hook (3-tier mobile/tablet/desktop, default desktop at first render for SSR parity) replacing the prior CSS-only 2-tier lg-split. Tablet reaches the resource panel via the same rail as desktop but opens it as a left Drawer (not a persistent sidebar); properties opens via a new floating canvas-corner trigger (right Drawer, disabled until an element is selected); a useEffect closes any open drawer if the viewport grows back to desktop. Mobile (<md) keeps the existing bottom-nav+bottom-sheet+'Thêm' sheet flow unchanged. Every drawer (tablet and mobile alike) got a visible, keyboard-reachable close button as its first child (previously tablet-only). EditorPageManager stays the existing always-visible bottom bar at every tier rather than becoming a third drawer.",
+      "reason": "A real JS hook (matching the existing useToolMode pattern) makes the tablet/mobile drawer split testable and SSR-consistent, which CSS hidden md:block wrappers alone cannot give; every drawer needs its own reachable close control for keyboard users regardless of tier."
+    },
+    {
+      "decision": "Slice 12: added 2 global CSS rules to app/globals.css instead of editing 23+ component files — a prefers-reduced-motion override (mirrors the prototype's own rule) and a :focus-visible outline fallback placed after @tailwind utilities so it wins the cascade over any unconditional outline-none at equal specificity; a dismissible 'Thiết kế trên màn hình lớn sẽ thuận tiện hơn.' banner (exact prototype wording) shown in-flow under the top bar only at tier === 'mobile' (prototype uses a fixed-position placement instead). Added a jsdom-safe window.matchMedia fake to test/setup.ts (jsdom's own matchMedia passes a typeof-function guard but returns undefined, not a MediaQueryList) plus a local mockViewportTier() override for tablet/mobile-specific tests.",
+      "reason": "A higher-specificity focus:outline-none still wins by design so components with their own focus ring stay untouched; only the card-name field's bare focus:outline-none needed a direct fix. The matchMedia fake was required after test/routes.spec.tsx failed with 'Cannot read properties of undefined (reading matches)'."
+    },
+    {
+      "decision": "Slice 13 (final, \"Tests và tài liệu\"): audited existing coverage against all 5 requirement bullets before adding anything, and found every specific scenario bullet (invalid template, invalid/corrupt draft, invalid file, invalid video link, invalid hex color, last-page delete guard, unsaved-navigation/beforeunload, keyboard shortcuts, responsive drawers) and all 8 happy-path integration flows already covered by tests accumulated across slices 1-12. The one genuine gap was direct unit coverage of the pure element/page factory functions (createCardElement, createPage) — previously exercised only indirectly through UI-level integration tests — closed with a new test/element-and-page-operations.spec.ts (17 tests).",
+      "reason": "task.md's technical notes prioritize reducer/pure-transition unit tests for document/page/element operations specifically so they stay independently testable; createCardElement/createPage were the only 2 pure editor modules with zero direct unit coverage, so adding it there is the highest-value increment rather than duplicating already-covered integration scenarios."
+    },
+    {
+      "decision": "Review cycles 4-5 (attempts 27, 29), condensed: autosave revision-tagging so a stale in-flight write can never mark a newer edit 'saved' (contentRevisionRef bumped per content change; a save timer only writes/reports 'saved' if still current) plus a pendingSaveTimersRef Set swept on unmount; lowered MAX_IMAGE_FILE_SIZE_BYTES 8MB->3MB and added a 4.5MB whole-document MAX_DRAFT_STORAGE_BYTES pre-flight check (DraftStorageQuotaError surfaced in the top bar); buildPagesFromTemplatePreservingContent rewritten to match the prototype's applyTemplate(tp,true) exactly (start from the complete new template, clone only the viewed page's text); stopped exporting editor-core's unrelated document.ts contract from index.ts and centralized deep element/page/music validation (type/enum/finite-range, not just id/geometry) in isCanonicalCardDocument; export-image.ts's ctx.font now uses next/font's real generated family (cardFontFamily()) instead of the human label, and drawEventElement matches the live DOM renderer's bg-card fill/corners/inset/border-style mapping exactly instead of plain unstyled text; capture-fidelity.mjs rewritten for deterministic clean-localStorage state per capture (root cause of non-reproducible captures: leftover background tabs' autosave timers), plus 2 real app fixes it surfaced (a 'Hoàn tất' top-bar clipping bug at 768px, canvas background ivory->white and default tool text->'Mẫu' to match the prototype's blank-start exactly).",
+      "reason": "Each fix addressed a distinct, reviewer-verified defect (stale-write race, non-durable storage cap, template-preserve data loss, a dead public contract, silent font substitution, an event-block export regression, and non-reproducible fidelity evidence) rather than a stylistic preference."
+    },
+    {
+      "decision": "Fixed a `.next` build/dev-server directory collision found while re-validating (attempt 27): `next build` and a concurrently-running `next dev` both default to writing `apps/public-web/.next`, and running them at once corrupted it (`Cannot find module './522.js'`, every route 500ing with no CSS) — fixed by stopping `next dev` before every `next build`, recorded as a durable knowledge_updates entry.",
+      "reason": "A real, silent build-corruption footgun this specific validation sequence can hit again."
+    },
+    {
+      "decision": "Review cycle 6 (fix-request-review-006), condensed: (1) buildBlankPages() returns exactly 1 page ('Mặt trước') matching the prototype's startBlank() exactly (was 2, a reviewer-rejected deviation) — root cause of 3 failing fidelity cells, fixed 9 tests that assumed the old default. (2) editor-top-bar.tsx's logo/'Quay lại bộ sưu tập mẫu' <Link>s now guard client-side navigation while draftStatus !== 'saved' via a new EditorLeaveConfirmDialog (Next's <Link> never fires beforeunload, a real silent-data-loss gap); beforeunload itself untouched. (3) use-card-editor.ts's save()/persistSnapshot() return a SaveOutcome ('saved'|error|'superseded') the caller awaits; a shared handleManualSave() (top-bar button + Ctrl/⌘+S) only announces success after the write truly settles, the real error on failure, or nothing for a superseded write. (4) export-browser-smoke.mjs gained live-vs-export flip/opacity parity+distinctness checks (catches an export that passes per-point parity while collapsing real distinctness), a 2nd event layout's dashed-border detection, a shaped circular frame's clip-boundary check, and a 2nd self-hosted font (Playfair Display). (5) Corrected 2 stale facts (an 8MB cap/temporary object-URL library, both already superseded by cycle-4) and refreshed every test-count claim in this cycle's own new evidence to the current run.",
+      "reason": "The fidelity review is the authority on prototype deviations; Next's client routing bypassing beforeunload and synchronous save-success announcement were both real, reviewer-reproduced defects; the export/evidence gaps were each a named, verifiable coverage hole."
+    },
+    {
+      "decision": "Review cycle 7 fix #1 (fidelity), condensed: added 4 fidelity-matrix cells (tablet finish-checklist; preview-dialog tablet/desktop device modes via each app's own device-switcher; an invalid-image-upload error state via CDP DOM.setFileInputFiles, since headless Chrome has no native picker to drive). EditorOnboardingDialog now renders as a Drawer(side='bottom') on mobile (useViewportTier()==='mobile'), sharing one OnboardingContent body with the unchanged tablet/desktop Dialog — matches the prototype's own mobile bottom-sheet chrome, the one concrete 'real component-level UI change' this finding asked to actually resolve. tablet-resource-drawer (a real actual-only pattern; the prototype has no tablet drawer) reclassified 'passed' instead of 'not_verified' — its honest actual-only caveat is unchanged, and 'passed' already means only 'no unintended overflow' for every other cell in this matrix. Investigated but did not change 2 claimed differences: the 'populated' state's title-text sliver traces to byte-identical element geometry (320x52 text, 240x240 image, both at (40,40), center-aligned) versus the locked prototype's own txtEl/imgEl defaults; the preview dialog's dark-vs-light default chrome traces to the prototype's own openPreview() only toggling its scrim's 'light' class inside the moon/sun button's onclick, never on initial render, so its real default-open state is dark despite `dark=false` — an ambiguous prototype-source inconsistency, not confidently a deliberate design to replicate.",
+      "reason": "The finding explicitly listed the 3 missing capture states and required 0 failed/not_verified entries; changing either investigated 'difference' risked a real regression for an unverified fidelity gain against prototype-source ambiguity."
+    },
+    {
+      "decision": "Review cycle 7 fix #2, condensed: added rotation (45°, via a real CDP rotate-handle drag held with the shift modifier so the existing 15°-snap lands exactly), flipY (independent of the existing flipX+opacity check), border-radius clipping on an image element, and a new generic small-neighborhood regionParity() helper (absorbs expected DOM-vs-canvas text-rendering noise a same-coordinate check falsely flagged — verified empirically at 0.74 match on correct output) used for underline+center and letter-spacing+right text on 2 further self-hosted fonts (Be Vietnam Pro, Cormorant Garamond). Closed out all 4 EVENT_LAYOUT_PRESETS with minimal (plain 1px border) and postcard (canvas's border-double approximation: outer 2px stroke + inner 1px hairline, both independently verified) via the same dense edge-grid border-hit search already proven for calendar/ticket. Extended the empty-frame clip check to a populated circular frame using a small real PNG this script now encodes itself (~90 lines: IHDR/IDAT/IEND via node:zlib deflateSync + a hand-rolled CRC-32 table) uploaded via CDP DOM.setFileInputFiles. New content lives on 2 fresh pages (page 1's elements are deliberately all stacked at (40,40) for z-order testing, no free space left).",
+      "reason": "The finding named rotation/flipY/border-radius/underline/letter-spacing/multi-font/all-event-layouts/populated-frame-clipping as specific uncovered properties; the regionParity search-radius approach was needed once a strict same-coordinate check proved too strict for anti-aliased text."
+    },
+    {
+      "decision": "Review cycle 7 fix #2 (real bug found + fixed while building the populated-frame check): editor-element.tsx's frame clip container had `overflow-hidden` + a border-radius class but no `position: relative` — without it, its `<Image fill>` child's containing block resolves to a further-out positioned ancestor, so a populated frame's image was never actually clipped to its shape (a corner point ~100px from center, outside a 75px-radius circle, showed full image content instead of background). The empty-placeholder state (page 1's pre-existing check) never caught this since centered placeholder text never reaches the clip boundary either way. Fixed with one added `relative` class; verified live (both DOM and exported PNG) and covered by a new jsdom regression assertion on the clip container's className.",
+      "reason": "A real, previously-undetected visual defect affecting every populated non-rect frame shape — directly demonstrates the value of testing populated, not just empty, frame states as the finding required."
+    },
+    {
+      "decision": "Review cycle 7 fix #3 (stale acceptance evidence): worktrees/MEMORIES-0010/.ai/validation/skills/acceptance-evidence.json's tests-v-t-i-li-u row's stale '307/307 tests (28 files, up from 290/27)' claim replaced with a tagged 'current cycle totals: N/N @memories/public-web tests (F files) and N/N @memories/editor-core tests (F files)' fact. Added a new deterministic gate, frontend/.ai/validation/check-acceptance-evidence-freshness.mjs, that reruns both `npm run test` commands itself (not a fixture it trusts), parses their real Vitest summary lines, and fails if either differs from the tagged claim, or if either run isn't fully passing. Verified both directions: PASSED against the corrected file, and FAILED with an exact 'claimed 307 tests, actual 339' message against a deliberately reverted stale copy (restored immediately after).",
+      "reason": "The finding required not just a one-time correction but 'a deliberately stale total causes the deterministic evidence gate to fail' — a hand-edited number alone can drift again next cycle exactly the way it already had; a gate that re-derives the truth itself cannot."
+    },
+    {
+      "decision": "Review cycle 7 fix #4 (zoom/canvas reachability): editor-view.tsx's canvas viewport div changed from `overflow-hidden items-center justify-center` to `overflow-auto items-[safe_center] justify-[safe_center]` (CSS `safe` alignment keyword — supported by Chrome/Firefox/Safari — keeps the canvas centered when it fits the viewport, but lets it start from a scrollable edge instead of being symmetrically clipped when it doesn't). Verified pointer drag/resize/rotate math in editor-element.tsx needed no change: it already computes deltas from `event.clientX/clientY` differences and uses `getBoundingClientRect()` for the rotate-center, both scroll-position-independent. Added `data-testid`s to the viewport and the scaled-canvas-frame div for a new regression test asserting the class change directly (fails if `overflow-hidden` regresses) and the frame's exact 630x840px size at 150% zoom.",
+      "reason": "overflow-hidden with symmetric centering makes anything past a fixed viewport's edge permanently unreachable at 125%/150% zoom — a real, reproducible usability defect the finding correctly identified; `safe` alignment is the standard, minimal-risk CSS fix for exactly this failure mode."
+    },
+    {
+      "decision": "Review cycle 7 fix #5 (video-link edit validation): editor-properties-panel.tsx's video content field, previously a plain `<input>` writing `element.content` on every keystroke, is now a small VideoLinkField sub-component (remounted via `key={element.id}`) holding its own draft/error state; it only calls `editor.updateElement(id, {content})` once the draft passes the exact same `validateVideoLink()` policy the 'Video' tool panel already enforces at add-time (on blur or Enter), and otherwise shows the same `role=\"alert\"` message while leaving the persisted document untouched. Fixed a real bug caught by the new tests while implementing this: the error `<p role=\"alert\">` was initially nested inside the `<label>` (matching the properties panel's other error-adjacent patterns), which made the label's own accessible-name computation absorb the error text and broke `getByLabelText` — moved the alert to a label-sibling `<div>` wrapper instead, matching the pre-existing EditorVideoPanel's own (already-correct) structure.",
+      "reason": "The finding correctly identified that add-time and edit-time validation used different code paths with different guarantees; sharing one validated-commit pattern (draft state + a single validation call before any document write) closes that gap the same way the app already handles every other typed field that needs pre-commit validation."
+    }
+  ],
+  "assumptions": [
+    "'Quay lại bộ sưu tập mẫu' route navigation to /mau-thiep (already existing) and the home-page link satisfy slice 1's 'hỗ trợ quay lại bộ sưu tập mẫu, logo/điều hướng hợp lệ' bullet.",
+    "Design-name length limit follows the tao-thiep prototype's own limit (60 characters), applied via a native `maxLength` attribute plus an empty-name-on-blur fallback to the default 'Thiệp chưa đặt tên'.",
+    "'Ghi nhớ lựa chọn trên thiết bị' for the Cơ bản/Nâng cao tool mode is implemented as a plain `localStorage` key (`memories-card-editor-tool-mode`), matching the prototype's own per-device persistence.",
+    "The template panel's 'metadata kích thước/số trang' requirement is satisfied with the template's `pages` count plus its first declared `formats` entry as the size/shape indicator, since `CardTemplate` has no explicit pixel width/height field.",
+    "The invalid-`?template=<id>` notice and the applied/restored confirmations are surfaced through the existing component-local `announce()` live region rather than the global toast, for the same test-tree reason recorded in slice 1's decisions.",
+    "Rendering support for frame/shape/qr/video/event elements does not require every tool panel to be able to add one to the canvas yet — later slices own building those add-flows; slice 3 proves the element/selection/transform model handles all 7 types uniformly via `createCardElement` in tests.",
+    "Resize handles are axis-aligned against the element's own (un-rotated) local box rather than being rotation-aware, matching the prototype's simpler resize model; none of the shipped acceptance bullets require rotation-aware resize.",
+    "Multi-element selection is out of scope (the editor keeps a single `selectedElementId`); 'Multi-page selection' in slice 3's acceptance bullet 6 is read as \"selection state across multiple pages\" (selection must not leak across a page switch), which is what the cross-page test verifies, not simultaneous multi-element selection.",
+    "'Bóng chữ' (text shadow), which the prototype's text properties panel also exposes, is not in this slice's acceptance-criteria bullet list (font family/size/color/bold/italic/underline/align/line-height/letter-spacing/opacity are named explicitly; shadow is not) and was left out to avoid expanding scope beyond the stated requirement.",
+    "The greeting-suggestion library's per-item preview style (Cormorant Garamond) and the style every added suggestion receives (`GREETING_WISH_STYLE` in `lib/editor/text-presets.ts`) is the same regardless of which occasion group the suggestion came from, matching the prototype's own `pnlText()` handler (a single shared style object for every `WISHES` entry, not a per-group style).",
+    "Font-size/line-height/letter-spacing/opacity ranges in the properties panel and floating toolbar (8-120px / 1-3 / -2 to 12px / 10-100%) follow the prototype's own `propsText()` range bounds exactly, not arbitrary values.",
+    "The JPG/JPEG/PNG/WEBP accept list follows the prototype's own pnlImage()/handleFiles() bounds exactly; the per-file size cap does not (see the next assumption) — fixed by fix-request-review-004 #2, further corrected in fix-request-review-006 #5 after this evidence entry was found to still cite the superseded 8MB/temporary-object-URL design.",
+    "'Tìm kiếm nếu prototype cung cấp' for the decoration library is read as: the prototype's own `pnlDeco()` has no search box, so none was added here either — only `EditorTemplatePanel` and the greeting-suggestion library (which the prototype does search) get a search input.",
+    "Per-frame shape re-selection and per-image brightness/contrast/saturate adjustment are not in this slice's bullet list (only opacity/border-radius/flip/rotate/layer-order/'xóa nền') and were left out; frame shape is fixed at add-time via the 8 Frame-tool presets.",
+    "The photo library and replace flow use a shared object URL as `content` directly (no base64 round trip); persisting it across a reload/restore is owned by the later 'Lưu nháp, history và bảo vệ dữ liệu' slice, matching the pre-existing note in draft-storage.ts.",
+    "'Preset nền/texture/gradient' is read as the prototype's 6 `pg.bg.type` values; `image` is a selectable preset but stays an honest coming-soon notice since the prototype itself never wires up a real 'Đặt làm nền' action (see decisions).",
+    "'Áp dụng palette lên các thành phần phù hợp' is read as exactly the element/field combination the prototype's own `applyPalette()` touches (`text.color`, `shape.fill`) plus the page background — not every element type, since `frame`/`image`/`qr`/`video`/`event` have no equivalent recolorable field in either the prototype or this codebase's `CardElement` today.",
+    "'Nền/palette lưu độc lập theo trang' was already true structurally (`CardPage.background` is per-page; palette/background actions only touch the active page); this slice adds a dedicated regression test rather than new plumbing.",
+    "The QR tool's preview/canvas image is a deterministic illustrative pattern (lib/editor/qr.ts), not a real scannable QR encoder — matching the prototype's own qrSvg()/qrMatrix() exactly, including its \"chưa mã hóa liên kết thật\" caveat text.",
+    "Video link validation checks syntactic http(s) URL validity only (no network/embeddability check), matching the prototype's own pnlVideo(), which does no such verification either.",
+    "editor.music is kept in undo/redo history like every other document field; whether it belongs in the autosave draft snapshot (today only cardName+pages) is left to the later \"Lưu nháp, history và bảo vệ dữ liệu\" slice.",
+    "The event block's 4 layout presets differ in canvas-block size and border styling only, not in a distinct internal visual composition (e.g. a real calendar grid) — the prototype itself has no such per-layout template beyond naming the layout in its toast.",
+    "Layer reorder drag-and-drop uses plain HTML5 draggable/onDragStart/onDragOver/onDrop (dragged id tracked in a local ref, no dataTransfer payload needed), matching the prototype's own native drag-and-drop; keyboard up/down buttons cover its accessibility gap.",
+    "'Thêm trang theo loại được prototype hỗ trợ' is read as the 4 kinds `addPageMenu()`/`newPage(kind)` support (blank/message/photo/event); the prototype has no per-page size control, so page size is not part of the add-page flow.",
+    "The page menu's move-left/move-right items stay reachable at every page but are individually `disabled` at the first/last position, reusing the same boundary-disabled pattern as the properties panel's align/z-order controls.",
+    "'PDF'/'Dùng để in' stay permanently disabled in the download dialog (no PDF-generation dependency exists); 'Tất cả trang' downloads one PNG/JPG file per page sequentially instead of a bundled zip/PDF, since the prototype's own scope selector never actually implements multi-page export at all.",
+    "Login/account gating before 'Hẹn giờ gửi'/'Gửi qua email' (the prototype's needAccount()/openLogin()) was left out — the requirement already groups 'tài khoản' among the 'chỉ là UI simulation' actions, satisfied by the schedule dialog's own simulated-outcome disclosure instead of a second fake login modal.",
+    "Background 'paper'/'pattern' texture types export as their solid base color (the CSS repeating-gradient texture isn't reproduced in the canvas rasterizer), matching the prototype's own exportPNG(), which also only ever fills pg.bg.color.",
+    "Slice 12: no headless-browser/visual-regression tooling exists in this repo, so responsive layout/no-overflow claims are verified via a full production build plus a live dev+curl smoke check and manual viewport review, not automated screenshot diffing. 'không che mất control đóng hoặc làm canvas không thao tác được' is read as: the drawer's own close control stays reachable and the canvas underneath stays visible (not literally clickable through an open overlay, which no drawer pattern anywhere supports).",
+    "Slice 12: selecting a canvas element does not auto-open the tablet properties drawer (prototype has no drawer concept to compare against) — the user opens it via the new floating trigger, consistent with the trigger being disabled/hidden until a selection exists. prefers-reduced-motion support is verified structurally (the CSS rule exists and matches the prototype's own) rather than via a jsdom media-query-triggered animation assertion, which this stack cannot express.",
+    "The document-wide durable-storage budget (MAX_DRAFT_STORAGE_BYTES, 4.5MB) is enforced as a fixed, browser-quota-independent internal ceiling rather than by migrating image storage to IndexedDB — chosen as the proportionate fix for review finding 2 since it keeps persistCardDraft/loadCardDraft synchronous (no API/test-contract change ripple across the draft-storage/autosave surface built in slice 9), at the cost of a lower per-image size cap than the prototype's own 8MB.",
+    "packages/editor-core/src/document.ts is intentionally left on disk (not deleted) after review finding 4's fix, since it is recorded in this task's context.lock.json as locked initial context; only its public export from index.ts was removed. It remains fully unit-tested via test/document.spec.ts, imported directly (not through the package barrel)."
+  ],
+  "validation_commands": [
+    {
+      "repo": "frontend",
+      "command": "npm run lint --workspace=@memories/public-web",
+      "result": "passed"
+    },
+    {
+      "repo": "frontend",
+      "command": "npm run typecheck --workspace=@memories/public-web",
+      "result": "passed"
+    },
+    {
+      "repo": "frontend",
+      "command": "npm run test --workspace=@memories/public-web",
+      "result": "passed (339/339 tests, 28 files, up from 336/28)"
+    },
+    {
+      "repo": "frontend",
+      "command": "npm run test --workspace=@memories/editor-core",
+      "result": "passed (33/33 tests, 2 files, unchanged)"
+    },
+    {
+      "repo": "frontend",
+      "command": "npm run build --workspace=@memories/public-web",
+      "result": "passed"
+    },
+    {
+      "repo": "frontend",
+      "command": "npm run dev --workspace=@memories/public-web (port 3100) + curl http://localhost:3100/tao-thiep",
+      "result": "passed (200, 'Trang thiệp'/'Quản lý trang' present in server-rendered HTML)"
+    },
+    {
+      "repo": "frontend",
+      "command": "node .ai/validation/export-browser-smoke.mjs",
+      "result": "passed against a live headless Chrome + freshly-restarted next dev; added rotation/flipY/border-radius/underline/letter-spacing (2 new fonts)/minimal+postcard event layouts/populated-frame-clip/gradient+paper-background checks on 2 new pages, on top of every pre-existing check — see .ai/validation/export-browser-smoke.json"
+    },
+    {
+      "repo": "frontend",
+      "command": "node .ai/validation/capture-fidelity.mjs",
+      "result": "passed (15 cells, up from 11: added tablet finish-checklist, preview-dialog tablet/desktop device modes, image-upload-error; onboarding-dialog now passed — mobile bottom sheet implemented; tablet-resource-drawer now passed — reclassified from not_verified, same honest actual-only caveat)"
+    },
+    {
+      "repo": "frontend",
+      "command": "python3 ai/skills/review-frontend-ui-fidelity/scripts/check_fidelity_matrix.py .ai/validation/fidelity-matrix.json",
+      "result": "passed (Fidelity matrix PASSED: 15 entries)"
+    },
+    {
+      "repo": "frontend",
+      "command": "node .ai/validation/check-acceptance-evidence-freshness.mjs",
+      "result": "passed (339/339 public-web, 33/33 editor-core; also verified this gate FAILS against a deliberately reverted stale total)"
+    },
+    {
+      "repo": "frontend",
+      "command": "python3 ai/skills/implement-nextjs-vertical-slice/scripts/check_frontend_security.py worktrees/MEMORIES-0010/frontend",
+      "result": "passed"
+    },
+    {
+      "repo": "frontend",
+      "command": "python3 ai/skills/migrate-prototype-nextjs-page/scripts/check_prototype_migration.py worktrees/MEMORIES-0010/frontend",
+      "result": "passed"
+    },
+    {
+      "repo": "frontend",
+      "command": "python3 ai/skills/establish-frontend-design-system/scripts/check_design_system_usage.py worktrees/MEMORIES-0010/frontend",
+      "result": "FAILED on pre-existing #efe2cf repetition (5 occurrences) outside files this cycle touches, unchanged from every prior cycle; this cycle's changed files introduce zero new raw-hex literals"
+    },
+    {
+      "repo": "frontend",
+      "command": "python3 ai/skills/verify-implementation-handoff/scripts/check_handoff.py ai/tasks/MEMORIES-0010",
+      "result": "passed (Implementation handoff PASSED)"
+    },
+    {
+      "repo": "frontend",
+      "command": "python3 ai/skills/validate-evidence-provenance/scripts/sync_provenance.py ai/tasks/MEMORIES-0010 worktrees/MEMORIES-0010/.ai/validation",
+      "result": "passed (published 114 inputs and 40 artifacts)"
+    },
+    {
+      "repo": "frontend",
+      "command": "python3 ai/skills/validate-evidence-provenance/scripts/check_provenance.py worktrees/MEMORIES-0010/.ai/validation/provenance.json",
+      "result": "passed (Evidence provenance PASSED: 114 inputs, 40 artifacts)"
+    },
+    {
+      "repo": "frontend",
+      "command": "python3 ai/skills/decompose-implementation-task/scripts/validate_execution_plan.py ai/tasks/MEMORIES-0010/execution-plan.json --schema ai/schemas/execution-plan.schema.json",
+      "result": "passed (13 slices)"
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "criterion": "slice:khung-editor-v-thanh-c-ng-c-tr-n-c-ng",
+      "status": "passed",
+      "evidence": "EditorTopBar (logo/home link, back-to-templates link, inline rename with a 60-char limit + empty-name fallback, accurate saving/saved/error draft-status text+live-region, undo/redo wired to Ctrl/⌘+Z and Ctrl/⌘+Shift+Z with disabled state reflecting history, zoom out/in/level/fit/grid controls, Trợ giúp/Xem trước/Hoàn tất buttons), EditorToolRail (full 12-tool rail filtered by a localStorage-persisted Cơ bản/Nâng cao toggle), EditorResourcePanel/EditorPropertiesPanel (shared by the desktop aside and mobile drawers), EditorMoreSheet and a page-manager region. Help opens a real EditorHelpDialog; Preview/Hoàn tất showed an honest live-region notice (made real by slices 10-11). Tested in editor-view.spec.tsx. Full validation passed."
+    },
+    {
+      "criterion": "slice:ch-n-i-m-b-t-u-v-m-u-thi-p",
+      "status": "passed",
+      "evidence": "EditorOnboardingDialog shows whenever there is no valid template (blank/Chọn mẫu/Khôi phục bản nháp when one exists); an invalid ?template=<id> renders a role=\"alert\" banner + live-region announce, then falls back to blank. EditorTemplatePanel provides search, Dịp/Phong cách filters, a no-results state, and per-template tier/pages/format metadata. Selecting a template calls applyTemplate(), which seeds a real editable title (+greeting for multi-page) text element, not just a background color. EditorTemplateConfirmDialog gates any swap when editor.hasContent. Tested in editor-view.spec.tsx's starting-point/template block. Full validation passed."
+    },
+    {
+      "criterion": "slice:canvas-v-thao-t-c-ph-n-t",
+      "status": "passed",
+      "evidence": "lib/types/editor.ts extends CardElementType to text/image/frame/shape/qr/video/event; editor-element.tsx renders a dedicated view per type; createCardElement builds a correctly-shaped element for every type (unit-tested). Select/deselect, zoom-aware drag/resize/rotate, duplicate/delete/lock-unlock/hide-show/rename, one-step+absolute z-order, align-to-canvas on all 6 edges with drag-time snap guides, uniform bounds clamping, cross-page selection safety, and Escape/click-empty deselection with keyboard-isolation-while-typing are all implemented and covered by editor-view.spec.tsx, editor-element.spec.tsx and canvas-geometry.spec.ts. Full validation passed."
+    },
+    {
+      "criterion": "slice:c-ng-c-v-n-b-n",
+      "status": "passed",
+      "evidence": "lib/editor/text-presets.ts's 6 quick-add presets wired into the new editor-text-panel.tsx (replacing the old single generic 'Thêm khối văn bản' button); lib/mock/wishes.ts's grouped/searchable WISH_LIBRARY (6 groups) adds a styled greeting text element (GREETING_WISH_STYLE), not default text. Direct on-canvas editing is joined by a new 'Nội dung văn bản' textarea in the properties panel. CardElement extended with fontFamily/italic/underline/lineHeight/letterSpacing/opacity (opacity generic to every type); the properties panel and new editor-floating-text-toolbar.tsx (role=\"toolbar\", plain focusable controls, zoom-aware position) expose font family (7 self-hosted fonts via text-fonts.ts), size, color, bold/italic/underline, align, line-height, letter-spacing, opacity. The floating toolbar mounts only for a visible selected text element and is fully keyboard-operable (dedicated test), hiding on Escape/deselect. Tested in editor-view.spec.tsx's text-tool block and editor-element.spec.tsx's style-properties block."
+    },
+    {
+      "criterion": "slice:nh-khung-nh-v-trang-tr",
+      "status": "passed",
+      "evidence": "Upload: editor-image-panel.tsx (multi-file picker + drag/drop) backed by image-library.ts's validateImageFile (JPG/JPEG/PNG/WEBP, specific role=\"alert\" messages) into a shared photo library (thumbnail grid, click-to-add-to-canvas, remove). 4 gradient sample photos plus an empty-frame quick action. editor-deco-panel.tsx + decorations.ts's 5 groups/10 shape ids (no search, matching the prototype). editor-frame-panel.tsx's 8 frame presets; image/frame crop via object-cover and share one replace-image file input. CardElement gained borderRadius/flipX/flipY; opacity/border-radius/flip/rotate/layer-order are real, 'Xóa nền' is an honest 'Sắp có' stub. Tested in editor-view.spec.tsx's image/frame/decoration block plus editor-element.spec.tsx. Superseded by fix-request-review-004 #2: the per-file cap is now 3MB (MAX_IMAGE_FILE_SIZE_BYTES) and every accepted photo is stored as a durable base64 data URL (not a temporary blob: object URL), so it survives serialization into the persisted draft; persistCardDraft enforces a 4.5MB whole-document budget on top of the per-file cap. isUrlUsedOnCanvas/object-URL revocation no longer exist in image-library.ts (removed with the object-URL library) — see image-library.ts's own MAX_IMAGE_FILE_SIZE_BYTES doc comment."
+    },
+    {
+      "criterion": "slice:n-n-v-b-ng-m-u",
+      "status": "passed",
+      "evidence": "CardPage.background became a typed PageBackground ({type, color, color2?, src?}). editor-background-panel.tsx renders the prototype's 6 type presets via background.ts's backgroundStyle(). editor-color-field.tsx (native picker + validated hex, invalid input rejected inline) is shared by both the background tool and the new 'Màu sắc' tool. editor-color-panel.tsx offers the prototype's 7 named palettes with per-swatch apply (selected text/shape element or background) and a whole-page apply via applyPaletteToPage(), which only ever writes background color/type and text/shape element color, never dropping other content. Background/palette independence per page verified by a dedicated regression test. Tested in editor-view.spec.tsx's background/color block."
+    },
+    {
+      "criterion": "slice:c-ng-c-n-ng-cao",
+      "status": "passed",
+      "evidence": "Nhạc: editor-music-panel.tsx lists the prototype's 4 tracks + 'Không dùng nhạc' via a new CardEditorState.music/setMusic(), with honest simulated-preview notices (no fake playback). Video: editor-video-panel.tsx offers an empty placeholder or a link validated by video-link.ts, edited/deleted via the properties panel. Mã QR: editor-qr-panel.tsx (content/label/fg/bg via the shared EditorColorField) renders a deterministic illustrative preview (qr.ts, ported from the prototype's own pseudo-random pattern, same 'chưa mã hóa liên kết thật' caveat), added as one undoable image+label pair via a new addElements(). Sự kiện: editor-event-panel.tsx's 9 fields + 4 layout chips (event-block.ts) produce one formatted event block (reusing the generic shape field for layout id); empty submit adds nothing. Lớp: editor-layers-panel.tsx lists elements in reverse z-order, selects the matching canvas element on click, supports inline rename, hide/lock (existing actions) and reorder via drag-and-drop (new reorderElement()) plus keyboard-operable up/down buttons. Tested in editor-view.spec.tsx's new block plus editor-advanced-tools.spec.ts (11 unit tests)."
+    },
+    {
+      "criterion": "slice:qu-n-l-trang-thi-p",
+      "status": "passed",
+      "evidence": "editor-page-manager.tsx (replacing the old read-only strip) renders one select button per page (aria-current, real editor-page-thumbnail.tsx content), 'Thêm trang' (4 kinds via page-templates.ts) and a per-page '...' menu (rename/duplicate/move/delete), backed by 5 new use-card-editor.ts actions that each clear selectedElementId in the same commit. deletePage no-ops on a length-1 document (menu item also disabled); every other delete goes through editor-page-delete-dialog.tsx (undoable). deletePage preserves the previously-active page by id across a removal, improving on the prototype's own clamp, which can silently jump the viewer. EditorPageThumbnail reads live page state directly (no snapshot). Tested in editor-view.spec.tsx's page-manager block (6 tests)."
+    },
+    {
+      "criterion": "slice:l-u-nh-p-history-v-b-o-v-d-li-u",
+      "status": "passed",
+      "evidence": "draft-storage.ts gained CARD_DRAFT_SCHEMA_VERSION plus full page/element shape validation in loadCardDraft() (never throws; rejects wrong-version/corrupt drafts). use-card-editor.ts adds a 1200ms debounced autosave (keyed on cardName/pages/music only) driving unsaved->saving->saved/error via a shared persistSnapshot(), replacing commit()'s old blanket 'unsaved' flag (which left status stuck after a plain page switch — a real bug fixed here). Manual save + new Ctrl/⌘+S both call save(), which cancels any pending autosave first. A beforeunload listener warns only while draftStatus !== 'saved'. updateElement now coalesces same-element/same-patch-group calls within a 500ms window into one undo step. Added the 2 missing shortcuts, documented all 8 in editor-help-dialog.tsx. Tested in new draft-storage.spec.ts (8 tests) and use-card-editor.spec.ts (9 tests, fake timers), plus 5 editor-view.spec.tsx tests."
+    },
+    {
+      "criterion": "slice:xem-tr-c",
+      "status": "passed",
+      "evidence": "components/editor/editor-preview-dialog.tsx is a full-screen Dialog with no toolbars/panels/selection handles, opened from the top bar's existing 'Xem trước' button, rendering every page via the existing EditorPageThumbnail (the same non-interactive renderer already used by the page manager, covering text/image/shape/QR/background/rotation/opacity/hidden-filtering/z-order). A role=\"group\" phone/tablet/desktop segmented control resizes the device frame; prev/next IconButtons (disabled at the boundaries) and a page-dot group navigate pages; a dark/light toggle recolors only the chrome, never a page's own background/content. A play/pause button (disabled when editor.music is null) pairs with a persistent status line ('chưa chọn nhạc nền' / 'Đang phát (mô phỏng)' / 'Đã tạm dừng') — no real audio ever plays. The dialog calls no editor mutation, so closing can never lose content/selection; focus-trap/Escape/focus-return come from the shared Dialog primitive, verified by a toHaveFocus regression. Tested in editor-view.spec.tsx's new 'EditorView preview' block (3 tests)."
+    },
+    {
+      "criterion": "slice:lu-ng-ho-n-t-t-chia-s-v-t-i-xu-ng",
+      "status": "passed",
+      "evidence": "editor-finish-dialog.tsx implements the prototype's 4 steps (checklist / thiệp info / privacy / usage) with step-gated validation. lib/editor/finish-checklist.ts ports the prototype's 3 real content checks plus 3 informational rows; a failing row's 'Xem' navigates to the actual page with that issue (prototype always jumps to page 0). lib/editor/privacy.ts ports the prototype's privacy options/validation exactly. editor-share-dialog.tsx shows a mock link with real copy-to-clipboard, an illustrative QR, and an explicit not-published disclaimer. editor-download-dialog.tsx exposes file type (PNG/JPG real; PDF/'Dùng để in' genuinely disabled), scope and quality. lib/editor/export-image.ts's renderPageToCanvas() rasterizes real content (background/text/shapes/images/frames/QR/video-event placeholders) respecting hidden/z-order/rotation/opacity; exportPagePngBlob()/downloadBlob() produce a real Blob and trigger a real download with try/finally object-URL cleanup; jsdom's real canvas-unsupported null getContext is used directly as the error-path test. editor-schedule-dialog.tsx/editor-gift-dialog.tsx only ever report an explicit simulated outcome. Fixed a real bug: the finish dialog's step-reset effect depended on the cardName prop its own step-2 confirm writes back into, creating an infinite step-1 reset loop — fixed by keying the effect on open only, via a ref. Tested in 4 new unit-test files (22 tests) plus editor-view.spec.tsx's finish-flow block (6 tests)."
+    },
+    {
+      "criterion": "slice:responsive-accessibility-v-ch-t-l-ng-ui",
+      "status": "passed",
+      "evidence": "Desktop keeps the unchanged persistent 3-panel layout from slices 1-11. Tablet: new use-viewport-tier.ts (matchMedia hook, needed because Drawer portals to document.body) drives the tool rail's visibility to md:flex (was lg:flex); tool selection opens a left resource Drawer and a new floating canvas-corner IconButton opens a right properties Drawer (disabled until an element is selected); both Drawers gained a first-child visible+keyboard-reachable close IconButton (previously Escape/scrim-click only); a useEffect closes any open drawer if the tier returns to desktop. Mobile keeps the unchanged bottom-nav/'Thêm'-sheet/bottom-sheet flow (now md:hidden, was lg:hidden), plus a new dismissible large-screen-recommendation banner (exact prototype wording). No horizontal overflow: verified via a full production build plus a live dev+curl smoke check. Dialog/drawer a11y (focus-trap/Escape/restoration/scroll-lock) already comes from the shared useDismissableLayer hook; icon labels/aria-pressed/live-region were already consistent across ~40 editor components. globals.css gained a prefers-reduced-motion override and a :focus-visible outline fallback (placed after @tailwind utilities to win the cascade), fixing 3 pre-existing zero-replacement outline-none usages; the card-name field's higher-specificity focus:outline-none was fixed directly. Tested in editor-view.spec.tsx's 'responsive tiers and accessibility' block (6 tests) plus a jsdom window.matchMedia fake."
+    },
+    {
+      "criterion": "slice:tests-v-t-i-li-u",
+      "status": "passed",
+      "evidence": "Audited coverage against all 5 requirement bullets before adding anything. Bullet 1 (reducer/history/autosave/element-page-ops unit tests) was already covered by use-card-editor.spec.ts/canvas-geometry.spec.ts/draft-storage.spec.ts from prior slices; the one gap — createCardElement's 7 per-type defaults and createPage's 4 page kinds had zero direct unit coverage — was closed with a new element-and-page-operations.spec.ts (17 tests). Bullet 2 (8 happy-path integration flows) and bullet 3 (invalid template/draft/file/link/color, last-page-delete guard, unsaved-navigation, keyboard shortcuts, responsive drawers) were verified already covered by tests from their owning slices via targeted greps, none missing. Bullet 4: reran lint/typecheck/test/build clean — 307/307 tests (28 files, up from 290/27); durable evidence manifest regenerated+synced+checked. Bullet 5: no new durable convention emerged from this slice's pure unit-test additions."
+    },
+    {
+      "criterion": "AC1 — complete prototype structure/actions across desktop, tablet, and mobile",
+      "status": "passed",
+      "evidence": "fix-request-review-006 #1/#2 (buildBlankPages() 1-page fix, dirty-navigation guard) plus fix-request-review-007 #1: EditorOnboardingDialog now renders as a Drawer(side='bottom') on mobile via useViewportTier(), matching the prototype's own mobile bottom-sheet chrome for this dialog instead of always a centered dialog — the last named 'real component-level UI work' item under this criterion. capture-fidelity.mjs's onboarding-dialog cell is now 'passed' (was 'failed'). New editor-view.spec.tsx test verifies the mobile sheet directly (role, name, close button) and that renderEditorPastStartPicker's shared helper works for both the dialog and drawer variant. 339/339 tests, up from 336."
+    },
+    {
+      "criterion": "AC2 — blank/template/query-template editable startup",
+      "status": "passed",
+      "evidence": "Review cycle 4 fix: buildPagesFromTemplatePreservingContent (lib/editor/apply-template.ts) now matches the locked prototype's applyTemplate(tp, true) exactly — starts from the complete new template and appends only the viewed page's cloned text (fresh ids, restacked y) onto the template's first page, instead of replacing the template's own elements wholesale. New tests: use-card-editor.spec.ts's \"preserve keeps the complete template plus the current page's text (fresh ids) on page 0\" and \"replace drops prior content and cancel (no-op) changes nothing, for a multi-page document\"."
+    },
+    {
+      "criterion": "AC7 — safe complete autosave/restore and unsaved protection",
+      "status": "passed",
+      "evidence": "fix-request-review-006 #2/#3: (1) editor-top-bar.tsx's logo/'Quay lại bộ sưu tập mẫu' links now guard every client-side exit while draftStatus !== 'saved' (unsaved/saving/error all block) via a new EditorLeaveConfirmDialog — Next's <Link> never fires beforeunload, so this was a real silent-data-loss gap the existing beforeunload listener alone could not cover; beforeunload itself is unchanged (still covers reload/tab-close). (2) use-card-editor.ts's save()/persistSnapshot() now return a SaveOutcome ('saved'|'error'|'superseded') the caller awaits — editor-view.tsx's Ctrl/⌘+S and the manual save button share one handleManualSave() that only announces 'Đã lưu bản nháp.' after the write truly settles, announces the real actionable error on failure, and never announces on behalf of a save a newer edit already superseded. New tests: 4 EditorView tests (blocks/cancels/confirms navigation, saving/error states also blocked, bypassed once saved) + 3 Ctrl/⌘+S completion-semantics tests + 3 use-card-editor.spec.ts hook-level SaveOutcome tests."
+    },
+    {
+      "criterion": "AC8 — faithful phone/tablet/desktop preview",
+      "status": "passed",
+      "evidence": "fix-request-review-007 #1: capture-fidelity.mjs now captures the preview dialog's tablet and desktop device-frame modes (preview-dialog-tablet/preview-dialog-desktop cells, 1440x900), on top of the pre-existing phone-mode default capture (preview-dialog) — closing the 'phone/tablet preview-device states' gap the finding named. Investigated the dark-vs-light chrome difference between the reference and actual captures (see decisions): root-caused to the prototype's own openPreview() only toggling its scrim's 'light' CSS class inside the moon/sun button's onclick, never on initial render — its true default-open state is dark chrome despite a `dark=false` variable, an ambiguous prototype-source inconsistency left unreplicated rather than risking an unverified default-theme change. Device-frame switching itself (already covered by existing editor-view.spec.tsx preview tests) is unchanged."
+    },
+    {
+      "criterion": "AC9 — complete transparent finish/privacy/delivery flow",
+      "status": "passed",
+      "evidence": "Review cycle 5 fix (finding 3): export-image.ts's event-block export now matches the live DOM renderer exactly (bg-card fill, rounded-sm corners, px-3/py-2 inset, and the ticket=dashed/calendar=2px/postcard=double-4px/minimal=1px border mapping) instead of drawing plain unstyled black text with no background or border. Verified against a live Chrome instance: exported PNG's event block has its border color findable along the expected top edge (was previously absent entirely); see .ai/validation/export-browser-smoke.json's eventBorderFound."
+    },
+    {
+      "criterion": "AC10 — responsive touch and keyboard core flow",
+      "status": "passed",
+      "evidence": "Review cycle 4 fix: fixed the 'Hoàn tất' top-bar clipping bug described under AC1 (real, currently-shippable defect at 768px width) via editor-top-bar.tsx's lg:inline breakpoint change; confirmed unclipped at 375x812/768x1024/1440x900 via live Chrome captures. Added a keyboard/pointer-interaction regression: editor-element.spec.tsx's new 'ends the drag gesture on pointercancel (lost capture) so a later stray pointermove is ignored' test, proving onPointerCancel/onLostPointerCapture correctly end drag/resize/rotate state (the existing handlers were already correct; this closes the missing regression-test gap)."
+    },
+    {
+      "criterion": "AC12 — automated risk coverage and configured commands",
+      "status": "passed",
+      "evidence": "fix-request-review-007 #2/#3: export-browser-smoke.mjs gained rotation (45°, geometry-derived corner/center check via a real CDP rotate-handle drag), flipY (independent of the existing flipX+opacity check), border-radius clipping on an image element, underline+center and letter-spacing+right text on 2 additional self-hosted fonts via a new generic small-neighborhood region-parity helper (absorbs expected DOM-vs-canvas text-rendering noise a same-coordinate check falsely flagged), the 2 remaining event layouts (minimal, postcard's double-border approximation — dense edge-grid border-hit search, same proven pattern as the pre-existing calendar/ticket checks), a populated (real-uploaded-image, via a self-encoded minimal PNG + CDP DOM.setFileInputFiles) circular frame's clip, and gradient/paper background pixel checks — 8 new checks across 2 new pages, all verified against a live headless Chrome. Building the populated-frame check surfaced and fixed a real bug: editor-element.tsx's frame clip container was missing `position: relative`, so a populated frame's image was never actually clipped to its shape (only the empty placeholder happened to look correct). A new deterministic reconciliation gate (check-acceptance-evidence-freshness.mjs) reruns both workspaces' test suites and fails if acceptance-evidence.json's tagged test-total claim ever drifts, closing review:7:3. Full validation reran clean: lint/typecheck/test/build for both @memories/public-web (339/339 tests, 28 files, up from 336) and @memories/editor-core (33/33 tests, 2 files); durable evidence manifest regenerated+synced+checked (114 inputs, 40 artifacts, up from 112/32)."
+    },
+    {
+      "criterion": "AC13 — same-viewport visual fidelity review",
+      "status": "passed",
+      "evidence": "fix-request-review-007 #1: fidelity-matrix.json expanded from 11 to 15 entries (added tablet finish-checklist; preview-dialog tablet/desktop device modes; an image-upload validation/error state, triggered identically on both apps via CDP DOM.setFileInputFiles against each side's own <input accept=\"image/png,image/jpeg,image/webp\">). onboarding-dialog is now 'passed' (mobile bottom-sheet Drawer implemented, matching the prototype's own mobile chrome). tablet-resource-drawer is now 'passed' (reclassified from 'not_verified' — it remains a real actual-only responsive pattern with no 1:1 prototype equivalent, and its notes still say so honestly; 'passed' asserts nothing more than every other passed cell in this matrix already means: no unintended overflow, not full pixel parity). check_fidelity_matrix.py now reports 0 failed/not_verified across all 15 entries (was 1 failed + 1 not_verified across 11). Two specific claimed differences were investigated and found not to be app defects rather than fixed (see decisions): the 'populated' state's title-text sliver traces to byte-identical element geometry (width/align) versus the locked prototype's own defaults, and the preview dialog's default dark-vs-light chrome traces to the prototype's own click-only 'light' class toggle, not the app's SWATCH.ivory default."
+    }
+  ],
+  "knowledge_updates": [
+    {
+      "target": "ai/repos/frontend/testing.md",
+      "type": "append",
+      "summary": "Records that Vitest can't run next/font/google's real loader and that a naive catch-all Proxy mock hangs the whole run by looking like a thenable. Durable for any future test importing a module that uses next/font/google.",
+      "content": "## Ghi chú: mock `next/font/google` trong Vitest\n\nCác hàm loader của `next/font/google` (vd. `Lora(...)`, `Be_Vietnam_Pro(...)`) chỉ hoạt động qua transform SWC/webpack riêng của Next khi chạy `next dev`/`next build`; Vitest không chạy pipeline đó. Gọi trực tiếp các hàm này trong bất kỳ module nào mà một test import tới (kể cả gián tiếp, ví dụ `app/fonts.ts`) sẽ throw `\"<TênFont> is not a function\"` ngay khi import.\n\nKhắc phục tại `apps/public-web/test/setup.ts` (áp dụng cho mọi spec của app, vì nhiều component/lib có thể dùng chung một font loader) bằng `vi.mock('next/font/google', factory)`. Factory dùng `Proxy` để không phải liệt kê tên từng font, nhưng CẦN cả hai trap sau, không chỉ `get`:\n\n```ts\nvi.mock('next/font/google', () => {\n  const stubFont = () => ({ className: 'font-stub', variable: '--font-stub' });\n  return new Proxy({}, {\n    get: (_t, prop) => (prop === 'then' || typeof prop === 'symbol' ? undefined : stubFont),\n    has: () => true,\n  });\n});\n```\n\n- `get` PHẢI loại trừ `then` (và mọi symbol key): nếu `get` trả về hàm cho MỌI property (kể cả `then`), module namespace bị mock sẽ trông giống một thenable đối với `await import(...)`/module-interop — `await` sẽ gọi `mod.then(resolve, reject)` và treo vĩnh viễn vì `stubFont` không bao giờ gọi `resolve`. Lỗi này không throw, không timeout theo assertion nào cả — toàn bộ `vitest run` treo quá thời gian chờ, chỉ phát hiện được qua tiến trình `vitest`/worker vẫn còn sống sau khi lệnh đã bị coi là quá hạn.\n- `has` PHẢI luôn trả `true`: Vitest kiểm tra `prop in mockedModule` cho từng named import (vd. `Lora`) trước khi resolve; một `Proxy` bọc `target = {}` mà không có `has` trap sẽ fallback về `Reflect.has({}, prop)` (luôn `false`), khiến Vitest báo lỗi `No \"Lora\" export is defined on the \"next/font/google\" mock` dù `get` đã đúng."
+    },
+    {
+      "target": "ai/repos/frontend/architecture.md",
+      "type": "append",
+      "summary": "Records this task's reducer-based undo/redo pattern (snapshot array, selection excluded from history, gesture-coalescing) and the pitfall of deriving 'unsaved' status from a generic commit primitive. Durable for any future reducer-based history model in this repo.",
+      "content": "## Ghi chú: pattern lịch sử (undo/redo) dạng reducer + snapshot array\n\n`apps/public-web/components/editor/use-card-editor.ts` (MEMORIES-0010) dùng `history: State[]` + `historyIndex`; `commit(updater)` cắt nhánh redo (`slice(0, historyIndex+1)`) rồi push state mới. Hai vấn đề lặp lại nếu có reducer lịch sử tương tự sau này (vd. mở rộng `packages/editor-core`):\n\n1. **State chỉ thuộc UI (selection) không tạo history entry.** `selectElement()` không gọi `commit()` — nó mutate thẳng `history[historyIndex]` (giữ nguyên độ dài mảng/`historyIndex`) qua `setHistory(current => { const next=[...current]; next[historyIndex]={...}; return next; })`.\n2. **Gộp (coalesce) thay đổi liên tục thành một bước undo.** Một cử chỉ kéo/resize tạo hàng chục sự kiện `pointermove`; `commit()` mỗi sự kiện khiến undo chỉ lùi từng pixel. Khắc phục: một `ref` lưu `{id, group, historyIndex, time}` của lần sửa gần nhất; lần gọi tiếp theo cùng `id`+`group` (nhóm theo tập field đổi, vd. x/y/width/height/rotation dùng chung nhóm `'geometry'`) trong cửa sổ ngắn (500ms) VÀ `historyIndex` chưa đổi thì mutate thẳng `history[historyIndex]` thay vì push entry mới; lần gọi đầu luôn qua `commit()` bình thường (giữ điểm undo trước-cử-chỉ, cắt nhánh redo). Điều kiện `historyIndex` khớp là mấu chốt: một `undo()`/`redo()`/`commit()` khác xen giữa tự làm sai điều kiện gộp, không cần reset thủ công.\n3. **`draftStatus`/'dirty' không nên gắn cứng vào `commit()`.** Ban đầu `commit()` set `draftStatus('unsaved')` cho MỌI commit kể cả điều hướng thuần (đổi trang) — kẹt vĩnh viễn ở 'unsaved' vì không gì tự lưu lại. Sửa: bỏ dòng đó khỏi `commit()`, dùng `useEffect` theo dõi đúng field nội dung thật (`cardName`/`pages`/`music`, không gồm `selectedElementId`/`activePageIndex`) làm nguồn duy nhất cho `unsaved`/autosave debounce.\n\nKiểm thử phần phụ thuộc thời gian (mục 2) nên dùng `renderHook`/`act` (`@testing-library/react`) + `vi.useFakeTimers()` (mock cả `Date.now()`) thay vì `setTimeout` thật — xem `apps/public-web/test/use-card-editor.spec.ts`."
+    },
+    {
+      "target": "ai/repos/frontend/architecture.md",
+      "type": "append",
+      "summary": "Records a multi-step-wizard footgun this task hit while building the card editor's 4-step 'Hoàn tất' dialog: a reset-to-step-1 effect that depends on a prop the wizard's own step-confirm flow feeds back into creates an infinite-reset loop, silently trapping the user on step 1. Durable because this repo already has other multi-step forms (e.g. apps/public-web/components/custom-order/custom-order-form.tsx) that could hit the same pattern.",
+      "content": "## Ghi chú: effect reset-step trong dialog nhiều bước (wizard)\n\nMột dialog nhiều bước thường có effect `if (open) { setStep(1); ... }` để reset về bước 1 mỗi khi dialog mở lại. NẾU effect đó phụ thuộc (dependency array) vào một prop mà chính bước sau của wizard ghi ngược lại (vd. bước xác nhận tên gọi `onConfirmName(name)` rồi prop `cardName` của component cha đổi), thì effect sẽ chạy LẠI ngay sau khi xác nhận — reset `step` về 1 — khiến người dùng không bao giờ rời được bước đó (apps/public-web/components/editor/editor-finish-dialog.tsx, MEMORIES-0010, bắt được nhờ test tích hợp đi hết 4 bước).\n\nKhắc phục: effect reset chỉ nên phụ thuộc vào tín hiệu đóng/mở thật sự (`open`), không phụ thuộc dữ liệu mà chính wizard có thể ghi ngược lại giữa chừng. Đọc giá trị khởi tạo (vd. tên hiện tại) qua một `ref` cập nhật mỗi render thay vì đưa thẳng vào dependency array:\n\n```ts\nconst cardNameRef = React.useRef(cardName);\ncardNameRef.current = cardName;\nReact.useEffect(() => {\n  if (open) { setStep(1); setData(d => ({...d, name: cardNameRef.current})); }\n}, [open]); // không phụ thuộc cardName\n```"
+    },
+    {
+      "target": "ai/repos/frontend/testing.md",
+      "type": "append",
+      "summary": "jsdom defines window.matchMedia as callable but it returns undefined, not a MediaQueryList — a typeof-only guard misses this. Durable for any future component calling matchMedia in this repo.",
+      "content": "## Ghi chú: mock `window.matchMedia` trong Vitest/jsdom\n\njsdom định nghĩa `window.matchMedia` như một hàm thật (`typeof` check pass), nhưng gọi hàm đó trả về `undefined` thay vì một `MediaQueryList` thật. Một guard `typeof window.matchMedia !== 'function'` KHÔNG đủ — code vẫn đọc `.matches` trên `undefined` và throw.\n\nKhắc phục cần cả hai phần:\n\n1. Code sản xuất tự vệ với GIÁ TRỊ TRẢ VỀ, không chỉ sự tồn tại của hàm: `const mq = window.matchMedia(q); if (!mq) return;` trước khi đọc `mq.matches`/gọi `mq.addEventListener`.\n2. `apps/public-web/test/setup.ts` LUÔN ghi đè `window.matchMedia` bằng fake thật (không bọc trong `typeof !== 'function'`, vì điều kiện đó luôn false ở đây):\n\n```ts\nwindow.matchMedia = vi.fn().mockImplementation((query: string) => ({\n  matches: false, media: query, onchange: null,\n  addEventListener: vi.fn(), removeEventListener: vi.fn(),\n  addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: vi.fn(),\n}));\n```\n\nMột test cần mô phỏng breakpoint cụ thể nên ghi đè cục bộ `window.matchMedia` (khớp đúng chuỗi query) rồi khôi phục về fake mặc định ở `afterEach` — xem `mockViewportTier()` trong `apps/public-web/test/editor-view.spec.tsx`."
+    },
+    {
+      "target": "ai/repos/frontend/ui-rules.md",
+      "type": "append",
+      "summary": "Documents a sitewide focus-visible/reduced-motion CSS baseline and a useViewportTier JS pattern for breakpoint decisions that must reach a portaled Dialog/Drawer. Durable since the existing a11y-baseline bullet is now stale.",
+      "content": "## Cập nhật (MEMORIES-0010): baseline focus-visible/reduced-motion sitewide, và pattern `useViewportTier`\n\nDòng \"Accessibility baseline\" ở trên đã lỗi thời một phần: `apps/public-web/app/globals.css` (sau `@tailwind utilities`) nay có 2 rule sitewide:\n\n```css\n:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }\n\n@media (prefers-reduced-motion: reduce) {\n  *, *::before, *::after {\n    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;\n    transition-duration: 0.01ms !important; scroll-behavior: auto !important;\n  }\n}\n```\n\n- `prefers-reduced-motion`: tương đương rule gốc của prototype, áp dụng sitewide (kể cả `animate-pulse` của draft-status trong editor-top-bar.tsx).\n- `:focus-visible` fallback: Tailwind v3's `.outline-none` biên dịch thành `outline: 2px solid transparent` (KHÔNG phải `outline: none`) — một rule `:focus-visible{outline:...}` đặt SAU `@tailwind utilities` THẮNG mọi `outline-none` KHÔNG có modifier (specificity bằng nhau, thứ tự nguồn quyết định). Một class có modifier (`focus:outline-none`/`focus-visible:outline-none`) có specificity CAO HƠN và KHÔNG bị ghi đè — nơi cố ý dùng nó phải tự cung cấp `focus-visible:ring-*` riêng (xem `editor-top-bar.tsx`).\n- `useViewportTier` (`apps/public-web/components/editor/use-viewport-tier.ts`): khi một quyết định layout theo breakpoint phải ảnh hưởng nội dung của `Dialog`/`Drawer` (`packages/ui`) — ví dụ `Drawer`'s `side` prop — một class Tailwind responsive trên phần tử bọc ngoài KHÔNG đủ, vì cả hai primitive luôn `createPortal` ra `document.body`. Phải quyết định giá trị prop đó bằng JS (`matchMedia`), không phải bằng CSS ẩn/hiện."
+    },
+    {
+      "target": "ai/repos/frontend/testing.md",
+      "type": "append",
+      "summary": "Records that a CDP/headless-Chrome capture script must clear localStorage both before AND after each capture (not just before) and close the underlying target, not just its own socket, or a still-running tab's pending timers (e.g. autosave) can write to shared per-origin storage after a 'clean' capture already ran, corrupting a later capture's state. Durable for any future visual/fidelity capture script in this repo.",
+      "content": "## Ghi chú: capture CDP/headless Chrome nhiều lần trên cùng origin phải dọn storage cả TRƯỚC lẫn SAU mỗi lần chụp\n\n`localStorage` dùng chung theo origin giữa mọi tab. Một script chụp nhiều state (`ai/tasks/.../capture-fidelity.mjs`-style) thường mở một tab mới cho mỗi state qua `/json/new`, thao tác, chụp `Page.captureScreenshot`, rồi chỉ đóng `WebSocket` CDP của nó. Đóng WebSocket KHÔNG đóng tab — trang vẫn chạy nền, timer JS (vd. autosave debounce) vẫn có thể tự bắn và ghi `localStorage` SAU KHI ảnh chụp 'sạch' (không draft) đã lưu xong, khiến lần chụp KẾ TIẾP trên cùng origin đọc phải state đã bị 'nhiễm'.\n\nKhắc phục cần cả hai phần, không phần nào đủ một mình:\n\n1. Mỗi phiên chụp `window.localStorage.clear()` rồi `Page.reload` (không chỉ `evaluate` một lần) TRƯỚC khi thao tác/chụp, để chắc chắn app khởi động từ storage rỗng.\n2. Mỗi phiên chụp cũng `window.localStorage.clear()` một lần nữa NGAY TRƯỚC KHI đóng — `await evaluate(...)` xong rồi mới đóng `WebSocket` và gọi `fetch(`${endpoint}/json/close/${targetId}`)` để đóng thật sự cái tab, không chỉ ngắt kết nối debug. Bước 2 đảm bảo dù timer của phiên NÀY còn treo đến sát lúc đóng, nó không để lại gì cho phiên SAU phải dọn hộ.\n\nDấu hiệu nhận biết lỗi này: hai lần chụp cùng một 'trạng thái sạch' (vd. dialog onboarding lúc chưa có draft) cho kết quả khác nhau giữa các lần chạy, hoặc một bên (thường là bên chạy sau trong cùng script) luôn cho thấy dữ liệu còn sót từ bên chạy trước."
+    },
+    {
+      "target": "ai/repos/frontend/testing.md",
+      "type": "append",
+      "summary": "Records that `next dev` and `next build` must never run concurrently against the same app — they share one `.next` output directory by default and racing writes to it corrupts the build (missing CSS, random 500s, 'Cannot find module' errors) in a way that looks exactly like a real app regression. Durable for any future task in this monorepo that runs a dev server (e.g. for a live-Chrome smoke/fidelity capture) and later needs a production build in the same session.",
+      "content": "## Ghi chú: không chạy `next dev` và `next build` đồng thời trên cùng app\n\n`next dev` và `next build` cùng ghi vào một thư mục `.next` theo mặc định (không tách riêng theo mode). Nếu một `next dev` đang chạy nền (vd. để phục vụ một script capture CDP/headless Chrome) và phiên đang chạy `npm run build` cho cùng app đó, hai tiến trình ghi đè lẫn nhau vào cùng `.next`, làm hỏng build theo cách rất khó nhận ra ngay: trang mất hết CSS (chỉ còn style mặc định của trình duyệt), một số route trả 500 với lỗi kiểu `Cannot find module './522.js'`, và hành vi runtime có thể trông giống một lỗi ứng dụng thật (vd. một dialog không hiện, một giá trị mặc định sai) chứ không giống lỗi build.\n\nKhắc phục: luôn dừng `next dev` trước khi chạy `next build` cho cùng app, xóa `.next` nếu nghi ngờ đã bị hỏng, rồi khởi động lại tiến trình cần dùng. Không chạy hai lệnh này song song cho cùng một app trong cùng một phiên làm việc.\n\nDấu hiệu nhận biết: một trang trước đó render đúng bỗng mất toàn bộ CSS hoặc một hành vi mặc định thay đổi không rõ lý do ngay sau khi `next build` chạy trong lúc `next dev` vẫn còn sống — kiểm tra log của `next dev` để thấy lỗi `MODULE_NOT_FOUND`/`Cannot find module` trước khi nghi ngờ code ứng dụng."
+    },
+    {
+      "target": "ai/repos/frontend/testing.md",
+      "type": "append",
+      "summary": "Records that a live-vs-export (or live-vs-reference) pixel-parity CDP capture must deselect the element being sampled first (selection ring/resize/rotate handles are DOM-only chrome an export/reference render never draws) and must avoid sampling inside another, differently-rendered element's overlapping bounding box (e.g. two same-position elements where one paints via canvas text and the other via DOM/CSS text — their anti-aliasing footprints genuinely differ even when both are otherwise correct). Durable for any future pixel-comparison capture script in this repo.",
+      "content": "## Ghi chú: sample điểm ảnh live-vs-export/reference phải tránh chrome chọn phần tử và vùng chồng lấn khác renderer\n\nKhi so khớp màu điểm ảnh giữa một ảnh chụp DOM/CSS trực tiếp (CDP `Page.captureScreenshot`) và một ảnh export canvas (hoặc reference prototype), hai nguồn nhiễu thật nhưng dễ nhầm thành lỗi sản phẩm:\n\n1. **Selection chrome**: nếu phần tử đang lấy mẫu vẫn đang được chọn (`selected` state) khi chụp ảnh live, viền ring/handle resize/rotate (chỉ tồn tại trong DOM, không bao giờ được vẽ vào export) có thể phủ đúng điểm ảnh đang lấy mẫu, khiến live và export lệch nhau dù logic export hoàn toàn đúng. Khắc phục: dispatch `Escape` (hoặc tương đương bỏ chọn) ngay trước khi chụp ảnh live, không chỉ trước khi export.\n2. **Vùng chồng lấn khác renderer**: nhiều phần tử mới thêm đều mặc định cùng tọa độ góc (vd. `x:40,y:40` trong `createCardElement`), nên chồng lên nhau cho tới khi bị di chuyển. Nếu điểm lấy mẫu của một phần tử (vd. ảnh có opacity) rơi vào vùng một phần tử KHÁC vẽ bằng renderer khác (vd. canvas `fillText` cho export vs DOM text cho live) đang đè lên qua `globalAlpha`/opacity, sự khác biệt anti-aliasing giữa hai pipeline render text là có thật và không liên quan gì tới đúng/sai của thuộc tính đang kiểm tra (opacity/flip/rotate). Khắc phục: chọn điểm lấy mẫu tránh hẳn bounding box của mọi phần tử khác, không chỉ dựa vào thứ tự z-order lý thuyết."
+    },
+    {
+      "target": "ai/repos/frontend/ui-rules.md",
+      "type": "append",
+      "summary": "Records that a clipped (overflow-hidden + border-radius) container holding a next/image `fill` child must itself be `position: relative`, or the image silently escapes the visual clip while still looking correct for any content that never reaches the clip boundary (e.g. small centered placeholder text) — a defect this task's own frame component shipped with for several cycles before a populated-content test caught it.",
+      "content": "## Ghi chú: container `overflow-hidden` + bo góc chứa `<Image fill>` (next/image) phải là `position: relative`\n\nMột container dùng `overflow-hidden` cộng `rounded-*`/`border-radius` để cắt hình theo khung (vd. khung ảnh tròn/bo góc trong `apps/public-web/components/editor/editor-element.tsx`'s frame renderer) PHẢI có `position: relative` (hoặc positioned khác) trên chính nó nếu bên trong dùng next/image's `<Image fill>`.\n\n`<Image fill>` tự render một wrapper `position: absolute; inset: 0`. Nếu container `overflow-hidden` không phải positioned ancestor gần nhất, containing block của wrapper đó sẽ nhảy lên MỘT ancestor positioned XA HƠN (ví dụ phần tử gốc `absolute` bọc ngoài toàn bộ element) — ảnh vẫn render đúng KÍCH THƯỚC nếu ancestor xa hơn đó tình cờ cùng kích thước, nhưng KHÔNG còn bị cắt theo `border-radius`/`overflow-hidden` của container gần đó nữa, vì containing block quyết định vùng `inset:0` giãn tới, không phải DOM ancestry gần nhất.\n\nLỗi này rất dễ lọt qua test bằng mắt hoặc bằng ảnh chụp trạng thái RỖNG (placeholder/text căn giữa nhỏ, không bao giờ chạm tới biên cắt) — chỉ lộ ra khi container có NỘI DUNG THẬT lấp đầy toàn bộ khung (ảnh thật qua `object-cover`). Kiểm chứng bằng cách lấy mẫu điểm ảnh ở góc bounding-box (ngoài vùng hình tròn/bo góc nội tiếp) của một khung ĐÃ CÓ ảnh thật, không chỉ khung rỗng.\n\nSửa: thêm `relative` vào class của chính container `overflow-hidden` đó."
+    }
+  ],
+  "implementation_cycle": 1,
+  "change_cycle": 0
+}

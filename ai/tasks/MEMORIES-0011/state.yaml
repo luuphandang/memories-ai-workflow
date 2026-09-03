@@ -1,0 +1,29 @@
+task_id: MEMORIES-0011
+status: prepared
+implementation_cycle: 1
+review_cycle: 0
+review_cycles_total: 0
+fix_cycle: 0
+fix_cycles_total: 0
+change_cycle: 0
+active_change: null
+timestamps:
+  created_at: '2026-08-31T02:10:06+07:00'
+  context_prepared_at: '2026-08-31T02:23:12+07:00'
+agents:
+  implementation: claude
+  review: codex
+repositories:
+  frontend:
+    path: worktrees/MEMORIES-0011/frontend
+    base_ref: origin/master
+    head_sha: e2252a8a5b93cb66025c5a8ee1c42638f2c6ed77
+    branch: feature/MEMORIES-0011-intergration-api-to-homepage
+    registered_branch: feature/MEMORIES-0011-intergration-api-to-homepage
+    status: ''
+user_acceptance:
+  status: pending
+  accepted_at: null
+  accepted_by: null
+  accepted_change_cycle: null
+last_error: null

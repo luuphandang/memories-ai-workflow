@@ -1,0 +1,50 @@
+version: 1
+id: MEMORIES-0010
+title: Implement Design Card By Prototype
+jira:
+  type: epic
+  parent_id: null
+  epic_id: MEMORIES-0010
+priority: medium
+status: ready
+children: []
+worktrees:
+- repo: frontend
+  path: worktrees/MEMORIES-0010/frontend
+  base_ref: origin/master
+  writable: true
+agents:
+  implementer: claude
+  reviewer: codex
+skills:
+  implement:
+  - decompose-implementation-task
+  - verify-implementation-handoff
+  - validate-evidence-provenance
+  - implement-nextjs-vertical-slice
+  - establish-frontend-design-system
+  - migrate-prototype-nextjs-page
+  review:
+  - review-code-change
+  - review-vertical-slice-completeness
+  - review-frontend-ui-fidelity
+scope:
+  execution_plan_required: true
+review:
+  max_cycles: 5
+  fail_on:
+  - blocker
+  - major
+validation:
+  frontend:
+  - lint
+  - typecheck
+  - test
+  - build
+report:
+  language: vi
+  include_diff_stat: true
+  include_changed_files: true
+  include_test_results: true
+  include_review_findings: true
+  include_knowledge_updates: true

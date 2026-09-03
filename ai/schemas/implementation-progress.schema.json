@@ -18,7 +18,24 @@
     "current_slice": {"type": ["string", "null"]},
     "current_step": {"type": "string"},
     "remaining_steps": {"type": "array", "items": {"type": "string"}},
-    "notes": {"type": "array", "items": {"type": "string"}}
+    "notes": {"type": "array", "items": {"type": "string"}},
+    "checklist": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "source", "description", "status", "evidence", "updated_at"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "source": {"enum": ["execution_plan", "acceptance", "review_finding", "validation"]},
+          "source_ref": {"type": ["string", "null"]},
+          "description": {"type": "string", "minLength": 1},
+          "status": {"enum": ["pending", "in_progress", "completed", "blocked"]},
+          "evidence": {"type": "string"},
+          "updated_at": {"type": ["string", "null"]}
+        },
+        "additionalProperties": false
+      }
+    }
   },
   "additionalProperties": false
 }

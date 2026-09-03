@@ -2,18 +2,164 @@
   "task_id": "MEMORIES-0009",
   "implementation_cycle": 1,
   "change_cycle": 0,
-  "status": "draft",
+  "status": "ready",
   "slices": [
     {
-      "id": "complete-task",
-      "title": "Complete the effective task requirements",
+      "id": "inventory-v-page-composition",
+      "title": "Inventory và page composition",
       "depends_on": [],
-      "acceptance_criteria": ["All effective acceptance criteria"],
-      "requirement_details": {"All effective acceptance criteria": []},
-      "deliverables": ["Implementation and required wiring"],
-      "tests": ["Tests for the primary behavior and risks"],
-      "validation": ["Configured repository validation"],
-      "status": "pending"
+      "acceptance_criteria": [
+        "Inventory và page composition"
+      ],
+      "requirement_details": {
+        "Inventory và page composition": [
+          "Đọc toàn bộ HTML/CSS/JS prototype và lập mapping element → React component trước khi làm;",
+          "Giữ đúng thứ tự 11 section: Hero; Occasions; Templates; Editor introduction; Gifts; QR",
+          "Giữ announcement, header, footer, mobile drawer và mobile bottom nav từ shell dùng chung;",
+          "Không bỏ section/card/control vì dùng mock hoặc chưa có trang chi tiết; dùng route khả dụng"
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "completed"
+    },
+    {
+      "id": "c-c-element-b-t-bu-c",
+      "title": "Các element bắt buộc",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Các element bắt buộc"
+      ],
+      "requirement_details": {
+        "Các element bắt buộc": [
+          "Hero có eyebrow, headline hai dòng, mô tả, hai CTA, ba trust points và toàn bộ collage:",
+          "Occasions có heading/mô tả và đủ 8 lựa chọn: Sinh nhật, Đám cưới, Kỷ niệm, Tân gia, Đầy",
+          "Templates có heading, đủ filter tabs, 6 template cards với preview, price/free badge,",
+          "Editor introduction có visual editor/card preview, feature list, copy và CTA.",
+          "Gifts có heading, đủ 6 gift cards, visual, badge, rating, price, personalization info,",
+          "QR Story có copy, bốn bước/benefit items, badges, CTA và visual hộp quà + QR card/phone.",
+          "How it works có heading và đủ 3 bước được nối thành flow rõ ràng.",
+          "Custom order có visual, eyebrow, heading, mô tả, các điểm nổi bật và CTA.",
+          "Stories có heading, đủ testimonial slides, previous/next và pagination dots.",
+          "Blog có heading, đủ 3 article cards cùng category, title, excerpt/metadata và link/CTA.",
+          "Final CTA giữ decoration, copy và hai CTA theo prototype.",
+          "Footer giữ đầy đủ brand/contact/social, các nhóm link, newsletter validation/feedback và"
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "completed"
+    },
+    {
+      "id": "interaction-v-state",
+      "title": "Interaction và state",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Interaction và state"
+      ],
+      "requirement_details": {
+        "Interaction và state": [
+          "Template filters thay đổi danh sách và phản ánh trạng thái bằng `aria-pressed`.",
+          "Favorite/add-to-cart dùng `ShopProvider`, cập nhật badge/toast nhất quán với catalog, không",
+          "Stories slider hỗ trợ previous, next và chọn dot; active state có accessible name/state.",
+          "Announcement close, mobile menu, newsletter validation và CTA/link tiếp tục hoạt động.",
+          "Motion/reveal tôn trọng `prefers-reduced-motion`; nội dung không bị ẩn vĩnh viễn nếu"
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "completed"
+    },
+    {
+      "id": "header-search-kh-ng-g-y-layout-shift",
+      "title": "Header search không gây layout shift",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Header search không gây layout shift"
+      ],
+      "requirement_details": {
+        "Header search không gây layout shift": [
+          "Giữ search button và submit tới danh mục quà với query `q` hiện tại.",
+          "Form search là popover/overlay được định vị absolute/fixed/portal và neo hợp lý theo",
+          "Surface có layering/kích thước/vị trí phù hợp desktop và mobile, không clipping hoặc che",
+          "Focus chuyển hợp lý vào input khi mở; Escape, click ngoài hoặc control đóng sẽ đóng search và",
+          "Trigger có `aria-expanded` và semantics liên kết tới surface; Enter submit được; popover nhỏ",
+          "Không sửa bằng cách xóa button hoặc vô hiệu hóa search."
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "completed"
+    },
+    {
+      "id": "responsive-accessibility-v-quality",
+      "title": "Responsive, accessibility và quality",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Responsive, accessibility và quality"
+      ],
+      "requirement_details": {
+        "Responsive, accessibility và quality": [
+          "Kiểm tra tối thiểu 375x812, 768x1024 và 1440x900; không overflow ngang, overlap, clipping",
+          "Duy trì landmark, heading hierarchy, accessible names, keyboard navigation, focus-visible,",
+          "Tái sử dụng Next.js `Image`, routes, mock data, shared UI/design tokens và component hiện có;",
+          "Bổ sung component tests cho section completeness, filter, favorites/cart, slider và header",
+          "Cập nhật knowledge nếu mapping prototype hoặc convention UI bền vững thay đổi.",
+          "AC1 — `/` render đủ 11 section đúng thứ tự, không thiếu nhóm element trong Scope.",
+          "AC2 — Nội dung, hierarchy, màu sắc, typography, spacing, decoration và visual composition",
+          "AC3 — Hero đủ copy, CTA, trust points và collage; decoration không overflow/che nội dung.",
+          "AC4 — Occasions đủ 8 item; Templates và Gifts đều đủ 6 card cùng metadata/control.",
+          "AC5 — Editor, QR Story, How it works và Blog hiện diện đầy đủ, không phải optional scope.",
+          "AC6 — Template filters hoạt động/accessibile và không làm hỏng layout.",
+          "AC7 — Favorite/add-to-cart dùng shared store, cập nhật badge/toast nhất quán.",
+          "AC8 — Slider hoạt động bằng button/dot; newsletter báo lỗi email sai và success email hợp lệ.",
+          "AC9 — Mở search không đổi bounding box/chiều cao header, vị trí nội dung dưới hoặc scroll.",
+          "AC10 — Search overlay responsive, tự focus input, đóng bằng Escape và click ngoài/control,",
+          "AC11 — Search button không bị xóa/vô hiệu hóa; form không còn là in-flow row.",
+          "AC12 — Trang usable tại ba viewport yêu cầu, không overflow/clipping/overlap/hidden controls.",
+          "AC13 — Semantics, accessible names/state, focus-visible và reduced-motion đạt baseline repo.",
+          "AC14 — Tests khóa regression completeness/search; `lint`, `typecheck`, `test`, `build` pass.",
+          "AC15 — Handoff có mapping 11 section, file/asset thay đổi, test và visual evidence trước/sau ở"
+        ]
+      },
+      "deliverables": [
+        "Complete implementation across every applicable architecture layer"
+      ],
+      "tests": [
+        "Happy path, failure path and primary-risk regression tests"
+      ],
+      "validation": [
+        "Configured repository validation and required deterministic skill checks"
+      ],
+      "status": "completed"
     }
   ]
 }

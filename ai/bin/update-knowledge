@@ -23,6 +23,11 @@ def main() -> None:
     p = argparse.ArgumentParser(description="Apply approved durable knowledge updates")
     p.add_argument("task_id")
     p.add_argument("--apply", action="store_true", help="Without this flag only show the plan")
+    p.add_argument(
+        "--strict",
+        action="store_true",
+        help="Fail before writing unless every approved update is directly applicable",
+    )
     p.add_argument("--force", action="store_true")
     args = p.parse_args()
     td = ensure_task(args.task_id)
@@ -52,6 +57,20 @@ def main() -> None:
         for index, item in enumerate(updates, start=1)
         if item.get("approved")
     ]
+    unresolved = []
+    for index, item in approved:
+        content = item.get("content", "").strip()
+        if item.get("type") not in {"append", "replace", "create"}:
+            unresolved.append(f"#{index:03d} uses non-applicable type {item.get('type')!r}")
+        if not content:
+            unresolved.append(f"#{index:03d} has empty content")
+        if "[BỔ SUNG" in content:
+            unresolved.append(f"#{index:03d} contains unresolved markers")
+    if args.strict and unresolved:
+        raise SystemExit(
+            "Approved knowledge updates are not ready for automatic application:\n- "
+            + "\n- ".join(unresolved)
+        )
     for index, item in approved:
         target = (ROOT / item["target"]).resolve()
         if not is_allowed(target): raise SystemExit(f"Disallowed target: {target}")

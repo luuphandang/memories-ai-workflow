@@ -1,0 +1,649 @@
+{
+  "task_id": "MEMORIES-0010",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "generated_at": "2026-09-03T11:04:02+07:00",
+  "command": "lint/typecheck/test/build (public-web+editor-core); export-browser-smoke.mjs; capture-fidelity.mjs (review cycle 7 fix: findings 1/2/3/4/5)",
+  "preconditions": [
+    {
+      "name": "next dev on :3100",
+      "passed": true
+    },
+    {
+      "name": "Chrome headless CDP on :9222",
+      "passed": true
+    },
+    {
+      "name": "prototype/tao-thiep/Tao-thiep.dc.html present",
+      "passed": true
+    }
+  ],
+  "inputs": [
+    {
+      "path": "../../../../prototype/tao-thiep/Tao-thiep.dc.html",
+      "sha256": "206491b68ed99d2faf7f39f7d346db4daffebb0988a80fad3a7dadac7588c801"
+    },
+    {
+      "path": "../../../../prototype/tao-thiep/luumory-app.js",
+      "sha256": "26dadf6aaf13d0489c3377728450711542439ffab50330784900035cb490665d"
+    },
+    {
+      "path": "../task.yaml",
+      "sha256": "9254d0f9169bc67a977473ccb702a6b95c2cad55e35e4476931d97835854ce02"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/app/globals.css",
+      "sha256": "a708ef41c83b63a755a11d10fbb94e0877094883c6726c6c8a6372f420587600"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-background-panel.tsx",
+      "sha256": "7d08f10eb95b4d166284ec88b50b40b3333a45c8679dd696a77c62c4695f4cc9"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-color-field.tsx",
+      "sha256": "48e5f58a37bad6f168984aec822018f5056baf0dabc20906070801887c843b39"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-color-panel.tsx",
+      "sha256": "48a668d562aa00356768c6fdac483b8ddfd66b5fe103e94aa97203593f3fb45d"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-deco-panel.tsx",
+      "sha256": "80bfebb61775fd1d01115b9bacae65002ba5fd5f9c82e791aa2b75aada51280a"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-download-dialog.tsx",
+      "sha256": "f0ed02e3d3bed5460a0f19def1c65cfd04cb88035615204e770dec9333980dc5"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-element.tsx",
+      "sha256": "ecd2d00d4f26bca112f4a5971914b8975a61bdb8a86da864789b007de4b5730c"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-event-panel.tsx",
+      "sha256": "5087b1be748feee1a0ef68cbf7de1b58122f12835344c9f920cfb79e392173c2"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-finish-dialog.tsx",
+      "sha256": "05451b3f56096248bf509c9a444e85f1d822cfcc7181a8123ed711858804007d"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-floating-text-toolbar.tsx",
+      "sha256": "bd58feb6c8c5bc712f43a2ac1b3449453da37a9156ca77466af4e6aaafae46a3"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-frame-panel.tsx",
+      "sha256": "d126192cddff2bc2d6d6afc44ff36ece729852f0c7bf93338ec04ca2e63bab52"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-gift-dialog.tsx",
+      "sha256": "832705ef4248cdb76bbcc956b8f315c5fe6db4601ed1ba37cacb20434e209e61"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-help-dialog.tsx",
+      "sha256": "1394830123f0f8ba8c98f8aaaef0e85006bed3715a85393e06b1142b55c677de"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-image-panel.tsx",
+      "sha256": "995b04c00c30af0799c4f04d52b7a6b4ca0be36407f2e52d043228477a202653"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-layers-panel.tsx",
+      "sha256": "70595d9f081eba335838c3f93f3498dc60d0a86e6c3f52724f8d7eee59eaf65f"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-more-sheet.tsx",
+      "sha256": "dacfbb0d5d4ef4493d4cd18f59e22ddb14c3fd4118dbd21db7c892993b69e4f1"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-music-panel.tsx",
+      "sha256": "413958fde45dedb26cf1e8e935def6f3892f4e37be2052573aaa549a21ba59f9"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-onboarding-dialog.tsx",
+      "sha256": "e4062820d7f0d303ce412b4e730805e991c92c34ca8a03d3c8676e40923944f6"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-page-delete-dialog.tsx",
+      "sha256": "9d9c749b105f7e20d7c5bd1656a81cb961801d94868ed04032451c0cbce6391f"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-page-manager.tsx",
+      "sha256": "57323a0ef58bf2c98832b962b8131bb2db1cc8e2d511ba850aaf36c1c2083b9d"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-page-thumbnail.tsx",
+      "sha256": "8cabbdff6c3a5c826ddec99e42ae1ce9d8d822ee6559ceafc008f4f6c6a2e8af"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-preview-dialog.tsx",
+      "sha256": "109e89a83da5b7374333b7830a4ff404ded8908516b3986bd999d3be723c0e2a"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-properties-panel.tsx",
+      "sha256": "7fc3b98ad03fc551a2e3a4a9e108010b82b57a3ef0bd0499628046e573703c61"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-qr-panel.tsx",
+      "sha256": "11a9f410e108cdcd490078bb958720014b0bb6861650d83ac091fcce885a83e2"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-resource-panel.tsx",
+      "sha256": "7d6c74ad64f77e3e17048ddd0f1c6ec8481dbb73d44eb3bd8e6e136a6f2dacb5"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-schedule-dialog.tsx",
+      "sha256": "219695a4507b7ea6879abd05004b36dd184d1c29e87630fda14da2ac1bb333fa"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-share-dialog.tsx",
+      "sha256": "774a0504a2da04e853c16f7b6be15d4af2d976f83a7346202a80e19ba9d4224f"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-template-confirm-dialog.tsx",
+      "sha256": "489d9a8c42fd540d95d373acbdb80c0f81da1a1940d0611f6239a26e2af259ce"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-template-gallery-dialog.tsx",
+      "sha256": "75ee0ba9a9192ff18e4fe44ee881f9fe91cdbe9af483ec2a4309c40a71d51ae8"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-template-panel.tsx",
+      "sha256": "7b9f0e70c772d7417561b7c1cbc59654d23069091a734eab63acbe2049e4db33"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-text-panel.tsx",
+      "sha256": "947292349007713a7ac3bfea85b7dc856212a7405fc81b212d6cdb30d0a9e966"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-tool-rail.tsx",
+      "sha256": "9510acbc4cdef028122bc59864275703623b66743ebd60a5be630a8e6993e1e0"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-tools.ts",
+      "sha256": "b7f562a8350a3fa493381ef30383ed2bb08c237789951a34584fcf44e7fa8906"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-top-bar.tsx",
+      "sha256": "cdbd69a868892231c5dea75165281bf08515f817048549d6f246cd2393ee5b27"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-video-panel.tsx",
+      "sha256": "7be28ac88e1db04633f063969ea90107c02909137b89e520c2d71b555a6e6db4"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-view.tsx",
+      "sha256": "39432a880dd12c015f6a8c2323fb186502154fd5f76d3c7e1705ad3d5eb196aa"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-zoom-control.tsx",
+      "sha256": "1789a8160d9b506ff4e3c406911552dcbd9d16c134fd300809309aaa795d0bb1"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/tool-coming-soon.tsx",
+      "sha256": "23ca1132c1daba7a8222c3910a04d5b8bdf6506dd28817bdc81695ee11333dd9"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/tool-mode-toggle.tsx",
+      "sha256": "3d913730df4bf84e31c918e3c5b99e5bf892cd840aeaed0a8e944ce3e4c783f1"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/use-card-editor.ts",
+      "sha256": "0b31fffcc179011dcdb8a26325ff68d1f272287516bf2f5c2b1ce3bd0190a0aa"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/use-tool-mode.ts",
+      "sha256": "5ed2afa681e7a95c187b628ec0791fd988e1bfdad87ff1bfdd490df7aa3c023e"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/use-viewport-tier.ts",
+      "sha256": "adc9d05b53be5ae67fc148228fec92c17bdc2b69011e883053e8cb085f3f179b"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/icons.tsx",
+      "sha256": "3306106b13af328a1c20b35c345ca0514dd956d51de64e1aba506e271afcf834"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/apply-template.ts",
+      "sha256": "830232c0b04ba99e002a35c8fd1b7fca37e0d25474c4eefcb676b4cd043e62e5"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/background.ts",
+      "sha256": "695880331160764ba96cf593d3a930fc40034575493c5d00f8f7d82e7b2953c0"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/canvas-geometry.ts",
+      "sha256": "b749b5b9df947e2ac06c54bde75d4de9bd97c43e98e3d77a09e80738cf99c04f"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/create-id.ts",
+      "sha256": "b70215a0ea9afb29738f64562e81b78d4e7310feb0dca0af6b3c54e339d36e3f"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/decorations.ts",
+      "sha256": "60d8e8b9d5d8d06658051327a897081239fb93e4e66e899be0678536f235fa6c"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/draft-storage.ts",
+      "sha256": "234e29e013a914cf0fd09bbe8c7fceb8cb9fb2d5de99346ef6f846ccd76dd53b"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/element-defaults.ts",
+      "sha256": "7f8b5fabc8eaf6b6e74524cebdfedb9d3be876a2633a0a5f874c19028fe5b835"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/event-block.ts",
+      "sha256": "23b4435ef33a71f84dfad99cc18dbc531bfc9f9da8ed5346b11802f30bfed1fa"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/export-image.ts",
+      "sha256": "f4099eadfee3cc2a936df0d8463d2836c87e4a4146799b342a52a6461afcf69e"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/finish-checklist.ts",
+      "sha256": "7071318813a2c58790480dfcb1238a3ea776f8be289d8998c90c03064dd3e988"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/image-library.ts",
+      "sha256": "7d258314bfdb0ae994c05d5cbd6d14c18fc8963abe6964c50c6353402d863749"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/music-tracks.ts",
+      "sha256": "009856fd6eb8620464bb94174364c5406ee2358d6d25463e059d3c0ea4b90ac2"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/page-templates.ts",
+      "sha256": "5544f262319ea92096be80795822507b78e610c808a75f5d40c44eefc981ae85"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/privacy.ts",
+      "sha256": "769cb6294f035621fc9bad4035635e424ef6462fd12fb71974b42522b1184948"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/qr.ts",
+      "sha256": "468fe5e24a297b9453411e746dcd263daf93f6eabbc253b0666bf1f1af4d30a1"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/share-link.ts",
+      "sha256": "281ee9bb668d64ecd8ce911bf6a03475091b09fbd55164eac0f2d41ecf8d7c0f"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/text-fonts.ts",
+      "sha256": "b7113cfb8fab67d9f92c72102a2fda62be279704d4f82bfb407f8c6c55412a5b"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/text-presets.ts",
+      "sha256": "b6b8b97df188506e4683f3cec33f78c0df00263978ab4d6436da9f0e256b67fa"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/editor/video-link.ts",
+      "sha256": "c667f32eea7bb03ef9a62ba57c6560f417a10caf15c0715e63285cd70ccc072c"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/mock/swatches.ts",
+      "sha256": "17592621704193965d4a7707cf54c17992e3826e11e822fd0f51de2b6e2a3c71"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/mock/wishes.ts",
+      "sha256": "a30820f9abb17c2fdcedbd76e10f5d8355f9f2b888fd1c76936040d51e856fce"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/lib/types/editor.ts",
+      "sha256": "fbf89fe946af6e7a0629da55f396b01029ac6eace70aac1209a7af785d0f09fe"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/test/canvas-geometry.spec.ts",
+      "sha256": "2b029b8f8e16caaee111f6b3a40bcb0972830221abe2f2f40ce84a298866efb0"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/test/draft-storage.spec.ts",
+      "sha256": "88f45f3b9e1b4fad7cb6728de9aaf60b80e07a57002e20950a5a9bdb71d89031"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/test/editor-advanced-tools.spec.ts",
+      "sha256": "46d955481bb6c69c751d5342ab461c698e41ea3a7f64b3bc3c71354a192e7cf6"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/test/editor-element.spec.tsx",
+      "sha256": "f0c759b790c2c926745141866eeae0773bd6cf017fb927dc0660cb3d384e25f1"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/test/editor-view.spec.tsx",
+      "sha256": "02abc64d5dae2a09109a566937aae6a832bf1c8e2158cd13283466a72cdf4935"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/test/export-image.spec.ts",
+      "sha256": "51e87994c559404f6938c705769a8a4208422d8a45c47bab794b77dac391f637"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/test/finish-checklist.spec.ts",
+      "sha256": "17012b798a31ee6eae3bad606c824d8cee9e6160b6bdbcbe58186ecd6e280621"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/test/privacy.spec.ts",
+      "sha256": "e90fae4bb13f0801399cd93037808d4e94e438c63d86374b7bcd8fd97e149312"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/test/setup.ts",
+      "sha256": "9d4b2332779fa185f91771917bd96eb5e64ab6e0e03720e26038ca48612f3267"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/test/share-link.spec.ts",
+      "sha256": "af6b868a98ad380ece9ac0b4ee8180018849453432b7c551647cdecb2df3c6d6"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/test/use-card-editor.spec.ts",
+      "sha256": "6b1c547ca1a6431646992d9d24bf00228c4a30e47510bf00823681e07e70c279"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/test/element-and-page-operations.spec.ts",
+      "sha256": "d3066f9bb7026bdf8981c083389408239850f25002fd6d9c9c1ad81481bdda0f"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/packages/editor-core/src/card-document.ts",
+      "sha256": "48e8d29eebc9f66e28be620a1585bdb83ed19bf9a1cf0e29c962f3cb4ff2ed1a"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/packages/editor-core/test/card-document.spec.ts",
+      "sha256": "5b10f19551d4b5c83afcd091c1b428aaacec4d4946ced4458c0a97668ba6223b"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/capture-fidelity.mjs",
+      "sha256": "e597b53507a2a5365067f83e7979e2c9847b6ff98f480a19fceaa8dbc237ebaf"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/export-browser-smoke.mjs",
+      "sha256": "3a0691b1278fedc30bb75c72608a9af2348597c7fb3070b193e40631693c3960"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/export-browser-smoke.json",
+      "sha256": "b5d110f22c8eabccc8206ce1148e56f5118f5388ca0bed2c73e0f77f18a85bfa"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity-matrix.json",
+      "sha256": "b09ecd581b02e158cd2eedf000b0afc9be944b1f1866c561ef19af5ca6dc9cfe"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-dialog-375x812.png",
+      "sha256": "b1e64fb9f0b95372cbc9ac70d14ce120231e711720ba81499f1a1e67a3f3e6ef"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-editor-1440x900.png",
+      "sha256": "e90be9718e21d52edc52c4281d06636b4842769fab5bb0a8d14d3da1859773ea"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-editor-375x812.png",
+      "sha256": "9bbb4c7c76a050468fe52876d161ab4ba9c04b7b5abd901b61354d67c979903c"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-editor-768x1024.png",
+      "sha256": "b58dc8be96fc53f8dc4253154b53ef2c056ee46e09508f240075493f3e439729"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-finish-1440x900.png",
+      "sha256": "3c594fdf23b9900e397704d188df9ed497c663d09f35673c3090b5ff79f6d475"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-finish-375x812.png",
+      "sha256": "ba36fe3236e3bea1b0cce5390dc49722519d11e547f32efae3edcf48c2a37202"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-populated-1440x900.png",
+      "sha256": "c345b51cf3d0bfa3f23c3aad0eb40f96320c6b70dcdd9f45dcb7a2cae69ea0f4"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-populated-375x812.png",
+      "sha256": "2875aee964e0754c58fd8af77bc9451646b0fbb87d35968bb577a386da737742"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-populated-768x1024.png",
+      "sha256": "f814283a060ead4505d6084f19b899c167166d6e04c8d62eb681f75b9b726bd2"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-preview-1440x900.png",
+      "sha256": "76afab250e3688909c24acfe5134dfef7ce51da0effc6a68574d92cc6098679e"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-tablet-drawer-768x1024.png",
+      "sha256": "8322c3fc2d62a4e0c315d1c4b3dfdc1f8de6222c42bfa395cb526e88bbc9fbbc"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-dialog-375x812.png",
+      "sha256": "1c02ccc3398fdd9d22a902a3770c20b72c836a5b0c0fbf3c6f5d37d5e8c7483a"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-editor-1440x900.png",
+      "sha256": "2713e511623a39df046bbe7a09c83cb978ca4057c6886c819e02f5db13cebfeb"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-editor-375x812.png",
+      "sha256": "dad47a46d5c0c159b94e93260de8f7f53e617e1ebee0acb6cfed5f8e3104236b"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-editor-768x1024.png",
+      "sha256": "079add83b9c2ddab944e5f6ea35ede699b07441de31c1df3973a320caa1fe050"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-finish-1440x900.png",
+      "sha256": "f2ae40ef6ac7a650cc6f51d41c1bebfb1560be0de62ad1376c1e756e8e613e71"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-finish-375x812.png",
+      "sha256": "174d6b0df0bc84775d42ba7d76be6a52e8ec8337ff0e25c17075b13b71a5be6d"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-populated-1440x900.png",
+      "sha256": "b8e8e1d818563d8b0516f744effec89baf5f17d3c1db16dd32656bc5fa7c4416"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-populated-375x812.png",
+      "sha256": "97f281ca418e206e7987ad37cdd7bb88cf19b9996adae38e2f5d62217fb48127"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-populated-768x1024.png",
+      "sha256": "471f4f424af86efb9f69f91b71ae5658a0c7bc83a1a072ab33dd9751bbb2e033"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/package.json",
+      "sha256": "534e329238278465470d22e7bf6fc947bc937c1a86e7ac6aa29875814c8b5243"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/package-lock.json",
+      "sha256": "b03724196be9fb0b065a47c0b941dd7aa1e19092aae72920f257bc47591dc956"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/packages/editor-core/src/index.ts",
+      "sha256": "9dd91c32db8b70494c9526ce8e9fc75c0a356dd032625bf1e95aa5c4cb8c1181"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-preview-1440x900.png",
+      "sha256": "aff912985f6b8157e37b837cb3cddad68be186fbe3fa7fc89594c104de78245a"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-tablet-drawer-768x1024.png",
+      "sha256": "079add83b9c2ddab944e5f6ea35ede699b07441de31c1df3973a320caa1fe050"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/apps/public-web/components/editor/editor-leave-confirm-dialog.tsx",
+      "sha256": "2df71d7ade012ecbc96b1fb6fa27dd6b480f1933be50169bc1b901285ba21a0b"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/check-acceptance-evidence-freshness.mjs",
+      "sha256": "32f21be1ca637e65dc7c6640139d6e41232cf766bad7b37b619ff8919c242145"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/.ai/validation/skills/acceptance-evidence.json",
+      "sha256": "db0aade0e88b76bfa0877548f6194444b87aff79490f551caa09e9409f300cb8"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "logs/lint.log",
+      "sha256": "6448c0f5dcdda21bd68bbe4515d9ee94de33ae2cf17903fc387dbaccae786aab"
+    },
+    {
+      "path": "logs/typecheck.log",
+      "sha256": "930874a63892d5a8444adfb8d7e88db4b3f73569e70baa31dcb0f8ee81123048"
+    },
+    {
+      "path": "logs/test.log",
+      "sha256": "60649cbb9837011d359be310d48342be9f59657f7f2cf91b0cd187fbfa29a356"
+    },
+    {
+      "path": "logs/build.log",
+      "sha256": "046d6f662d4cd9e3a2704192715e6e02927c4ad5f9190cd2b1c89c733be8ab49"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/.ai/validation/frontend.json",
+      "sha256": "067c6da25b928122aa357d3dacdc060522628c6b342385bff8c0cd46db279815"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/.ai/validation/summary.json",
+      "sha256": "fe5420ee080202bcaa3e5d64eccf91b7f9b9a5837f0306d263f4aec8e9634dc4"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/export-browser-smoke.json",
+      "sha256": "b5d110f22c8eabccc8206ce1148e56f5118f5388ca0bed2c73e0f77f18a85bfa"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity-matrix.json",
+      "sha256": "b09ecd581b02e158cd2eedf000b0afc9be944b1f1866c561ef19af5ca6dc9cfe"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-editor-375x812.png",
+      "sha256": "dad47a46d5c0c159b94e93260de8f7f53e617e1ebee0acb6cfed5f8e3104236b"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-editor-375x812.png",
+      "sha256": "9bbb4c7c76a050468fe52876d161ab4ba9c04b7b5abd901b61354d67c979903c"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-editor-768x1024.png",
+      "sha256": "079add83b9c2ddab944e5f6ea35ede699b07441de31c1df3973a320caa1fe050"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-editor-768x1024.png",
+      "sha256": "b58dc8be96fc53f8dc4253154b53ef2c056ee46e09508f240075493f3e439729"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-editor-1440x900.png",
+      "sha256": "2713e511623a39df046bbe7a09c83cb978ca4057c6886c819e02f5db13cebfeb"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-editor-1440x900.png",
+      "sha256": "e90be9718e21d52edc52c4281d06636b4842769fab5bb0a8d14d3da1859773ea"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-dialog-375x812.png",
+      "sha256": "1c02ccc3398fdd9d22a902a3770c20b72c836a5b0c0fbf3c6f5d37d5e8c7483a"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-dialog-375x812.png",
+      "sha256": "b1e64fb9f0b95372cbc9ac70d14ce120231e711720ba81499f1a1e67a3f3e6ef"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/.ai/validation/skills/design-system-usage.log",
+      "sha256": "9c92db79fb09913e0dff1a6fb58fdaf6d6b025c01e8b49d22a205869621ac5b9"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/.ai/validation/skills/prototype-migration.log",
+      "sha256": "799d55c9ffb4f0c944876bb827befbc8fdfbf6aa29a2e981c184ecaf1df0d386"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-finish-1440x900.png",
+      "sha256": "3c594fdf23b9900e397704d188df9ed497c663d09f35673c3090b5ff79f6d475"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-finish-375x812.png",
+      "sha256": "ba36fe3236e3bea1b0cce5390dc49722519d11e547f32efae3edcf48c2a37202"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-populated-1440x900.png",
+      "sha256": "c345b51cf3d0bfa3f23c3aad0eb40f96320c6b70dcdd9f45dcb7a2cae69ea0f4"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-populated-375x812.png",
+      "sha256": "2875aee964e0754c58fd8af77bc9451646b0fbb87d35968bb577a386da737742"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-populated-768x1024.png",
+      "sha256": "f814283a060ead4505d6084f19b899c167166d6e04c8d62eb681f75b9b726bd2"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-preview-1440x900.png",
+      "sha256": "76afab250e3688909c24acfe5134dfef7ce51da0effc6a68574d92cc6098679e"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-tablet-drawer-768x1024.png",
+      "sha256": "8322c3fc2d62a4e0c315d1c4b3dfdc1f8de6222c42bfa395cb526e88bbc9fbbc"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-finish-1440x900.png",
+      "sha256": "f2ae40ef6ac7a650cc6f51d41c1bebfb1560be0de62ad1376c1e756e8e613e71"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-finish-375x812.png",
+      "sha256": "174d6b0df0bc84775d42ba7d76be6a52e8ec8337ff0e25c17075b13b71a5be6d"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-populated-1440x900.png",
+      "sha256": "b8e8e1d818563d8b0516f744effec89baf5f17d3c1db16dd32656bc5fa7c4416"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-populated-375x812.png",
+      "sha256": "97f281ca418e206e7987ad37cdd7bb88cf19b9996adae38e2f5d62217fb48127"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-populated-768x1024.png",
+      "sha256": "471f4f424af86efb9f69f91b71ae5658a0c7bc83a1a072ab33dd9751bbb2e033"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-preview-1440x900.png",
+      "sha256": "aff912985f6b8157e37b837cb3cddad68be186fbe3fa7fc89594c104de78245a"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-tablet-drawer-768x1024.png",
+      "sha256": "079add83b9c2ddab944e5f6ea35ede699b07441de31c1df3973a320caa1fe050"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-finish-768x1024.png",
+      "sha256": "4cd9b33d1a12e3196491455271aefc1e6d295b141bae37323ba9bc1de171c13e"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-preview-dialog-desktop-1440x900.png",
+      "sha256": "f92e18afe5a7048f7c5e0fa55781e0a6e8b5222ba8faff0444781b38857cd24b"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-preview-dialog-tablet-1440x900.png",
+      "sha256": "c8c0e5e18c085901b9ea8d82a04009f265b6bcfd156013f8930dac604d3232f1"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/actual-upload-error-768x1024.png",
+      "sha256": "36879a50242deb1103c2754ff74da247d0cc31f817be47f97dbaa42166892c8f"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-finish-768x1024.png",
+      "sha256": "4106dbed0a3246c85dd41fdaa168bd1d03ab26b32f1381e19f6d5d27034a5819"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-preview-dialog-desktop-1440x900.png",
+      "sha256": "927dc8319f721945a832db739aaeaff21858851e091bac6a75e3cc620a7a4953"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-preview-dialog-tablet-1440x900.png",
+      "sha256": "233d0a79fb8930e590d77c64bf4e5520521d89ecbdcf5157966d52f2fd395313"
+    },
+    {
+      "path": "../../../../worktrees/MEMORIES-0010/frontend/.ai/validation/fidelity/reference-upload-error-768x1024.png",
+      "sha256": "b38b3a6de5ffc462f1d0bf39f997d38f0f7c650ed309accc538d6c4112a1cab0"
+    }
+  ],
+  "validation_artifact_refresh": {
+    "command": "./ai/bin/ai task validate-code MEMORIES-0010 --tier full",
+    "generated_at": "2026-09-03T11:04:02+07:00",
+    "artifacts": [
+      "frontend.json",
+      "summary.json"
+    ]
+  }
+}

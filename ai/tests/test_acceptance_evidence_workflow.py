@@ -34,6 +34,27 @@ def load_ai_common_module():
 
 
 class AcceptanceEvidenceWorkflowTest(unittest.TestCase):
+    def test_evidence_matrix_supports_task_defined_criteria(self) -> None:
+        script = AI_ROOT / "skills" / "review-vertical-slice-completeness" / "scripts" / "build_evidence_matrix.py"
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            plan = root / "plan.json"
+            implementation = root / "implementation.json"
+            output = root / "matrix.json"
+            plan.write_text(json.dumps({"slices": [{"id": "smoke", "acceptance_criteria": ["Smoke pipeline completes"]}]}))
+            implementation.write_text(json.dumps({"acceptance_criteria": [{"criterion": "slice:smoke", "status": "passed", "evidence": "fixture"}]}))
+
+            result = subprocess.run(
+                [str(script), str(plan), str(implementation), "--output", str(output)],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                check=False,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertTrue(json.loads(output.read_text())["passed"])
+
     def test_delivery_gates_run_evidence_freshness_for_backend_review(self) -> None:
         module = load_ai_common_module()
         with tempfile.TemporaryDirectory() as temp:
@@ -152,6 +173,166 @@ class AcceptanceEvidenceWorkflowTest(unittest.TestCase):
         self.assertTrue(module.is_no_progress_failure(1, "failed", "same", "same"))
         self.assertFalse(module.is_no_progress_failure(0, "prepared", "same", "same"))
         self.assertFalse(module.is_no_progress_failure(1, "failed", "before", "after"))
+
+    def test_quick_validation_completion_advances_to_next_slice(self) -> None:
+        module = load_run_task_module()
+        with tempfile.TemporaryDirectory() as temp:
+            task_dir = Path(temp)
+            (task_dir / "execution-plan.json").write_text(
+                json.dumps(
+                    {
+                        "slices": [
+                            {"id": "first", "status": "pending", "depends_on": []},
+                            {"id": "second", "status": "pending", "depends_on": ["first"]},
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (task_dir / "implementation-progress.json").write_text(
+                json.dumps(
+                    {
+                        "current_slice": "first",
+                        "completed_criteria": ["slice:first"],
+                        "current_step": "done",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (task_dir / "implementation.json").write_text(
+                json.dumps(
+                    {
+                        "acceptance_criteria": [
+                            {"criterion": "slice:first", "status": "passed", "evidence": "verified"}
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            completed = module.complete_validated_execution_slice(
+                task_dir, {"last_completed_slice": "first"}
+            )
+
+            self.assertEqual(completed, "first")
+            plan = json.loads((task_dir / "execution-plan.json").read_text())
+            self.assertEqual(plan["slices"][0]["status"], "completed")
+            progress = json.loads((task_dir / "implementation-progress.json").read_text())
+            self.assertEqual(progress["current_slice"], "second")
+
+    def test_quick_validation_completion_requires_consistent_evidence(self) -> None:
+        module = load_run_task_module()
+        with tempfile.TemporaryDirectory() as temp:
+            task_dir = Path(temp)
+            (task_dir / "execution-plan.json").write_text(
+                json.dumps({"slices": [{"id": "first", "status": "pending", "depends_on": []}]}),
+                encoding="utf-8",
+            )
+            (task_dir / "implementation-progress.json").write_text(
+                json.dumps({"current_slice": "first", "completed_criteria": []}),
+                encoding="utf-8",
+            )
+            (task_dir / "implementation.json").write_text(
+                json.dumps({"acceptance_criteria": []}), encoding="utf-8"
+            )
+
+            with self.assertRaisesRegex(SystemExit, "missing passed evidence key slice:first"):
+                module.complete_validated_execution_slice(
+                    task_dir, {"last_completed_slice": "first"}
+                )
+
+            plan = json.loads((task_dir / "execution-plan.json").read_text())
+            self.assertEqual(plan["slices"][0]["status"], "pending")
+
+    def test_quick_validation_completion_rejects_advanced_checkpoint_even_if_plan_completed(self) -> None:
+        module = load_run_task_module()
+        with tempfile.TemporaryDirectory() as temp:
+            task_dir = Path(temp)
+            (task_dir / "execution-plan.json").write_text(
+                json.dumps(
+                    {
+                        "slices": [
+                            {"id": "first", "status": "completed", "depends_on": []},
+                            {"id": "second", "status": "pending", "depends_on": ["first"]},
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (task_dir / "implementation-progress.json").write_text(
+                json.dumps(
+                    {
+                        "current_slice": "second",
+                        "completed_criteria": ["slice:first"],
+                        "current_step": "implemented",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (task_dir / "implementation.json").write_text(
+                json.dumps(
+                    {
+                        "acceptance_criteria": [
+                            {"criterion": "slice:first", "status": "passed", "evidence": "verified"}
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(SystemExit, "expected orchestrator-owned slice 'first'"):
+                module.complete_validated_execution_slice(
+                    task_dir, {"last_completed_slice": "first"}
+                )
+
+            progress = json.loads((task_dir / "implementation-progress.json").read_text())
+            self.assertEqual(progress["current_slice"], "second")
+
+    def test_quick_validation_completion_rejects_non_orchestrator_slice_advance(self) -> None:
+        module = load_run_task_module()
+        with tempfile.TemporaryDirectory() as temp:
+            task_dir = Path(temp)
+            (task_dir / "execution-plan.json").write_text(
+                json.dumps(
+                    {
+                        "slices": [
+                            {"id": "first", "status": "pending", "depends_on": []},
+                            {"id": "second", "status": "pending", "depends_on": ["first"]},
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (task_dir / "implementation-progress.json").write_text(
+                json.dumps(
+                    {
+                        "current_slice": "second",
+                        "completed_criteria": ["slice:first"],
+                        "current_step": "ready for second",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (task_dir / "implementation.json").write_text(
+                json.dumps(
+                    {
+                        "acceptance_criteria": [
+                            {"criterion": "slice:first", "status": "passed", "evidence": "verified"}
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(SystemExit, "expected orchestrator-owned slice 'first'"):
+                module.complete_validated_execution_slice(
+                    task_dir, {"last_completed_slice": "first"}
+                )
+
+            plan = json.loads((task_dir / "execution-plan.json").read_text())
+            self.assertEqual(plan["slices"][0]["status"], "pending")
+            progress = json.loads((task_dir / "implementation-progress.json").read_text())
+            self.assertEqual(progress["current_slice"], "second")
 
     def test_repository_fingerprint_detects_code_progress(self) -> None:
         module = load_run_task_module()

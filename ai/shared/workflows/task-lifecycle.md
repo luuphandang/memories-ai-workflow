@@ -1,9 +1,10 @@
 # Task Lifecycle
 
 ```text
-backlog → ready → prepared → implementing → validating → reviewing
+backlog → ready → prepared → implementing → implementation_ready_for_validation → validating → reviewing
                                               ↑             │
                                               └─ changes_requested_by_codex
+                                              └─ changes_requested_by_validation
 reviewing + gates pass → awaiting_user_acceptance
 awaiting_user_acceptance ├─ accept → completed
                          └─ request correction → changes_requested_by_user
@@ -17,9 +18,12 @@ Any active state → interrupted (có thể retry/resume) | needs_input | blocke
 - `ready`: yêu cầu tối thiểu và quan hệ Jira hợp lệ.
 - `prepared`: context đã khóa hash, worktree hợp lệ, base/current SHA đã ghi.
 - `implementing`: Claude đang thay đổi code.
+- `implementation_ready_for_validation`: handoff của slice hiện hành đã hợp lệ; orchestrator
+  phải resume từ validation và tuyệt đối không gọi lại implementer cho cùng handoff.
 - `validating`: validation deterministic đang chạy.
 - `reviewing`: có handoff và kết quả validation để Codex đánh giá.
 - `changes_requested_by_codex`: Codex có finding cần sửa.
+- `changes_requested_by_validation`: deterministic validation đã tạo checklist lỗi và chờ implementer sửa/retest.
 - `awaiting_user_acceptance`: validation pass, Codex pass, báo cáo đã sinh nhưng người dùng chưa xác nhận.
 - `changes_requested_by_user`: người dùng yêu cầu chỉnh sửa trước khi nghiệm thu.
 - `completed`: người dùng đã xác nhận vòng hiện hành.
@@ -29,4 +33,6 @@ Any active state → interrupted (có thể retry/resume) | needs_input | blocke
 - `blocked`: thiếu quyền/phụ thuộc hoặc vượt số vòng review cho phép.
 - `failed`: lỗi pipeline hoặc hồ sơ task không hợp lệ.
 
-`review_cycle` được reset khi bắt đầu một change cycle mới; `review_cycles_total` giữ tổng lịch sử.
+`review_cycle` đếm mọi lần gọi reviewer và được reset khi bắt đầu change cycle mới;
+`review_cycles_total` giữ tổng lịch sử. `fix_cycle` chỉ tăng khi một fix request thực sự được
+tạo và là counter dùng cho `review.max_fix_cycles` (fallback tương thích: `max_cycles`).

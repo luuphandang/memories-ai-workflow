@@ -1,0 +1,130 @@
+{
+  "task_id": "MEMORIES-0011",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "status": "ready",
+  "slices": [
+    {
+      "id": "ngu-n-d-li-u-v-contract-truy-v-n",
+      "title": "Tích hợp typed API cho hai homepage teaser",
+      "depends_on": [],
+      "acceptance_criteria": ["AC1", "AC2"],
+      "requirement_details": {
+        "AC1": [
+          "TemplatesTeaser dùng useCardTemplates với popular/page 1/pageSize 6 và mapCardTemplate",
+          "Loại runtime dependency vào CARD_TEMPLATES; không direct fetch hoặc mock fallback"
+        ],
+        "AC2": [
+          "GiftsTeaser dùng useProducts với popular/page 1/pageSize 6 và mapProduct",
+          "Loại runtime dependency vào GIFT_PRODUCTS; giữ API order và tối đa 6 item"
+        ]
+      },
+      "deliverables": [
+        "Hai teaser dùng typed client, shared query hooks, mappers và query keys hiện có",
+        "Hai query độc lập, không thay backend hoặc generated OpenAPI contract"
+      ],
+      "tests": [
+        "Provider-backed tests chứng minh endpoint/query params, mapping, API order và giới hạn 6",
+        "Static/runtime assertion chứng minh hai teaser không còn đọc production mock catalog"
+      ],
+      "validation": [
+        "npm run lint --workspaces --if-present",
+        "npm run typecheck --workspaces --if-present",
+        "Targeted public-web homepage tests"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "tr-ng-th-i-ui-v-d-li-u-t-y-ch-n",
+      "title": "Hoàn thiện query states và dữ liệu nullable",
+      "depends_on": ["ngu-n-d-li-u-v-contract-truy-v-n"],
+      "acceptance_criteria": ["AC4", "AC5"],
+      "requirement_details": {
+        "AC4": [
+          "Initial loading, background refetch, error/retry và empty state accessible cho từng teaser",
+          "Failure/empty độc lập và không được silent fallback sang mock"
+        ],
+        "AC5": [
+          "Template chỉ hiển thị access-tier label do API cung cấp, không suy diễn numeric price",
+          "Product xử lý image/rating/description/variant nullable và chặn cart khi unavailable"
+        ]
+      },
+      "deliverables": [
+        "Loading, updating, error/retry và empty presentation giữ CTA catalog",
+        "Truthful nullable/unavailable rendering cho template và product cards"
+      ],
+      "tests": [
+        "Tests initial loading, background refetch, section-scoped error + retry, empty và query independence",
+        "Tests missing image/rating/variant, tier label và unavailable add-to-cart guard"
+      ],
+      "validation": [
+        "npm run lint --workspaces --if-present",
+        "npm run typecheck --workspaces --if-present",
+        "Targeted public-web homepage tests"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "interaction-v-kh-ng-regression-homepage",
+      "title": "Giữ interaction và homepage composition",
+      "depends_on": ["tr-ng-th-i-ui-v-d-li-u-t-y-ch-n"],
+      "acceptance_criteria": ["AC3", "AC6"],
+      "requirement_details": {
+        "AC3": [
+          "Style tabs được tạo và lọc từ mapped API response; stale selection được reset an toàn",
+          "Preview, favorite và cart dùng canonical API id/object qua ShopProvider"
+        ],
+        "AC6": [
+          "Giữ 11 section, heading/CTA, card composition, responsive grid, keyboard và semantics hiện có",
+          "Các CTA catalog vẫn đúng route trong mọi query state"
+        ]
+      },
+      "deliverables": [
+        "API-backed template filter và shared-store interactions",
+        "Homepage composition không thay đổi ngoài catalog content động"
+      ],
+      "tests": [
+        "Tests dynamic styles, aria-pressed, stale style reset, preview, favorite và cart badges",
+        "Regression tests section order, heading/CTA, grid classes, routes và max-card count"
+      ],
+      "validation": [
+        "npm run lint --workspaces --if-present",
+        "npm run typecheck --workspaces --if-present",
+        "Targeted public-web homepage tests"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "tests-v-handoff",
+      "title": "Full validation và implementation handoff",
+      "depends_on": ["interaction-v-kh-ng-regression-homepage"],
+      "acceptance_criteria": ["AC7", "AC8"],
+      "requirement_details": {
+        "AC7": [
+          "Provider-backed automated suite bao phủ toàn bộ behavior và regression đã khóa",
+          "Tests không mock query hooks theo cách bỏ qua serialization, mapper hoặc query state"
+        ],
+        "AC8": [
+          "Frontend lint, typecheck, test và build đều pass từ source state cuối",
+          "Exact changed-file handoff và provenance evidence khớp implementation hiện tại"
+        ]
+      },
+      "deliverables": [
+        "Hoàn chỉnh test suite và sửa mọi regression trong phạm vi",
+        "Implementation handoff, validation results và provenance manifest theo workflow"
+      ],
+      "tests": [
+        "Run complete frontend workspace test suite",
+        "Verify all AC1-AC8 rows have current evidence"
+      ],
+      "validation": [
+        "npm run lint --workspaces --if-present",
+        "npm run typecheck --workspaces --if-present",
+        "npm run test --workspaces --if-present",
+        "npm run build --workspaces --if-present",
+        "Required verify-implementation-handoff and validate-evidence-provenance checks"
+      ],
+      "status": "pending"
+    }
+  ]
+}

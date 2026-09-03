@@ -146,6 +146,8 @@ một lần**, mục **11 Chuẩn bị CodeGraph, plan, skill và context**, và
 | Full validation | Toàn bộ validation bắt buộc trước khi Codex review |
 | Delta review | Review correction và dependency trực tiếp, chỉ dùng khi phạm vi không nhạy cảm |
 | Full review | Review đầy đủ bảy lượt trên toàn bộ implementation hiện hành |
+| Review baseline | Contract requirement/risk/test được khóa từ full review đầu tiên để review sau không âm thầm mở rộng goalpost |
+| Implementation checklist | Danh sách machine-readable trong `implementation-progress.json`, mỗi item có trạng thái và evidence |
 
 ## 3. Quy ước placeholder
 
@@ -394,7 +396,7 @@ ai/tasks/<ID>/context.yaml
 
 ```yaml
 review:
-  max_cycles: 5
+  max_fix_cycles: 5
   fail_on: [blocker, major]
 report:
   language: vi
@@ -405,7 +407,8 @@ report:
   include_knowledge_updates: true
 ```
 
-- `review.max_cycles`: số lần review tối đa trong một implementation cycle. Nếu review vẫn không đạt khi chạm giới hạn, `request-fixes` chuyển task sang `blocked`.
+- `review.max_fix_cycles`: số fix request thực tế tối đa trong một implementation cycle;
+  delta/full review invocation không tiêu thụ counter này. `max_cycles` cũ vẫn là fallback tương thích.
 - `review.fail_on`: các severity được xem là finding chặn. Giá trị hỗ trợ: `blocker`, `major`, `minor`, `note`. Giá trị này được dùng trong prompt Codex, `request-fixes`, `finalize-task` và `accept-task`.
 - `report.language`: `vi` hoặc `en`.
 - Các field `report.include_*`: bật/tắt từng section trong `final-report.md`.
@@ -534,7 +537,8 @@ Pipeline vận hành theo luồng tiết kiệm token:
 
 ```text
 chọn một runnable slice
-→ fresh Claude session có giới hạn turn
+→ fresh bounded Claude session cho đúng một slice
+→ implementation_ready_for_validation
 → quick validation
 → slice tiếp theo
 → full validation sau slice cuối
@@ -547,11 +551,22 @@ chọn một runnable slice
 
 Mỗi Claude session chỉ được xử lý một slice. Script tạo compact context bundle tại `worktrees/<ID>/.ai/input/slice-context-<slice>.json`; agent đọc bundle trước và chỉ mở knowledge/requirement liên quan khi cần. Evidence và changed files của slice đã hoàn thành phải được merge vào `implementation.json`, không được ghi đè bằng dữ liệu của riêng slice hiện tại.
 
+Claude chỉ sửa source, test, handoff và checkpoint; không sở hữu trạng thái trong
+`execution-plan.json`. Chỉ orchestrator được chuyển slice sang `completed` sau quick
+validation. Nếu pipeline dừng sau handoff, trạng thái `implementation_ready_for_validation`
+giúp lần chạy sau tiếp tục thẳng từ validation, không gọi Claude lại cho cùng slice.
+Task cũ/interrupted có slice completed nhưng thiếu progress/handoff evidence sẽ được tự
+reconcile về `in_progress` hoặc `pending`.
+
 Danh sách requirement document đưa vào implement/review chỉ gồm `task.md` cùng
 addendum của các cycle *chưa gộp* (xem mục 17 về `consolidate-requirements`); addendum
 đã gộp không bị đọc lại mỗi session nữa.
 
-Validation failure được chuyển thành fix request giới hạn tối đa 40 dòng output liên quan và trỏ về artifact đầy đủ. Khi Codex pass, pipeline sinh report và dừng ở `awaiting_user_acceptance`; pipeline không tự accept task.
+Validation failure được chuyển thành structured checklist và fix request giới hạn tối đa
+40 dòng output liên quan. Correction được phân loại `code_or_test`, `evidence_or_handoff`
+hoặc `validation`; evidence-only correction bị cấm sửa source để tránh tự làm stale evidence.
+Khi Codex pass, reviewer vẫn giữ trạng thái `reviewing`; chỉ `report` sinh thành công mới
+chuyển sang `awaiting_user_acceptance`. Pipeline không tự accept task.
 
 Tuỳ chọn kiểm soát:
 
@@ -560,7 +575,7 @@ Tuỳ chọn kiểm soát:
 ./ai/bin/ai task run PROJ-1002 --resume-interrupted --max-interrupted-retries 1
 ```
 
-Không bật `--resume-interrupted` cho đến khi quota hoặc lỗi availability đã được giải quyết. Pipeline dừng khi chạm `review.max_cycles`, `--max-attempts`, gặp `blocked`/`needs_input`, hoặc gặp lỗi không thể retry.
+Không bật `--resume-interrupted` cho đến khi quota hoặc lỗi availability đã được giải quyết. Pipeline dừng khi chạm `review.max_fix_cycles`, `--max-attempts`, gặp `blocked`/`needs_input`, hoặc gặp lỗi không thể retry.
 
 Xem metrics cục bộ bằng:
 
@@ -624,7 +639,12 @@ Review mode:
 
 Codex reasoning effort được chọn theo risk trong context lock: task ít rủi ro dùng `low`, task lớn dùng `medium`, còn security/database/API/background dùng `high`. Delta review dùng `medium`. Trong pipeline tự động, delta pass luôn được xác nhận lại bằng một final full review trước khi sinh report.
 
-Nếu Codex yêu cầu sửa, lưu ý `review.max_cycles` áp dụng cho implementation cycle hiện hành. Mặc định là `5`: nếu lần review thứ năm vẫn không đạt, `request-fixes` chuyển task sang `blocked` và cần người dùng quyết định bổ sung thông tin, đổi yêu cầu hoặc xử lý thủ công.
+Full review đầu tiên sinh `review-baseline.json`, khóa acceptance criteria, risk area và
+test contract. Review sau phải gắn finding mới với correction diff; nếu cần mở rộng input/
+behavior contract thì trả `blocked` như requirement gap, không âm thầm gửi goalpost mới cho Claude.
+
+Nếu Codex yêu cầu sửa, `review.max_fix_cycles` áp dụng cho số fix request thực tế trong
+implementation cycle hiện hành. Mặc định là `5`; review retry/delta/final-full có counter riêng.
 
 ```bash
 ./ai/bin/ai task request-fixes PROJ-1002
@@ -661,9 +681,19 @@ Kiểm tra:
 Nếu kết quả đúng:
 
 ```bash
+# Cách tối giản (`--accepted-by` mặc định là `user`)
+./ai/bin/ai task accept PROJ-1002
+
+# Hoặc ghi rõ người nghiệm thu và ghi chú
 ./ai/bin/ai task accept PROJ-1002 \
   --accepted-by "Tên người xác nhận" \
   --note "Đã kiểm tra trên môi trường local/dev"
+```
+
+Thay `PROJ-1002` bằng ID task thực tế, ví dụ:
+
+```bash
+./ai/bin/ai task accept MEMORIES-0009
 ```
 
 Kết quả:
@@ -907,10 +937,12 @@ Nếu task được reopened, knowledge phát sinh từ cycle mới chỉ áp d�
 | `ready` | Hồ sơ mới tạo |
 | `prepared` | Context và worktree đã kiểm tra |
 | `implementing` | Claude đang triển khai |
+| `implementation_ready_for_validation` | Handoff slice hợp lệ; lần chạy/restart tiếp tục từ validation, không gọi lại Claude |
 | `interrupted` | Implementation bị gián đoạn; có thể resume session hoặc tiếp tục từ checkpoint và Git diff |
 | `validating` | Đang chạy kiểm tra deterministic |
 | `reviewing` | Codex đang/đã review, chưa sinh acceptance report |
 | `changes_requested_by_codex` | Codex yêu cầu sửa kỹ thuật |
+| `changes_requested_by_validation` | Validation đã tạo checklist lỗi và chờ remediation tự động |
 | `awaiting_user_acceptance` | Đã pass kỹ thuật, chờ người dùng xác nhận |
 | `changes_requested_by_user` | Người dùng yêu cầu correction trước nghiệm thu |
 | `completed` | Người dùng đã xác nhận vòng hiện hành |
@@ -987,11 +1019,11 @@ detail. Xem danh sách ngắn bằng `./ai/bin/ai --help`. Bảng dưới đây 
 
 | Lệnh | Chức năng và tùy chọn |
 |---|---|
-| `ai task run <ID>` | Pipeline tự động implement → quick/full validation → review/fix → final full review → report. `--dry-run` không tạo bằng chứng đủ điều kiện nghiệm thu; `--max-attempts N` giới hạn attempt trong lần chạy; `--resume-interrupted` cho phép retry phiên Claude bị gián đoạn; `--max-interrupted-retries N` mặc định `1`. |
+| `ai task run <ID>` | Pipeline tự động implement → resume-at-validation → quick/full validation → review/fix → final full review → report. Handoff hợp lệ không bị implement lại khi restart. `--dry-run` không tạo bằng chứng đủ điều kiện nghiệm thu; `--max-attempts N` giới hạn attempt trong lần chạy; `--resume-interrupted` cho phép retry phiên Claude bị gián đoạn; `--max-interrupted-retries N` mặc định `1`. |
 | `ai task implement <ID>` | Chạy một Claude implement session/slice. `--dry-run` không gọi CLI; `--print-command` in command đã dựng để chẩn đoán. Nếu có session/checkpoint hợp lệ, lần gọi sau có thể resume. |
 | `ai task validate-code <ID>` | Chạy command trong `ai/repos/<repo>/commands.yaml`. `--tier quick|full` (mặc định `full`); `--dry-run` chỉ lập kế hoạch; `--include-optional` chạy cả command `required: false`; `--command <NAME>` chỉ chạy tên được chọn và có thể lặp option. Chỉ full validation thật mới đủ gate review/accept. |
 | `ai task review <ID>` | Chạy Codex read-only review. `--mode auto|full|delta` (mặc định `auto`); `--dry-run` không tạo verdict dùng được; `--print-command` in command để debug. Delta bị từ chối với scope nhạy cảm và trước report vẫn cần final full review. |
-| `ai task request-fixes <ID>` | Chuyển findings chặn trong `review.json` thành fix request có giới hạn, tăng review cycle hoặc block khi đạt `review.max_cycles`. |
+| `ai task request-fixes <ID>` | Chuyển findings chặn thành checklist/fix request có correction scope và remediation type; tăng `fix_cycle` hoặc block khi đạt `review.max_fix_cycles`. |
 | `ai task report <ID>` | Kiểm gate rồi sinh `final-report.md` và chuyển sang `awaiting_user_acceptance`. `--report-only` chỉ render lại báo cáo, thường được `accept` gọi nội bộ; `--force` bỏ qua một số guard validation và chỉ dành cho phục hồi có kiểm soát, không dùng để nghiệm thu kết quả chưa pass. |
 
 ### 21.4 Nghiệm thu, thay đổi yêu cầu và knowledge
@@ -1043,9 +1075,10 @@ find worktrees/<ID>/.ai -maxdepth 3 -type f | sort
 | Validation fail | Đọc `worktrees/<ID>/.ai/validation/summary.json` và file `<repo>.json`; chạy riêng command lỗi bằng `ai task validate-code <ID> --command <NAME> --tier full`. Sửa source/config rồi chạy lại full validation. |
 | Dry-run pass nhưng review/report bị chặn | Đây là hành vi đúng: chạy validation thật `--tier full`, rồi review thật. Dry-run không phải evidence. |
 | Task ở `interrupted` | Đọc log mới nhất trong `worktrees/<ID>/.ai/exchange/`, xử lý quota/network/timeout, rồi chạy `ai task run <ID> --resume-interrupted --max-interrupted-retries 1`. Không resume liên tục khi nguyên nhân chưa hết. |
+| Claude lặp lại slice đã hoàn tất | Kiểm `state.status`. Với handoff hợp lệ phải là `implementation_ready_for_validation`; chạy `task run` để resume validation, không gọi `task implement` thủ công. Workflow sẽ tự sửa plan completed sai nếu thiếu progress/handoff evidence. |
 | Claude timeout | Tăng `CLAUDE_TIMEOUT_SECONDS` bằng số nguyên dương nếu slice hợp lý nhưng cần lâu hơn; nếu slice quá lớn, sửa execution plan và `prepare-context` lại. |
 | Codex timeout | Tăng `CODEX_TIMEOUT_SECONDS`, source env và chạy lại review; kiểm tra log exchange trước. |
-| Review yêu cầu sửa | Dùng `task request-fixes`, implement, full validate, review lại; hoặc dùng `task run`. Khi đạt `review.max_cycles`, task block và cần quyết định của người dùng. |
+| Review yêu cầu sửa | Ưu tiên `task run`; correction được tự phân loại code/evidence/validation. Khi đạt `review.max_fix_cycles`, task block. Finding mở rộng contract ngoài `review-baseline.json` phải được xử lý như requirement gap. |
 | Delta review bị từ chối | Chạy `ai task review <ID> --mode full`; đây là bắt buộc với auth/security/API/database/migration/transaction/concurrency. |
 | Report/accept bị chặn | Kiểm `state.yaml`, cycle trong implementation/review/validation, verdict, `review.fail_on`, và full-validation không phải dry-run. Không dùng `--force` chỉ để vượt nghiệm thu. |
 | Requirement consolidation báo hash/cycle mismatch | Không sửa manifest. Tạo lại draft bằng `consolidate-requirements`, review lại rồi apply với người duyệt. |
@@ -1107,6 +1140,8 @@ Toàn bộ nội dung ví dụ là trung lập và không dùng dữ liệu dự
 - [ ] Full validation của cycle hiện hành đã chạy; quick validation không được dùng thay thế.
 - [ ] Không dùng validation cũ trong baseline.
 - [ ] Implementation progress và Git diff của attempt hiện hành đã được ghi nhận.
+- [ ] Mọi checklist item được giao đã `completed` với evidence; không tự sửa execution-plan status.
+- [ ] `review-baseline.json` đã được tạo từ full review đầu tiên và không bị mở rộng âm thầm.
 - [ ] Nếu đã dùng delta review, final full review cũng đã pass.
 
 ### Trước accept
@@ -1114,6 +1149,7 @@ Toàn bộ nội dung ví dụ là trung lập và không dùng dữ liệu dự
 - [ ] Codex pass.
 - [ ] Validation pass.
 - [ ] Pipeline đang ở `awaiting_user_acceptance`, không phải `interrupted` hoặc `blocked`.
+- [ ] `final-report.md` và finalized implementation/change/review cycle khớp trạng thái hiện hành.
 - [ ] Người dùng đã test kết quả.
 - [ ] Không còn correction cần thực hiện.
 

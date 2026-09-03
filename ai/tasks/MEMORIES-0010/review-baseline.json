@@ -1,0 +1,384 @@
+{
+  "task_id": "MEMORIES-0010",
+  "implementation_cycle": 1,
+  "change_cycle": 0,
+  "created_at": "2026-09-01T05:19:25+07:00",
+  "acceptance_criteria": [
+    "AC1 — complete prototype structure/actions across desktop, tablet, and mobile",
+    "AC2 — blank/template/query-template editable startup",
+    "AC3 — all element types and transforms/visibility/lock/z-order",
+    "AC4 — all listed tool panels interactive",
+    "AC5 — multi-page management and faithful preview/thumbnail",
+    "AC6 — zoom/grid/guides/history/shortcuts and zoom-aware transforms",
+    "AC7 — safe complete autosave/restore and unsaved protection",
+    "AC8 — faithful phone/tablet/desktop preview",
+    "AC9 — complete transparent finish/privacy/delivery flow",
+    "AC10 — responsive touch and keyboard core flow",
+    "AC11 — accessible dialog/drawer/toolbar/canvas/feedback states",
+    "AC12 — automated risk coverage and configured commands",
+    "AC13 — same-viewport visual fidelity review"
+  ],
+  "risk_areas": [
+    {
+      "area": "Effective requirements and scope",
+      "status": "reviewed",
+      "evidence": "AC1–AC13 and all 13 execution-plan slices mapped; no unconsolidated addendum."
+    },
+    {
+      "area": "Complete diff and untracked inventory",
+      "status": "reviewed",
+      "evidence": "9 tracked modifications plus 68 untracked paths match the 77-path handoff."
+    },
+    {
+      "area": "Architecture and canonical document model",
+      "status": "reviewed",
+      "evidence": "CodeGraph runtime flow and packages/editor-core dependency reviewed."
+    },
+    {
+      "area": "History, autosave, restore, and local data protection",
+      "status": "reviewed",
+      "evidence": "State, snapshot, timer, and object-URL boundaries reviewed."
+    },
+    {
+      "area": "Canvas transforms, bounds, touch, and pointer lifecycle",
+      "status": "reviewed",
+      "evidence": "Renderer, geometry, zoom wiring, and tests reviewed."
+    },
+    {
+      "area": "Template application and overwrite safety",
+      "status": "reviewed",
+      "evidence": "Locked prototype lines 1369–1377 compared with React implementation."
+    },
+    {
+      "area": "Preview, export, and finish/share delivery",
+      "status": "reviewed",
+      "evidence": "Renderer, device frames, exporter, wizard, and native share branch reviewed."
+    },
+    {
+      "area": "Responsive/accessibility source and jsdom behavior",
+      "status": "reviewed",
+      "evidence": "Viewport, Drawer/Dialog, focus, keyboard, and live-region behavior reviewed."
+    },
+    {
+      "area": "Same-viewport visual fidelity",
+      "status": "reviewed",
+      "evidence": "References and evidence inventory reviewed; actual route captures are absent, so AC13 remains unverified."
+    },
+    {
+      "area": "Security and trust boundaries",
+      "status": "reviewed",
+      "evidence": "Input validation, rendering, storage, clipboard/share, simulations, and credential check reviewed."
+    },
+    {
+      "area": "Authorization/API/database/transactions",
+      "status": "not_applicable",
+      "evidence": "Client-only epic excludes backend/API/database/publishing mutations."
+    },
+    {
+      "area": "Prior finding regression",
+      "status": "not_applicable",
+      "evidence": "First review cycle; no prior Codex findings."
+    }
+  ],
+  "test_contract": [
+    {
+      "sources": [
+        "requirement: AC1",
+        "diff-impact: editor-view.tsx#EditorView"
+      ],
+      "target": "Editor shell and tools",
+      "test_level": "integration",
+      "scenario": "Start blank and use top bar, rail, panels, and page manager",
+      "expected_result": "Core actions are reachable and interactive"
+    },
+    {
+      "sources": [
+        "requirement: AC2",
+        "diff-impact: apply-template.ts#buildPagesFromTemplate"
+      ],
+      "target": "Template startup",
+      "test_level": "integration",
+      "scenario": "Open valid and invalid template query routes",
+      "expected_result": "Valid templates seed editable state; invalid IDs fall back with notice"
+    },
+    {
+      "sources": [
+        "requirement: prototype behavior",
+        "diff-impact: editor-template-confirm-dialog.tsx"
+      ],
+      "target": "Template overwrite choices",
+      "test_level": "integration",
+      "scenario": "Choose preserve, replace, or cancel for existing content",
+      "expected_result": "All locked-prototype choices work without silent loss"
+    },
+    {
+      "sources": [
+        "requirement: AC3/AC6",
+        "diff-impact: editor-element.tsx and canvas-geometry.ts"
+      ],
+      "target": "Transforms at zoom",
+      "test_level": "unit",
+      "scenario": "Drag, resize, rotate, snap, align, and clamp at non-100% zoom",
+      "expected_result": "Logical coordinates remain correct and bounded"
+    },
+    {
+      "sources": [
+        "requirement: touch/pointer interaction",
+        "diff-impact: editor-element.tsx gesture refs"
+      ],
+      "target": "Interrupted pointer gesture",
+      "test_level": "integration",
+      "scenario": "Pointer cancellation occurs during a gesture",
+      "expected_result": "State and guides clear without later movement"
+    },
+    {
+      "sources": [
+        "requirement: AC3/AC4",
+        "diff-impact: editor tool panels"
+      ],
+      "target": "Supported element tools",
+      "test_level": "integration",
+      "scenario": "Add/edit all element types and reject invalid file/link/color inputs",
+      "expected_result": "Elements remain editable and invalid input receives feedback"
+    },
+    {
+      "sources": [
+        "requirement: AC5",
+        "diff-impact: use-card-editor.ts page operations"
+      ],
+      "target": "Multi-page management",
+      "test_level": "integration",
+      "scenario": "Add, duplicate, rename, reorder, delete/undo, and refuse last-page deletion",
+      "expected_result": "Page state/order remains correct"
+    },
+    {
+      "sources": [
+        "requirement: AC7",
+        "diff-impact: use-card-editor.ts#persistSnapshot"
+      ],
+      "target": "Autosave/history",
+      "test_level": "unit",
+      "scenario": "Debounce edits, manual save, undo/redo, and clear redo branch",
+      "expected_result": "Status and snapshot follow content mutations"
+    },
+    {
+      "sources": [
+        "requirement: corrupt draft must not crash",
+        "diff-impact: draft-storage.ts#loadCardDraft"
+      ],
+      "target": "Empty current-version draft",
+      "test_level": "integration",
+      "scenario": "Restore a snapshot with pages: []",
+      "expected_result": "Reject/repair it and keep the editor runnable"
+    },
+    {
+      "sources": [
+        "requirement: AC7",
+        "diff-impact: draft snapshot, blob URLs, and music"
+      ],
+      "target": "Complete restorable draft",
+      "test_level": "integration",
+      "scenario": "Save/reload music and uploaded/replaced images",
+      "expected_result": "Preserve state or truthfully report limitations without broken assets"
+    },
+    {
+      "sources": [
+        "requirement: AC8",
+        "diff-impact: EditorPageThumbnail#renderMiniContent"
+      ],
+      "target": "Preview renderer fidelity",
+      "test_level": "integration",
+      "scenario": "Preview styled text, shaped frames, events, flips, hidden state, and z-order",
+      "expected_result": "Preview matches the current document"
+    },
+    {
+      "sources": [
+        "requirement: AC8/AC10",
+        "diff-impact: EditorPreviewDialog DEVICE_FRAMES"
+      ],
+      "target": "Responsive preview modes",
+      "test_level": "e2e",
+      "scenario": "Select every device mode at 375x812",
+      "expected_result": "Frame and navigation remain visible"
+    },
+    {
+      "sources": [
+        "requirement: AC9",
+        "diff-impact: finish checklist/privacy/schedule/gift"
+      ],
+      "target": "Finish wizard",
+      "test_level": "integration",
+      "scenario": "Complete validation and simulated delivery paths",
+      "expected_result": "Gates work and unavailable backends are disclosed"
+    },
+    {
+      "sources": [
+        "requirement: no fabricated publishing",
+        "diff-impact: EditorFinishDialog#shareViaDevice"
+      ],
+      "target": "Web Share boundary",
+      "test_level": "integration",
+      "scenario": "navigator.share exists without a published card URL",
+      "expected_result": "Do not externally share a fabricated link"
+    },
+    {
+      "sources": [
+        "requirement: client PNG reflects content",
+        "diff-impact: export-image.ts#renderPageToCanvas"
+      ],
+      "target": "Successful export",
+      "test_level": "e2e",
+      "scenario": "Export representative content to PNG/JPG",
+      "expected_result": "Files visually match the live page"
+    },
+    {
+      "sources": [
+        "requirement: export failure cleanup",
+        "diff-impact: exportPagePngBlob/downloadBlob"
+      ],
+      "target": "Export errors and cleanup",
+      "test_level": "unit",
+      "scenario": "Canvas fails and a download URL is created",
+      "expected_result": "Show honest error and revoke the URL"
+    },
+    {
+      "sources": [
+        "requirement: AC10/AC11",
+        "diff-impact: useViewportTier and Drawer wiring"
+      ],
+      "target": "Responsive drawers/focus",
+      "test_level": "integration",
+      "scenario": "Open and close surfaces on desktop/tablet/mobile",
+      "expected_result": "Correct placement, close control, and focus behavior"
+    },
+    {
+      "sources": [
+        "requirement: keyboard isolation",
+        "diff-impact: EditorView document keydown"
+      ],
+      "target": "Shortcuts while typing",
+      "test_level": "integration",
+      "scenario": "Use shortcuts and Escape in editor forms",
+      "expected_result": "Typing controls are not disrupted"
+    },
+    {
+      "sources": [
+        "requirement: security/input validation",
+        "diff-impact: file/link/color validators"
+      ],
+      "target": "Untrusted client input",
+      "test_level": "unit",
+      "scenario": "Submit invalid files, unsafe schemes, and invalid colors",
+      "expected_result": "Reject without unsafe execution"
+    },
+    {
+      "sources": [
+        "requirement: canonical model technical note",
+        "diff-impact: app editor types vs editor-core"
+      ],
+      "target": "Document compatibility",
+      "test_level": "contract",
+      "scenario": "Round-trip the full document across app/core/persistence",
+      "expected_result": "One canonical versioned model preserves all fields"
+    },
+    {
+      "sources": [
+        "requirement: AC12",
+        "diff-impact: complete workspace"
+      ],
+      "target": "Repository validation",
+      "test_level": "static",
+      "scenario": "Run lint, typecheck, test, and build",
+      "expected_result": "All configured commands pass"
+    },
+    {
+      "sources": [
+        "requirement: AC13",
+        "diff-impact: responsive editor UI"
+      ],
+      "target": "Same-viewport fidelity",
+      "test_level": "manual",
+      "scenario": "Compare populated, drawer, preview, and finish states at all target viewports",
+      "expected_result": "Composition and visual hierarchy match the prototype"
+    }
+  ],
+  "initial_findings": [
+    {
+      "severity": "major",
+      "repo": "frontend",
+      "file": "apps/public-web/lib/editor/draft-storage.ts",
+      "title": "A structurally accepted empty draft crashes the editor",
+      "expected_fix": "Reject or safely repair snapshots that cannot produce a valid active page."
+    },
+    {
+      "severity": "major",
+      "repo": "frontend",
+      "file": "apps/public-web/components/editor/use-card-editor.ts",
+      "title": "Autosave loses music and persists non-restorable blob URLs",
+      "expected_fix": "Persist a complete, restorable document without durable blob URLs and close every object-URL lifecycle."
+    },
+    {
+      "severity": "major",
+      "repo": "frontend",
+      "file": "apps/public-web/components/editor/editor-page-thumbnail.tsx",
+      "title": "Preview is not document-faithful and fixed device frames clip on small screens",
+      "expected_fix": "Use a faithful read-only renderer and make all preview device modes fit the available viewport."
+    },
+    {
+      "severity": "major",
+      "repo": "frontend",
+      "file": "apps/public-web/lib/editor/export-image.ts",
+      "title": "The real export path is unverified and diverges from the live canvas",
+      "expected_fix": "Make exported files reproduce the visible card and validate a successful browser export."
+    },
+    {
+      "severity": "major",
+      "repo": "frontend",
+      "file": "apps/public-web/components/editor/editor-finish-dialog.tsx",
+      "title": "The native share branch sends an unpublished fake URL through a real share sheet",
+      "expected_fix": "Do not invoke real external sharing with an unpublished URL; preserve an explicit simulation boundary."
+    },
+    {
+      "severity": "major",
+      "repo": "frontend",
+      "file": "apps/public-web/components/editor/editor-template-confirm-dialog.tsx",
+      "title": "Template replacement omits the prototype’s preserve-content path",
+      "expected_fix": "Implement the prototype’s preserve-content choice alongside full replacement and cancel."
+    },
+    {
+      "severity": "major",
+      "repo": "frontend",
+      "file": "apps/public-web/lib/types/editor.ts",
+      "title": "The implementation leaves two incompatible canonical editor models",
+      "expected_fix": "Establish one canonical document contract or an explicit tested adapter boundary."
+    },
+    {
+      "severity": "major",
+      "repo": "frontend",
+      "file": "worktrees/MEMORIES-0010/.ai/validation/provenance.json",
+      "title": "Required UI fidelity and deterministic skill evidence is absent",
+      "expected_fix": "Publish reproducible UI comparisons and all required deterministic implementation-skill checks."
+    },
+    {
+      "severity": "minor",
+      "repo": "frontend",
+      "file": "apps/public-web/components/editor/use-card-editor.ts",
+      "title": "Page selection and no-op actions create undo entries",
+      "expected_fix": "Only document mutations should append history; UI navigation and no-ops should not."
+    },
+    {
+      "severity": "minor",
+      "repo": "frontend",
+      "file": "apps/public-web/components/editor/editor-view.tsx",
+      "title": "Global Escape bypasses the typing guard",
+      "expected_fix": "Apply Escape deselection only outside form/editing contexts unless explicitly delegated."
+    },
+    {
+      "severity": "minor",
+      "repo": "frontend",
+      "file": "apps/public-web/components/editor/editor-element.tsx",
+      "title": "Interrupted pointer gestures are not finalized",
+      "expected_fix": "Finalize gesture state on pointerup, pointercancel, and lost pointer capture."
+    }
+  ]
+}
