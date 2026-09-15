@@ -1,0 +1,19 @@
+{
+  "name": "@ai-workflow/source-analysis",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AST-based source analysis for ai/skills/*/scripts checkers (design-system usage, prototype migration). Fully independent of apps/backend and apps/frontend node_modules — see ai/tools/source-analysis in the repo.",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "node-html-parser": "^9.0.4",
+    "postcss": "^8.5.28",
+    "ts-morph": "^28.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.2",
+    "typescript": "^7.0.2"
+  }
+}

@@ -31,7 +31,7 @@ skills:
 scope:
   execution_plan_required: true
 review:
-  max_cycles: 5
+  max_cycles: 10
   fail_on:
   - blocker
   - major

@@ -22,7 +22,23 @@
           "deliverables": {"type": "array", "minItems": 1, "items": {"type": "string"}},
           "tests": {"type": "array", "minItems": 1, "items": {"type": "string"}},
           "validation": {"type": "array", "minItems": 1, "items": {"type": "string"}},
-          "status": {"enum": ["pending", "in_progress", "completed", "blocked"]}
+          "status": {"enum": ["pending", "in_progress", "completed", "blocked"]},
+          "evidence_requirements": {
+            "type": "object",
+            "description": "Optional, keyed by criterion string. Declares the minimum test level and real-infra dependencies build_evidence_matrix.py must see cited in that criterion's evidence before accepting it as passing.",
+            "additionalProperties": {
+              "type": "object",
+              "required": ["min_test_level", "requires_real_infra"],
+              "properties": {
+                "min_test_level": {"enum": ["static", "unit", "integration", "contract", "e2e", "manual"]},
+                "requires_real_infra": {
+                  "type": "array",
+                  "items": {"enum": ["database", "redis", "queue", "browser", "storage", "none"]}
+                }
+              },
+              "additionalProperties": false
+            }
+          }
         },
         "additionalProperties": false
       }

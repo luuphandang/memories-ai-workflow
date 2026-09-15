@@ -122,7 +122,7 @@ def main() -> None:
         smoke.write_validation(root, 1, 0)
         write_json(
             task_dir / "review.json",
-            smoke.with_skill_evidence(task_dir, smoke.review(TASK_ID, 1, 0), "review"),
+            smoke.with_skill_evidence(task_dir, smoke.review(TASK_ID, root, 1, 0), "review"),
         )
         # This is the crux: a review that returned "pass" but was itself only a delta
         # review (e.g. produced by a direct manual `--mode delta` call).

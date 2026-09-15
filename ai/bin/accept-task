@@ -10,8 +10,11 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib.ai_common import (
     AI_ROOT,
+    ROOT,
     configured_fail_severities,
+    dirty_worktree_hash,
     ensure_task,
+    git_value,
     now_iso,
     read_json,
     read_yaml,
@@ -21,6 +24,7 @@ from lib.ai_common import (
     validate_json,
     write_yaml,
 )
+from lib.docker_infra import teardown_infra
 
 
 def current_finalization_matches(state: dict) -> bool:
@@ -90,6 +94,23 @@ def main() -> None:
     blocking_findings = [
         item for item in review.get("findings", []) if item.get("severity") in fail_on
     ]
+    # The reviewer declared it reviewed a specific revision per repo (orchestrator-injected
+    # in run-codex-review, not model-authored). Checked here too (not only in finalize-task)
+    # so a direct manual `accept` call can't authorize acceptance for a stale review.
+    reviewed_revisions = review.get("reviewed_revisions", {})
+    # dirty_snapshot_sha256 (not head alone) is what actually changes mid-task: this workflow
+    # never commits until acceptance, so HEAD alone would not detect a worktree edited after
+    # review (see ai_common.dirty_worktree_hash's docstring).
+    actual_revisions = {
+        item["repo"]: {
+            "head": git_value(ROOT / item["path"], ["rev-parse", "HEAD"]),
+            "dirty_snapshot_sha256": dirty_worktree_hash(ROOT / item["path"]),
+        }
+        for item in task.get("worktrees", [])
+    }
+    revisions_match = all(
+        reviewed_revisions.get(repo) == value for repo, value in actual_revisions.items()
+    )
     # A delta review's own "pass" can never directly authorize user acceptance — it only
     # reviewed the latest fix's diff/dependencies, not the full seven passes. Checked here
     # too (not only in run-task/finalize-task) so a direct manual `accept` call can't
@@ -102,6 +123,7 @@ def main() -> None:
         and cycles_match
         and not blocking_findings
         and last_review_mode == "full"
+        and revisions_match
         and current_finalization_matches(state)
         and report_path.is_file()
     )
@@ -115,6 +137,8 @@ def main() -> None:
             reasons.append("outputs belong to a different cycle")
         if last_review_mode != "full":
             reasons.append(f"last review mode was {last_review_mode!r}, not a passing full review")
+        if not revisions_match:
+            reasons.append("source changed since the reviewed revision; re-run review")
         if state.get("finalized_review_cycle") != int(state.get("review_cycle", 0)):
             reasons.append("final report was not generated for the current review cycle")
         raise SystemExit(
@@ -205,6 +229,12 @@ def main() -> None:
             metadata["status"] = "accepted"
             write_yaml(metadata_path, metadata)
     subprocess.run([str(AI_ROOT / "bin" / "rebuild-indexes")], check=False)
+    try:
+        teardown_infra(args.task_id)
+    except Exception as exc:
+        # Best-effort: acceptance itself is already durable at this point; an orphaned infra
+        # stack is reclaimed later by infra-gc, not worth rolling back a completed task for.
+        print(f"Warning: could not tear down validation infra for {args.task_id}: {exc}")
     if knowledge_result.stdout.strip():
         print(knowledge_result.stdout.strip())
     print(f"Accepted and completed: {args.task_id}")

@@ -53,8 +53,7 @@ Handoff slice thành công dùng trạng thái `implementation_ready_for_validat
 tự tiếp tục ở validation. Status của execution-plan thuộc quyền orchestrator và mọi thay đổi
 status do implementer tạo sẽ bị khôi phục trước khi pipeline tiếp tục.
 Session nhận compact slice-context bundle và không bị workflow áp đặt giới hạn số
-agent turn. Các ngưỡng context được cấu hình bằng `AI_WARN_CONTEXT_TOKENS` và
-`AI_MAX_CONTEXT_TOKENS`.
+agent turn hay giới hạn context token.
 
 Review tự dùng delta mode cho correction không nhạy cảm; auth, security, API
 contract, database, migration, transaction và concurrency luôn được nâng lên full.

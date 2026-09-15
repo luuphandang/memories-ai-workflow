@@ -69,6 +69,19 @@ def main() -> None:
             continue
         locked_skills[name] = skill_manifest(name)
 
+    # Known, unresolved workflow defects for a required skill (workflow_issue.md #9):
+    # optional, so a task is never blocked by their absence, but when present they load
+    # into context.lock.json the same way other mandatory knowledge does, so a new task
+    # reusing the skill sees the limitation without anyone having to remember to say so.
+    known_issues: dict[str, dict] = {}
+    for name in sorted(locked_skills):
+        issue_path = AI_ROOT / "shared" / "quality" / "known-issues" / f"{name}.md"
+        if issue_path.is_file():
+            relative = str(issue_path.relative_to(ROOT))
+            issue_hash = sha256_file(issue_path)
+            known_issues[name] = {"path": relative, "sha256": issue_hash}
+            files.append({"path": relative, "sha256": issue_hash, "load": "initial", "category": "known-issues"})
+
     execution_plan = td / "execution-plan.json"
     if task.get("scope", {}).get("execution_plan_required", False):
         if not execution_plan.is_file():
@@ -196,7 +209,7 @@ def main() -> None:
             "mode": __import__("os").environ.get("AI_CODEGRAPH_MODE", "optional"),
             "repositories": codegraph_repositories,
         },
-        "skills": {"required": required_skills, "locked": locked_skills},
+        "skills": {"required": required_skills, "locked": locked_skills, "known_issues": known_issues},
         "execution_plan": f"ai/tasks/{args.task_id}/execution-plan.json" if execution_plan.is_file() else None,
         "scope_assessment": {
             "acceptance_items": acceptance_count,

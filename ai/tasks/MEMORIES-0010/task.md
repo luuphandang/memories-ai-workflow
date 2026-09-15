@@ -208,3 +208,27 @@ Prototype là nguồn sự thật cho composition, visual hierarchy, nội dung,
 - Không đọc secret hoặc thêm credential vào client.
 - Không sửa trực tiếp `ai/shared`, `ai/repos` hoặc `ai/domains`; knowledge update phải đi qua workflow tương ứng.
 - Không sửa ngoài repo/worktree khai báo, ngoại trừ artifact của task trong `ai/tasks/MEMORIES-0010` do AI Workflow quản lý.
+# User-approved fidelity waiver — 2026-09-06
+
+The task owner explicitly approves a narrow waiver for the following five
+prototype-fidelity matrix cells:
+
+- `editor-populated@375x812`
+- `finish-checklist@375x812`
+- `onboarding-dialog@375x812`
+- `tablet-resource-drawer@768x1024`
+- `image-upload-error@768x1024`
+
+For these cells only, the current measured differences are accepted because
+closing them would conflict with already-locked functional and accessibility
+requirements: the required editor top/bottom chrome, the required focus-trapped
+mobile/tablet overlay pattern, or a prototype interaction/state that is not
+reachable at the target viewport. These five cells may be recorded as
+`waived`/approved exceptions and must not block review, finalization, or user
+acceptance.
+
+This waiver does not relax any functional behavior, accessibility requirement,
+automated test, lint, typecheck, build, export, high-zoom, security, provenance,
+or fidelity requirement for any other matrix cell. The implementation must
+retain the existing evidence and documented measurements for the five waived
+cells.

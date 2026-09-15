@@ -22,6 +22,13 @@ Không áp dụng knowledge update ở trạng thái `awaiting_user_acceptance`,
 Nội dung liên quan source code phải được xác minh và thay marker `[BỔ SUNG THEO DỰ ÁN]`.
 Nội dung liên quan ticket phải được xác minh và thay marker `[BỔ SUNG THEO TÍNH NĂNG]`.
 
+`known issue có cách nhận diện` lưu tại `ai/shared/quality/known-issues/<skill-name>.md`
+(tối đa một file mỗi skill). `prepare-context` tự nạp file này vào `context.lock.json` cho
+task nào yêu cầu đúng skill đó, nên nội dung phải nêu rõ cách nhận diện lỗi thay vì mô tả
+chung chung. Update nhắm vào `known-issues/*.md` bắt buộc có dòng `Fixture: <path-tới-file>`
+trỏ tới regression fixture đã tồn tại trong repo; `update-knowledge --apply --strict` chặn
+entry thiếu dòng này hoặc trỏ tới file không tồn tại.
+
 Plan-only hiển thị mọi entry cùng trạng thái approval. Implementer phải xuất nội dung hoàn chỉnh với `append`, `replace` hoặc `create`; reviewer chỉ duyệt entry áp dụng trực tiếp được. Khi acceptance chạy, `update-knowledge --apply --strict` preflight toàn bộ entry đã duyệt rồi tự động áp dụng. Entry `proposal`, content rỗng hoặc còn marker không được phép đi qua finalization/acceptance. `append` bỏ qua nội dung đã tồn tại nguyên vẹn để rerun không nhân đôi section.
 
 `ai/bin/update-knowledge` áp dụng các entry đã được duyệt vào nguồn kiến thức canonical

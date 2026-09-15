@@ -26,3 +26,11 @@ worktrees/**/.ai/
 # Prototype chứa UI mock
 prototype/*
 !prototype/.gitkeep
+
+# Node package(s) dùng riêng cho AI workflow tooling (ai/tools/*) — build output và deps
+# cài lại được bằng `npm install && npm run build`, không commit.
+ai/tools/*/node_modules/
+ai/tools/*/dist/
+
+# Các mô tả local cần thực hiện
+issues/*

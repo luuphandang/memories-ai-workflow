@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, shutil
+import argparse, re, shutil
 from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib.ai_common import ROOT, AI_ROOT, ensure_task, read_yaml, read_json, validate_json, atomic_write, now_iso
 
 ALLOWED = (AI_ROOT / "shared", AI_ROOT / "repos", AI_ROOT / "domains")
+KNOWN_ISSUES_DIR = AI_ROOT / "shared" / "quality" / "known-issues"
+FIXTURE_LINE = re.compile(r"^Fixture:\s*(\S+)\s*$", re.MULTILINE)
 
 def is_allowed(path: Path) -> bool:
     rp = path.resolve()
@@ -66,6 +68,17 @@ def main() -> None:
             unresolved.append(f"#{index:03d} has empty content")
         if "[BỔ SUNG" in content:
             unresolved.append(f"#{index:03d} contains unresolved markers")
+        target_path = (ROOT / item.get("target", "")).resolve()
+        known_issues_root = KNOWN_ISSUES_DIR.resolve()
+        if target_path == known_issues_root or known_issues_root in target_path.parents:
+            match = FIXTURE_LINE.search(content)
+            if not match:
+                unresolved.append(
+                    f"#{index:03d} targets known-issues/ but has no 'Fixture: <path>' line "
+                    "pointing at a regression fixture"
+                )
+            elif not (ROOT / match.group(1)).resolve().is_file():
+                unresolved.append(f"#{index:03d} Fixture path does not exist: {match.group(1)}")
     if args.strict and unresolved:
         raise SystemExit(
             "Approved knowledge updates are not ready for automatic application:\n- "

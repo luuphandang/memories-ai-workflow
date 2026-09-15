@@ -25,8 +25,10 @@ def usage():
   ai task update-knowledge <ID> [--apply]
   ai task consolidate-requirements <ID> [--dry-run]
   ai task apply-requirements-consolidation <ID> --approved-by NAME
+  ai task infra <ID> up|down|status
   ai indexes rebuild
   ai metrics <ID>
+  ai infra-gc [--max-age-hours N]
 """)
 
 
@@ -37,8 +39,9 @@ def main():
     elif args[0]=="self-check": script,rest="self-check",args[1:]
     elif args[:2]==["indexes","rebuild"]: script,rest="rebuild-indexes",args[2:]
     elif args[0]=="metrics": script,rest="metrics",args[1:]
+    elif args[0]=="infra-gc": script,rest="infra-gc",args[1:]
     elif args[0]=="task" and len(args)>=2:
-        mapping={"create":"create-task","register-worktree":"register-worktree","prepare-context":"prepare-context","prepare-plan":"prepare-plan","classify-skills":"classify-skills","codegraph":"manage-codegraph","implement":"run-claude","run":"run-task","validate-code":"validate","review":"run-codex-review","request-fixes":"request-fixes","report":"finalize-task","accept":"accept-task","request-change":"request-change","update-knowledge":"update-knowledge","consolidate-requirements":"consolidate-requirements","apply-requirements-consolidation":"apply-requirements-consolidation"}
+        mapping={"create":"create-task","register-worktree":"register-worktree","prepare-context":"prepare-context","prepare-plan":"prepare-plan","classify-skills":"classify-skills","codegraph":"manage-codegraph","infra":"manage-infra","implement":"run-claude","run":"run-task","validate-code":"validate","review":"run-codex-review","request-fixes":"request-fixes","report":"finalize-task","accept":"accept-task","request-change":"request-change","update-knowledge":"update-knowledge","consolidate-requirements":"consolidate-requirements","apply-requirements-consolidation":"apply-requirements-consolidation"}
         script=mapping.get(args[1]); rest=args[2:]
         if not script: usage(); raise SystemExit(2)
     else: usage(); raise SystemExit(2)

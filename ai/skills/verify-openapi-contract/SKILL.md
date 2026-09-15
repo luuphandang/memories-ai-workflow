@@ -10,7 +10,7 @@ description: Implement or review HTTP API changes whose Swagger/OpenAPI contract
 3. Ensure request DTOs, successful response DTOs and the real global error envelope are represented in Swagger. A runtime exception filter does not add OpenAPI metadata by itself.
 4. Add explicit response metadata for every status in the manifest. Reuse one shared error DTO when the runtime envelope is shared.
 5. Add a contract test that builds or exports the real OpenAPI document and asserts the operation path, method, request schema, success schema and every required response status. Runtime E2E tests alone are insufficient.
-6. Run `scripts/check_openapi_contract.py <worktree>` before completion.
+6. Run `npm run export:openapi` (the `export-openapi` repo command) to regenerate `<worktree>/openapi.json` from the real `SwaggerModule.createDocument` output, then `scripts/check_openapi_contract.py <worktree>` before completion. The checker verifies required response statuses directly against that generated document — not by parsing decorator source — so it is unaffected by Prettier/formatting changes and always reflects what real clients see. If `validation.backend` in `task.yaml` is overridden to a custom command subset, make sure `export-openapi` is included or the checker will report a stale/missing document.
 7. Record the checker and generated-document test as acceptance evidence. Do not mark an OpenAPI criterion passed merely because DTO decorators or a global exception filter exist.
 
 If an outcome is deliberately undocumented, record the product decision in the effective requirements; do not silently remove it from the manifest.

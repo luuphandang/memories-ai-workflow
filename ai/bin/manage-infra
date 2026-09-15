@@ -1,0 +1,37 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+import argparse, json
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib.ai_common import ensure_task, read_yaml, safe_workspace_path
+from lib.docker_infra import ensure_infra_up, status_infra, teardown_infra
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Manually manage a task's isolated validation infra stack")
+    parser.add_argument("task_id")
+    parser.add_argument("action", choices=("up", "down", "status"))
+    args = parser.parse_args()
+
+    td = ensure_task(args.task_id)
+    task = read_yaml(td / "task.yaml")
+
+    if args.action == "status":
+        print(json.dumps(status_infra(args.task_id), indent=2))
+        return
+
+    if args.action == "down":
+        teardown_infra(args.task_id)
+        print(f"Torn down infra for {args.task_id}")
+        return
+
+    backend = next((wt for wt in task.get("worktrees", []) if wt["repo"] == "backend"), None)
+    if backend is None:
+        raise SystemExit(f"Task {args.task_id} has no 'backend' worktree; nothing to provision infra for")
+    manifest = ensure_infra_up(args.task_id, safe_workspace_path(backend["path"]))
+    print(json.dumps(manifest, indent=2))
+
+
+if __name__ == "__main__":
+    main()

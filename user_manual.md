@@ -268,8 +268,6 @@ export CODEGRAPH_COMMAND="codegraph"
 export AI_CODEGRAPH_MODE="optional"
 export CLAUDE_TIMEOUT_SECONDS="3600"
 export CODEX_TIMEOUT_SECONDS="1800"
-export AI_WARN_CONTEXT_TOKENS="60000"
-export AI_MAX_CONTEXT_TOKENS="80000"
 ```
 
 Nạp biến và cấu hình:
@@ -290,12 +288,7 @@ trong thư mục tạm, không gọi Claude/Codex thật.
 
 Không lưu token, secret hoặc credential trong workspace. `CLAUDE_TIMEOUT_SECONDS` và `CODEX_TIMEOUT_SECONDS` phải là số nguyên dương. Khi Claude implement bị timeout, quota hoặc session limit, task chuyển sang `interrupted`; mỗi attempt có log riêng và lần `implement` sau resume session nếu có, hoặc phục hồi từ `implementation-progress.json` cùng Git diff. Timeout của các bước khác vẫn được xử lý theo script tương ứng.
 
-Các biến `AI_*` kiểm soát ngân sách context:
-
-- `AI_WARN_CONTEXT_TOKENS`: ngưỡng ghi cảnh báo token vào `state.yaml`; mặc định `60000`.
-- `AI_MAX_CONTEXT_TOKENS`: ngưỡng ghi nhận budget breach và buộc phần việc tiếp theo dùng fresh bounded session; mặc định `80000`.
-
-Mỗi giá trị phải là số nguyên dương. Workflow không áp đặt giới hạn số agent turn cho Claude; phiên implement tiếp tục cho tới khi hoàn tất, timeout, hoặc gặp lỗi dịch vụ thực sự.
+Workflow không áp đặt giới hạn số agent turn hay giới hạn context token cho Claude; phiên implement tiếp tục cho tới khi hoàn tất, timeout, hoặc gặp lỗi dịch vụ thực sự.
 
 Các biến CodeGraph:
 

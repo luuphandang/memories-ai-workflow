@@ -68,6 +68,17 @@ def main() -> None:
             except SyntaxError as exc:
                 errors.append(f"Invalid skill script {script.relative_to(ROOT)}: {exc}")
 
+    source_analysis_dir = AI_ROOT / "tools" / "source-analysis"
+    for required_file in ("package.json", "tsconfig.json", "src/cli.ts"):
+        if not (source_analysis_dir / required_file).is_file():
+            errors.append(f"Missing {source_analysis_dir.relative_to(ROOT) / required_file}")
+    if not (source_analysis_dir / "dist" / "cli.js").is_file():
+        print(
+            f"Note: {source_analysis_dir.relative_to(ROOT)}/dist/cli.js not built yet -- "
+            "design-system/prototype-migration checkers will fail until "
+            f"`(cd {source_analysis_dir.relative_to(ROOT)} && npm install && npm run build)`."
+        )
+
     settings = read_yaml(AI_ROOT / "config" / "claude" / "settings.json")
     allowed = settings.get("permissions", {}).get("allow", [])
     required_claude_permissions = {

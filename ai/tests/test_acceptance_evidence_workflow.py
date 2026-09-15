@@ -55,6 +55,61 @@ class AcceptanceEvidenceWorkflowTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stdout)
             self.assertTrue(json.loads(output.read_text())["passed"])
 
+    def test_evidence_matrix_rejects_unit_evidence_for_real_infra_requirement(self) -> None:
+        script = AI_ROOT / "skills" / "review-vertical-slice-completeness" / "scripts" / "build_evidence_matrix.py"
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            plan = root / "plan.json"
+            implementation = root / "implementation.json"
+            output = root / "matrix.json"
+            evidence_dir = root / "evidence"
+            evidence_dir.mkdir()
+            plan.write_text(json.dumps({
+                "slices": [{
+                    "id": "persist",
+                    "acceptance_criteria": ["Row survives a real transaction"],
+                    "evidence_requirements": {
+                        "Row survives a real transaction": {
+                            "min_test_level": "integration",
+                            "requires_real_infra": ["database"],
+                        }
+                    },
+                }]
+            }))
+            implementation.write_text(json.dumps({"acceptance_criteria": [
+                {"criterion": "Row survives a real transaction", "status": "passed", "evidence": "[test-level: unit] mocked repository"}
+            ]}))
+
+            result = subprocess.run(
+                [str(script), str(plan), str(implementation), "--output", str(output), "--evidence-dir", str(evidence_dir)],
+                text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False,
+            )
+            self.assertEqual(result.returncode, 1, result.stdout)
+            data = json.loads(output.read_text())
+            self.assertFalse(data["passed"])
+            self.assertTrue(any("min_test_level=integration" in item for item in data["missing"]))
+
+            # Fix the test-level tag but still no real e2e-full-run.log: still missing.
+            implementation.write_text(json.dumps({"acceptance_criteria": [
+                {"criterion": "Row survives a real transaction", "status": "passed", "evidence": "[test-level: integration] real db"}
+            ]}))
+            result = subprocess.run(
+                [str(script), str(plan), str(implementation), "--output", str(output), "--evidence-dir", str(evidence_dir)],
+                text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False,
+            )
+            self.assertEqual(result.returncode, 1, result.stdout)
+            self.assertTrue(any("e2e-full-run.log" in item for item in json.loads(output.read_text())["missing"]))
+
+            # A real, passing e2e log satisfies the real-infra requirement.
+            (evidence_dir / "logs").mkdir()
+            (evidence_dir / "logs" / "e2e-full-run.log").write_text("Test Suites: 1 passed, 1 total\nTests: 3 passed, 3 total\n")
+            result = subprocess.run(
+                [str(script), str(plan), str(implementation), "--output", str(output), "--evidence-dir", str(evidence_dir)],
+                text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertTrue(json.loads(output.read_text())["passed"])
+
     def test_delivery_gates_run_evidence_freshness_for_backend_review(self) -> None:
         module = load_ai_common_module()
         with tempfile.TemporaryDirectory() as temp:

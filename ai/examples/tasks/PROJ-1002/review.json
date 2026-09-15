@@ -2,6 +2,7 @@
   "task_id": "PROJ-1002",
   "verdict": "pass",
   "reviewed_repositories": [],
+  "reviewed_revisions": {},
   "findings": [],
   "validation_assessment": {
     "passed": true,

@@ -113,6 +113,42 @@ class UpdateKnowledgeTest(unittest.TestCase):
         proposal_dir = self.root / "ai" / "tasks" / "TEST-1" / "knowledge-proposals"
         self.assertFalse(proposal_dir.exists())
 
+    def _write_known_issue_update(self, content: str) -> None:
+        task_dir = self.root / "ai" / "tasks" / "TEST-1"
+        data = json.loads((task_dir / "knowledge-updates.json").read_text(encoding="utf-8"))
+        data["updates"] = [
+            {
+                "target": "ai/shared/quality/known-issues/some-skill.md",
+                "type": "create",
+                "summary": "known issue",
+                "content": content,
+                "approved": True,
+            }
+        ]
+        (task_dir / "knowledge-updates.json").write_text(json.dumps(data), encoding="utf-8")
+
+    def test_strict_apply_rejects_known_issue_without_fixture_line(self) -> None:
+        self._write_known_issue_update("## Some defect\n\nDescription without a fixture reference.")
+        result = self.run_command("--apply", "--strict")
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertIn("no 'Fixture: <path>' line", result.stdout)
+
+    def test_strict_apply_rejects_known_issue_with_missing_fixture_file(self) -> None:
+        self._write_known_issue_update("## Some defect\n\nFixture: ai/tests/fixtures/does-not-exist.json")
+        result = self.run_command("--apply", "--strict")
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertIn("Fixture path does not exist", result.stdout)
+
+    def test_strict_apply_accepts_known_issue_with_existing_fixture(self) -> None:
+        self._write_known_issue_update(
+            "## Some defect\n\nDescription of how to recognize it.\n\n"
+            "Fixture: ai/tests/fixtures/skill-checks/fidelity-pass/matrix.json"
+        )
+        result = self.run_command("--apply", "--strict")
+        self.assertEqual(result.returncode, 0, result.stdout)
+        target = self.root / "ai" / "shared" / "quality" / "known-issues" / "some-skill.md"
+        self.assertIn("Fixture:", target.read_text(encoding="utf-8"))
+
 
 if __name__ == "__main__":
     unittest.main()

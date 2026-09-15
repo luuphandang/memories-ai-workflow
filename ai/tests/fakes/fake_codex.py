@@ -39,7 +39,10 @@ def main() -> None:
     )
     finding_file = os.environ.get("FAKE_CODEX_FINDING_FILE", "README.md")
     finding_title = os.environ.get("FAKE_CODEX_FINDING_TITLE", "Synthetic first-cycle finding")
-    findings = [{"severity": "major", "repo": task.get("worktrees", [{}])[0].get("repo", "unknown"), "file": finding_file, "line": 1, "title": finding_title, "evidence": "fake-agent-e2e", "expected_fix": "Run the automated fix cycle", "implementation_guidance": {"approach": "Apply the synthetic correction", "code_locations": [finding_file], "tests": ["Rerun fake-agent-e2e"], "done_when": ["The synthetic regression passes"]}}] if changes_requested else []
+    finding_repo = task.get("worktrees", [{}])[0].get("repo", "unknown")
+    finding_slug = re.sub(r"[^a-z0-9]+", "-", finding_title.lower()).strip("-")
+    finding_id = f"{finding_repo}:{finding_file}:major:{finding_slug}"
+    findings = [{"finding_id": finding_id, "severity": "major", "repo": finding_repo, "file": finding_file, "line": 1, "title": finding_title, "evidence": "fake-agent-e2e", "expected_fix": "Run the automated fix cycle", "implementation_guidance": {"approach": "Apply the synthetic correction", "code_locations": [finding_file], "tests": ["Rerun fake-agent-e2e"], "done_when": ["The synthetic regression passes"]}}] if changes_requested else []
 
     if final_full_mode == "blocked":
         artifact = {
@@ -81,8 +84,9 @@ def main() -> None:
             "changed_files": [{"repo": item["repo"], "file": "README.md", "status": "reviewed", "evidence": "fake-agent-e2e"} for item in task.get("worktrees", [])],
             "risk_areas": [{"area": "fake end-to-end pipeline", "status": "reviewed", "evidence": "fake-agent-e2e"}],
             "prior_findings": ([{
+                "finding_id": finding_id,
                 "source": "fix-request-review-1.md",
-                "title": "Synthetic first-cycle finding",
+                "title": finding_title,
                 "status": "resolved",
                 "evidence": "fake-agent-e2e reran the synthetic check",
             }] if count > 1 else []),

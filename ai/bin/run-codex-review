@@ -16,9 +16,11 @@ from lib.ai_common import (
     ROOT,
     configured_fail_severities,
     detect_risk_categories,
+    dirty_worktree_hash,
     enforce_global_git_policy,
     ensure_task,
     env_timeout_seconds,
+    git_value,
     now_iso,
     read_json,
     read_yaml,
@@ -127,6 +129,19 @@ def main() -> None:
         raise SystemExit("Codex review requires a real, passing validation run; dry-run/planned validation is not sufficient")
     if validation.get("tier", "full") != "full":
         raise SystemExit("Codex review requires full validation; run validate-code --tier full")
+    # This workflow never commits mid-task, so HEAD alone would not detect a worktree edited
+    # after validate-code ran; compare the same dirty-worktree fingerprint validate published.
+    validated_by_repo = {item.get("repo"): item for item in validation.get("repositories", [])}
+    stale_repos = []
+    for item in task.get("worktrees", []):
+        validated_hash = (validated_by_repo.get(item["repo"]) or {}).get("git", {}).get("dirty_snapshot_sha256")
+        if validated_hash != dirty_worktree_hash(ROOT / item["path"]):
+            stale_repos.append(item["repo"])
+    if stale_repos:
+        raise SystemExit(
+            "Source changed since validate-code ran in: " + ", ".join(stale_repos) +
+            f"; re-run ./ai/bin/ai task validate-code {args.task_id} --tier full"
+        )
 
     locked_skills = context_lock.get("skills", {}).get("locked", {})
     verify_locked_skills(context_lock)
@@ -194,7 +209,7 @@ def main() -> None:
     if task.get("scope", {}).get("execution_plan_required", False):
         matrix_script = AI_ROOT / "skills" / "review-vertical-slice-completeness" / "scripts" / "build_evidence_matrix.py"
         matrix_path = skill_check_dir / "acceptance-evidence.json"
-        matrix = run([sys.executable, str(matrix_script), str(execution_plan_path), str(implementation_path), "--output", str(matrix_path)], cwd=ROOT, timeout=120)
+        matrix = run([sys.executable, str(matrix_script), str(execution_plan_path), str(implementation_path), "--output", str(matrix_path), "--evidence-dir", str(td / "evidence")], cwd=ROOT, timeout=120)
         if matrix.returncode != 0:
             if matrix_path.is_file():
                 evidence = read_json(matrix_path)
@@ -223,6 +238,35 @@ def main() -> None:
     prior_fix_requests = sorted((runtime / "input").glob("fix-request-review-*.md"), key=fix_request_cycle)
     prior_fix_lines = "\n".join(f"- {path.relative_to(ROOT)}" for path in prior_fix_requests) or "- none (first review cycle)"
     fix_text = "\n".join(path.read_text(encoding="utf-8").lower() for path in prior_fix_requests)
+
+    # Orchestrator-computed, not model-authored: the actual current HEAD and dirty-worktree
+    # hash per worktree, injected into review.json after Codex returns so a later
+    # cycle/finalize can detect source drift instead of trusting a self-reported revision.
+    # HEAD is kept for human-readable audit; dirty_snapshot_sha256 is what actually changes
+    # mid-task (see dirty_worktree_hash's docstring) and is what finalize/accept compare.
+    actual_revisions = {
+        item["repo"]: {
+            "head": git_value(ROOT / item["path"], ["rev-parse", "HEAD"]),
+            "dirty_snapshot_sha256": dirty_worktree_hash(ROOT / item["path"]),
+        }
+        for item in task.get("worktrees", [])
+    }
+
+    # Durable ledger of the immediately preceding cycle's blocking findings (review.json
+    # itself is overwritten every cycle, so without this a later cycle could silently drop
+    # a finding from review_coverage.prior_findings and nothing would notice).
+    review_history_dir = td / "review-history"
+    prior_review_cycle = int(state.get("review_cycle", 0))
+    prior_ledger_path = review_history_dir / f"cycle-{prior_review_cycle:03d}.json"
+    prior_ledger = read_json(prior_ledger_path) if prior_review_cycle > 0 and prior_ledger_path.is_file() else None
+    prior_ledger_lines = (
+        "\n".join(
+            f"- {item['finding_id']}: [{item['severity']}] {item['title']} ({item['repo']}:{item['file']})"
+            for item in prior_ledger.get("findings", [])
+        )
+        if prior_ledger and prior_ledger.get("findings")
+        else "- none (first review cycle, or nothing blocking last cycle)"
+    )
     # Delta is only allowed directly after a FULL review produced the correction request
     # being reviewed now; this prevents delta->delta chains that never re-run the full
     # seven-pass review. Every delta pass is itself required (by run-task/finalize-task/
@@ -274,6 +318,12 @@ Deterministic skill evidence:
 
 Prior Codex findings that must each be retested against the current code:
 {prior_fix_lines}
+
+Prior cycle's blocking-findings ledger (retest each finding_id below against current code
+and current-cycle evidence; report its current status in review_coverage.prior_findings
+using the exact same finding_id so it can be matched programmatically):
+{prior_ledger_lines}
+Give every finding in `findings` a stable `finding_id` (e.g. "repo:file:severity:short-slug").
 
 Review baseline:
 {baseline_instruction}
@@ -379,6 +429,10 @@ approve proposal-only or empty-content entries; they cannot be deferred to human
     else:
         try:
             require_file(review_path, "Codex review output", f"inspect {log_path}")
+            raw_review = json.loads(review_path.read_text(encoding="utf-8"))
+            if isinstance(raw_review, dict):
+                raw_review["reviewed_revisions"] = actual_revisions
+                write_json(review_path, raw_review)
             validate_json(review_path, AI_ROOT / "schemas" / "review.schema.json")
             review = json.loads(review_path.read_text(encoding="utf-8"))
         except (SystemExit, Exception) as exc:
@@ -406,6 +460,17 @@ approve proposal-only or empty-content entries; they cannot be deferred to human
             incomplete_coverage.append("prior fix requests exist but prior-findings assessment is empty")
         if any(item.get("status") == "not_verified" for item in coverage.get("prior_findings", [])):
             incomplete_coverage.append("one or more prior findings were not verified")
+        if prior_ledger and prior_ledger.get("findings"):
+            reported_ids = {
+                item.get("finding_id") for item in coverage.get("prior_findings", []) if item.get("finding_id")
+            }
+            missing_ids = sorted(
+                item["finding_id"] for item in prior_ledger["findings"] if item["finding_id"] not in reported_ids
+            )
+            if missing_ids:
+                incomplete_coverage.append(
+                    "prior findings ledger missing retest for: " + ", ".join(missing_ids)
+                )
         if any(item.get("status") == "not_verified" for item in review.get("acceptance_criteria", [])):
             incomplete_coverage.append("one or more acceptance criteria were not verified")
         if coverage.get("completion_statement") is not True:
@@ -486,6 +551,20 @@ approve proposal-only or empty-content entries; they cannot be deferred to human
                 {key: item.get(key) for key in ("severity", "repo", "file", "title", "expected_fix")}
                 for item in review.get("findings", [])
             ],
+        })
+    if review is not None:
+        review_history_dir.mkdir(parents=True, exist_ok=True)
+        current_review_cycle = int(state.get("review_cycle", 0))
+        ledger_findings = [
+            {key: item.get(key) for key in ("finding_id", "severity", "title", "repo", "file")}
+            for item in review.get("findings", [])
+            if item.get("severity") in fail_on
+        ]
+        write_json(review_history_dir / f"cycle-{current_review_cycle:03d}.json", {
+            "task_id": args.task_id,
+            "review_cycle": current_review_cycle,
+            "reviewed_revisions": actual_revisions,
+            "findings": ledger_findings,
         })
     write_yaml(td / "state.yaml", state)
     extracted_usage, final_message = codex_stream_metadata(result.stdout)

@@ -32,7 +32,6 @@ from lib.ai_common import (
     write_json,
     active_execution_slice,
     reconcile_execution_plan_evidence,
-    token_budget,
 )
 from lib.codegraph import claude_mcp_config, prompt_guidance
 
@@ -189,7 +188,6 @@ def main() -> None:
     requirements = requirement_documents(args.task_id, include_user_request=True)
     context_lock = read_json(td / "context.lock.json")
     codegraph_guidance = prompt_guidance(ROOT, context_lock)
-    budget = token_budget()
     repaired_slices = reconcile_execution_plan_evidence(args.task_id)
     if repaired_slices:
         state["last_plan_reconciliation"] = {
@@ -645,13 +643,7 @@ Use these exact slice evidence keys for completed execution-plan slices:
             "full_plan_fallback_reason": correction_scope_reason,
         }
     write_yaml(td / "state.yaml", state)
-    context_tokens = sum(int(usage.get(key, 0) or 0) for key in ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"))
-    if context_tokens >= budget["warn_context_tokens"]:
-        state.setdefault("budget_warnings", []).append(f"attempt {attempt} slice {slice_id or 'whole-task'} used {context_tokens} context tokens")
-        if context_tokens >= budget["max_context_tokens"]:
-            state["last_budget_breach"] = {"attempt": attempt, "slice": slice_id, "context_tokens": context_tokens, "action": "next work continues in a fresh bounded session"}
-        write_yaml(td / "state.yaml", state)
-    append_agent_metric(args.task_id, {"generated_at": now_iso(), "agent": "claude", "phase": "implement", "attempt": attempt, "implementation_cycle": int(state.get("implementation_cycle", 1)), "change_cycle": int(state.get("change_cycle", 0)), "status": state["status"], "duration_seconds": round(time.monotonic() - started_monotonic, 2), "resumed": bool(session_id), "session_id": detected_session_id or session_id, "slice_id": slice_id, "budget": budget, "usage": usage, "correction_scope_mode": correction_scope_mode, "correction_scope_slices": correction_scope_slices, "correction_scope_fallback_reason": correction_scope_reason})
+    append_agent_metric(args.task_id, {"generated_at": now_iso(), "agent": "claude", "phase": "implement", "attempt": attempt, "implementation_cycle": int(state.get("implementation_cycle", 1)), "change_cycle": int(state.get("change_cycle", 0)), "status": state["status"], "duration_seconds": round(time.monotonic() - started_monotonic, 2), "resumed": bool(session_id), "session_id": detected_session_id or session_id, "slice_id": slice_id, "usage": usage, "correction_scope_mode": correction_scope_mode, "correction_scope_slices": correction_scope_slices, "correction_scope_fallback_reason": correction_scope_reason})
     print(final_text or result.stdout)
     raise SystemExit(result.returncode)
 

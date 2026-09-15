@@ -13,7 +13,7 @@ description: Convert HTML, CSS and JavaScript prototypes into maintainable Next.
 6. Move required assets into the target application's public asset tree, deduplicate them and use framework image/font facilities when appropriate.
 7. Implement loading, empty, error and edge states relevant to the route. Preserve keyboard use, focus visibility, labels and announcements.
 8. Test user-visible behavior with the repository test stack. Compare the implemented route against the reference at required viewports.
-9. Run `scripts/check_prototype_migration.py <frontend-worktree>` plus configured frontend validation.
+9. Run `scripts/check_prototype_migration.py <frontend-worktree>` plus configured frontend validation. The checker uses `ai/tools/source-analysis` (ts-morph AST) so a `prototype/` mention in a traceability comment is never confused with a real import, and JSX `onClick` is never confused with a raw HTML `onclick=` attribute — run `npm install && npm run build` there once if it reports a missing `dist/cli.js`.
 10. Record route, state and viewport evidence in the handoff before starting the next route.
 
 Never embed the original HTML as one component, execute legacy scripts, reference prototype assets at runtime or rename the source prototype to disguise an incomplete migration.

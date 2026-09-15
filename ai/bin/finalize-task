@@ -9,8 +9,11 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib.ai_common import (
     AI_ROOT,
+    ROOT,
     configured_fail_severities,
+    dirty_worktree_hash,
     ensure_task,
+    git_value,
     now_iso,
     read_json,
     read_yaml,
@@ -99,6 +102,23 @@ def main() -> None:
         for item in review_data.get("findings", [])
         if item.get("severity") in fail_on
     ]
+    # The reviewer declared it reviewed a specific revision per repo (orchestrator-injected
+    # in run-codex-review, not model-authored). If source moved since then, the verdict is
+    # stale and must not authorize acceptance.
+    reviewed_revisions = review_data.get("reviewed_revisions", {})
+    # dirty_snapshot_sha256 (not head alone) is what actually changes mid-task: this workflow
+    # never commits until acceptance, so HEAD alone would not detect a worktree edited after
+    # review (see ai_common.dirty_worktree_hash's docstring).
+    actual_revisions = {
+        item["repo"]: {
+            "head": git_value(ROOT / item["path"], ["rev-parse", "HEAD"]),
+            "dirty_snapshot_sha256": dirty_worktree_hash(ROOT / item["path"]),
+        }
+        for item in task.get("worktrees", [])
+    }
+    revisions_match = all(
+        reviewed_revisions.get(repo) == value for repo, value in actual_revisions.items()
+    )
     # A delta review's own "pass" can never directly authorize report/acceptance — it
     # only reviewed the latest fix's diff/dependencies, not the full seven passes. Only
     # a full review's pass counts here; run-task always runs one mandatory full review
@@ -111,6 +131,7 @@ def main() -> None:
         and cycles_match
         and not blocking_findings
         and last_review_mode == "full"
+        and revisions_match
     )
     if not gates_passed and not (args.report_only or args.force):
         details = []
@@ -124,6 +145,8 @@ def main() -> None:
             details.append("cycle identity does not match the current task state")
         if last_review_mode != "full":
             details.append(f"last review mode was {last_review_mode!r}, not a passing full review")
+        if not revisions_match:
+            details.append("source changed since the reviewed revision; re-run review")
         suffix = f" ({'; '.join(details)})" if details else ""
         raise SystemExit(
             "Cannot prepare acceptance: review/validation gates must pass" + suffix

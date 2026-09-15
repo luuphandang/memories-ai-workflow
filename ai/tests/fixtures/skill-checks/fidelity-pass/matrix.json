@@ -1,1 +1,21 @@
-{"entries": [{"route": "/", "viewport": "375x812", "state": "default", "reference": "prototype/home.png", "actual": "evidence/home-375.png", "status": "passed"}]}
+{
+  "entries": [
+    {
+      "route": "/",
+      "viewport": "375x812",
+      "state": "default",
+      "status": "passed",
+      "reference": "reference.png",
+      "actual": "actual.png",
+      "reference_sha256": "5c5922f2e2a3670b5f87238715463594e30b45b6c1cfcbb51c349ab3acb35deb",
+      "actual_sha256": "d10309001680da4b8334d6cbd07c53bc29227d3be139076de47f8f9b4aff6931",
+      "comparison": {
+        "tool": "fixture-comparator",
+        "tool_version": "1.0.0",
+        "algorithm": "byte-identity",
+        "threshold": 5.0,
+        "score": 0.0
+      }
+    }
+  ]
+}

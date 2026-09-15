@@ -96,6 +96,67 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
+def _git_status_records(repo: Path) -> list[tuple[str, str]]:
+    """Parse `git status --porcelain=v1 -z --untracked-files=all` into (status, path) pairs,
+    one per current worktree entry (a rename's original-path field is consumed and dropped,
+    keeping only its destination path, matching what `git diff`/the worktree itself show)."""
+    result = subprocess.run(
+        ["git", "status", "--porcelain=v1", "-z", "--untracked-files=all"],
+        cwd=repo, check=True, stdout=subprocess.PIPE,
+    )
+    records: list[tuple[str, str]] = []
+    raw = result.stdout.split(b"\0")
+    index = 0
+    while index < len(raw):
+        record = raw[index]
+        index += 1
+        if not record:
+            continue
+        text = record.decode("utf-8", errors="surrogateescape")
+        status, path = text[:2], text[3:]
+        if status[0] in {"R", "C"}:
+            if index >= len(raw):
+                raise ValueError("incomplete renamed-file record from git status")
+            index += 1  # original path field; not part of the current worktree inventory
+        records.append((status, path))
+    return records
+
+
+def git_worktree_paths(repo: Path) -> set[str]:
+    """Every changed path in `repo`: tracked modifications plus untracked files, exactly as
+    `git status --porcelain=v1 -z --untracked-files=all` reports them (a rename keeps only
+    its destination path). Shared by check_handoff.py and dirty_worktree_hash() so both
+    compute over the identical path set instead of two independent implementations that
+    could silently drift apart.
+    """
+    return {path for _, path in _git_status_records(repo)}
+
+
+def dirty_worktree_hash(repo: Path) -> str:
+    """SHA-256 fingerprint of everything currently dirty in `repo`: the tracked diff against
+    HEAD plus the content of every untracked file, sorted for a stable digest regardless of
+    git's listing order. This task workflow never commits mid-task
+    (enforce_global_git_policy blocks every git-write flag), so HEAD alone never moves while
+    a task is in progress -- this hash is what actually changes when source does, and is the
+    freshness signal validate/review/finalize compare against.
+    """
+    diff = subprocess.run(
+        ["git", "diff", "HEAD"], cwd=repo, check=True, stdout=subprocess.PIPE,
+    ).stdout
+    untracked = sorted(path for status, path in _git_status_records(repo) if status == "??")
+    h = hashlib.sha256()
+    h.update(b"diff:\n")
+    h.update(diff)
+    h.update(b"\nuntracked:\n")
+    for path in untracked:
+        h.update(path.encode("utf-8", errors="surrogateescape"))
+        h.update(b"\0")
+        content = (repo / path).read_bytes() if (repo / path).is_file() else b""
+        h.update(content)
+        h.update(b"\0")
+    return h.hexdigest()
+
+
 def skill_manifest(skill_name: str) -> dict[str, Any]:
     """Hash every durable file in a project skill into one reproducible digest."""
     skill_dir = AI_ROOT / "skills" / skill_name
@@ -213,6 +274,20 @@ def run_delivery_quality_gates(
         if missing:
             failures.append("acceptance-evidence")
 
+    if "review-frontend-ui-fidelity" in task.get("skills", {}).get("review", []):
+        fidelity_matrix = td / "evidence" / "fidelity-matrix.json"
+        if fidelity_matrix.is_file():
+            checker = AI_ROOT / "skills" / "review-frontend-ui-fidelity" / "scripts" / "check_fidelity_matrix.py"
+            result = run(
+                [__import__("sys").executable, str(checker), str(fidelity_matrix), "--require-all-passed"],
+                cwd=ROOT,
+                timeout=120,
+            )
+            check = {"name": "fidelity-matrix", "passed": result.returncode == 0, "output": result.stdout[-4000:]}
+            checks.append(check)
+            if not check["passed"]:
+                failures.append(check["name"])
+
     if "review-vertical-slice-completeness" in task.get("skills", {}).get("review", []):
         checker = AI_ROOT / "skills" / "review-vertical-slice-completeness" / "scripts" / "check_evidence_freshness.py"
         backend = next((item for item in task.get("worktrees", []) if item.get("repo") == "backend"), None)
@@ -245,28 +320,6 @@ def append_agent_metric(task_id: str, event: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(event, ensure_ascii=False) + "\n")
-
-
-def token_budget() -> dict[str, int]:
-    """Central, environment-overridable budgets for bounded agent sessions."""
-    import os
-
-    defaults = {
-        "warn_context_tokens": 60000,
-        "max_context_tokens": 80000,
-    }
-    result: dict[str, int] = {}
-    for key, default in defaults.items():
-        name = "AI_" + key.upper()
-        raw = os.environ.get(name, str(default))
-        try:
-            value = int(raw)
-        except ValueError as exc:
-            raise SystemExit(f"{name} must be an integer, found {raw!r}") from exc
-        if value <= 0:
-            raise SystemExit(f"{name} must be greater than zero")
-        result[key] = value
-    return result
 
 
 def active_execution_slice(task_id: str) -> dict[str, Any] | None:
@@ -354,7 +407,15 @@ def run(
     cwd: Path,
     timeout: int | None = None,
     shell: bool = False,
+    env: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
+    """`env`, when given, is merged over (not replacing) the current process environment --
+    e.g. per-task allocated infra ports (see docker_infra.py) without touching a shared
+    .env file. Omit it and the subprocess inherits the parent environment exactly as before.
+    """
+    import os
+
+    merged_env = {**os.environ, **env} if env is not None else None
     return subprocess.run(
         cmd,
         cwd=cwd,
@@ -364,6 +425,7 @@ def run(
         timeout=timeout,
         shell=shell,
         check=False,
+        env=merged_env,
     )
 
 
@@ -474,7 +536,7 @@ def validate_json(path: Path, schema_path: Path) -> None:
 
 def runtime_dir(task_id: str) -> Path:
     p = ROOT / "worktrees" / task_id / ".ai"
-    for name in ("input", "exchange", "validation", "metrics"):
+    for name in ("input", "exchange", "validation", "metrics", "infra"):
         (p / name).mkdir(parents=True, exist_ok=True)
     return p
 

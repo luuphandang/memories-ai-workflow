@@ -3,38 +3,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-import subprocess
 import sys
 
 import yaml
 
-
-def changed_files(repo: Path) -> set[str]:
-    result = subprocess.run(
-        ["git", "status", "--porcelain=v1", "-z", "--untracked-files=all"],
-        cwd=repo,
-        check=True,
-        stdout=subprocess.PIPE,
-    )
-    files: set[str] = set()
-    records = result.stdout.split(b"\0")
-    index = 0
-    while index < len(records):
-        record = records[index]
-        index += 1
-        if not record:
-            continue
-        text = record.decode("utf-8", errors="surrogateescape")
-        status, path = text[:2], text[3:]
-        if status[0] in {"R", "C"}:
-            if index >= len(records):
-                raise ValueError("incomplete renamed-file record from git status")
-            # In porcelain -z mode the first path is the destination; the next
-            # NUL-delimited field is the original path and is not part of the
-            # current worktree inventory.
-            index += 1
-        files.add(path)
-    return files
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "bin"))
+from lib.ai_common import git_worktree_paths as changed_files  # noqa: E402
 
 
 def main() -> int:

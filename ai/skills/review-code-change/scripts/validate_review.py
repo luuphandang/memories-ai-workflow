@@ -17,6 +17,14 @@ def main() -> int:
     parser.add_argument("review", type=Path)
     parser.add_argument("--mode", choices=("full", "delta"), required=True)
     parser.add_argument("--fail-on", default="blocker,major")
+    parser.add_argument(
+        "--history-dir",
+        type=Path,
+        default=None,
+        help="ai/tasks/<id>/review-history directory; when given, verify the most recent "
+        "prior cycle's blocking findings each have a matching finding_id in this review's "
+        "review_coverage.prior_findings",
+    )
     args = parser.parse_args()
 
     try:
@@ -41,6 +49,20 @@ def main() -> int:
         errors.append("one or more risk areas were not reviewed")
     if any(item.get("status") == "not_verified" for item in coverage.get("prior_findings", [])):
         errors.append("one or more prior findings were not verified")
+    if args.history_dir is not None and args.history_dir.is_dir():
+        ledgers = sorted(args.history_dir.glob("cycle-*.json"))
+        if ledgers:
+            prior_ledger = json.loads(ledgers[-1].read_text(encoding="utf-8"))
+            reported_ids = {
+                item.get("finding_id") for item in coverage.get("prior_findings", []) if item.get("finding_id")
+            }
+            missing_ids = sorted(
+                item["finding_id"]
+                for item in prior_ledger.get("findings", [])
+                if item.get("finding_id") not in reported_ids
+            )
+            if missing_ids:
+                errors.append("prior findings ledger missing retest for: " + ", ".join(missing_ids))
     if coverage.get("completion_statement") is not True:
         errors.append("review coverage is not declared complete")
 

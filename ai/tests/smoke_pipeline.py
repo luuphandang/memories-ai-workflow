@@ -8,6 +8,7 @@ It never calls Claude or Codex and never modifies the real workspace.
 from __future__ import annotations
 
 import contextlib
+import importlib.util
 import io
 import json
 import os
@@ -120,10 +121,29 @@ def implementation(task_id: str, implementation_cycle: int, change_cycle: int) -
     }
 
 
-def review(task_id: str, implementation_cycle: int, change_cycle: int, verdict: str = "pass", findings: list | None = None) -> dict:
+def git_head(repo_path: Path) -> str:
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=repo_path, text=True, capture_output=True, check=True,
+    )
+    return result.stdout.strip()
+
+
+def revision_snapshot(root: Path, repo_path: Path) -> dict:
+    """Matches finalize-task/accept-task's actual_revisions shape exactly -- imports the real
+    ai_common.dirty_worktree_hash (via the fixture's own copied ai/bin) instead of
+    reimplementing the algorithm, so this fixture can never silently drift from what the real
+    orchestrator computes and compares against."""
+    spec = importlib.util.spec_from_file_location("ai_common_smoke_revision", root / "ai" / "bin" / "lib" / "ai_common.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return {"head": git_head(repo_path), "dirty_snapshot_sha256": module.dirty_worktree_hash(repo_path)}
+
+
+def review(task_id: str, root: Path, implementation_cycle: int, change_cycle: int, verdict: str = "pass", findings: list | None = None) -> dict:
     normalized_findings = []
     for item in findings or []:
         item = dict(item)
+        item.setdefault("finding_id", f"{item.get('repo', 'example-repo')}:{item.get('file', 'README.md')}:{item.get('severity', 'minor')}:synthetic-fixture-finding")
         item.setdefault("implementation_guidance", {
             "approach": "Resolve the synthetic fixture failure",
             "code_locations": [item.get("file") or "README.md"],
@@ -136,6 +156,7 @@ def review(task_id: str, implementation_cycle: int, change_cycle: int, verdict: 
         "verdict": verdict,
         "applied_skills": [],
         "reviewed_repositories": ["example-repo"],
+        "reviewed_revisions": {"example-repo": revision_snapshot(root, root / "worktrees" / task_id / "example-repo")},
         "review_coverage": {
             "review_passes": ["requirements", "diff", "architecture", "behavior", "tests", "security", "regression"],
             "changed_files": [{"repo": "example-repo", "file": "README.md", "status": "reviewed", "evidence": "synthetic fixture"}],
@@ -257,7 +278,7 @@ def run_cycle(root: Path, task_dir: Path, implementation_cycle: int, change_cycl
     ai = root / "ai" / "bin" / "ai"
     write_json(task_dir / "implementation.json", with_skill_evidence(task_dir, implementation("TEST-1002", implementation_cycle, change_cycle), "implement"))
     write_validation(root, implementation_cycle, change_cycle)
-    write_json(task_dir / "review.json", with_skill_evidence(task_dir, review("TEST-1002", implementation_cycle, change_cycle), "review"))
+    write_json(task_dir / "review.json", with_skill_evidence(task_dir, review("TEST-1002", root, implementation_cycle, change_cycle), "review"))
     # This fixture represents a normal, complete (full) review; only a full review's
     # pass can authorize report/acceptance (delta reviews cannot, by contract).
     set_state_fields(task_dir / "state.yaml", last_review_mode="full")
@@ -287,7 +308,7 @@ def main() -> None:
         # Handcrafted artifacts cannot bypass required-skill gates at report time.
         write_json(task_dir / "implementation.json", implementation("TEST-1002", 1, 0))
         write_validation(root, 1, 0)
-        write_json(task_dir / "review.json", review("TEST-1002", 1, 0))
+        write_json(task_dir / "review.json", review("TEST-1002", root, 1, 0))
         bypass = run([str(ai), "task", "report", "TEST-1002"], root, expected=1)
         assert "required-skill gate" in bypass.stdout
 
@@ -303,14 +324,14 @@ def main() -> None:
         }
         write_json(task_dir / "implementation.json", with_skill_evidence(task_dir, implementation("TEST-1002", 1, 0), "implement"))
         run([str(ai), "task", "validate-code", "TEST-1002"], root)
-        write_json(task_dir / "review.json", with_skill_evidence(task_dir, review("TEST-1002", 1, 0, "changes_requested", [minor]), "review"))
+        write_json(task_dir / "review.json", with_skill_evidence(task_dir, review("TEST-1002", root, 1, 0, "changes_requested", [minor]), "review"))
         set_state_fields(task_dir / "state.yaml", review_cycle=1, status="changes_requested_by_codex")
         fix = run([str(ai), "task", "request-fixes", "TEST-1002"], root)
         assert "fix-request-review-001.md" in fix.stdout
         assert "[minor]" in (root / "worktrees" / "TEST-1002" / ".ai" / "input" / "fix-request-review-001.md").read_text()
 
         # Complete the initial cycle.
-        write_json(task_dir / "review.json", with_skill_evidence(task_dir, review("TEST-1002", 1, 0), "review"))
+        write_json(task_dir / "review.json", with_skill_evidence(task_dir, review("TEST-1002", root, 1, 0), "review"))
         set_state_fields(task_dir / "state.yaml", last_review_mode="full")
         run([str(ai), "task", "report", "TEST-1002"], root)
 
