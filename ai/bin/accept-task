@@ -25,6 +25,9 @@ from lib.ai_common import (
     write_yaml,
 )
 from lib.docker_infra import teardown_infra
+from lib.integration import verify_integration_ready
+from lib.coordination import CoordinationStore
+from lib.registries import RegistryService
 
 
 def current_finalization_matches(state: dict) -> bool:
@@ -33,6 +36,9 @@ def current_finalization_matches(state: dict) -> bool:
         and state.get("finalized_change_cycle") == int(state.get("change_cycle", 0))
         and state.get("finalized_review_cycle") == int(state.get("review_cycle", 0))
     )
+
+
+from lib.ai_common import task_transactional
 
 
 def main() -> None:
@@ -79,6 +85,7 @@ def main() -> None:
     review = read_json(review_path)
     summary = read_json(summary_path)
     run_delivery_quality_gates(args.task_id, implementation, review)
+    verify_integration_ready(args.task_id)
 
     current_implementation_cycle = int(state.get("implementation_cycle", 1))
     current_change_cycle = int(state.get("change_cycle", 0))
@@ -228,6 +235,12 @@ def main() -> None:
             metadata = read_yaml(metadata_path)
             metadata["status"] = "accepted"
             write_yaml(metadata_path, metadata)
+    try:
+        RegistryService(CoordinationStore()).complete_task_claims(args.task_id)
+    except Exception as exc:
+        # Acceptance is already durable. Claims are leased and will expire, so cleanup
+        # failure must be visible without corrupting the accepted task state.
+        print(f"Warning: could not release coordination claims for {args.task_id}: {exc}")
     subprocess.run([str(AI_ROOT / "bin" / "rebuild-indexes")], check=False)
     try:
         teardown_infra(args.task_id)
@@ -240,5 +253,6 @@ def main() -> None:
     print(f"Accepted and completed: {args.task_id}")
 
 
+main = task_transactional(main)
 if __name__ == "__main__":
     main()

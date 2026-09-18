@@ -15,6 +15,7 @@ ai/runtime/locks/*
 ai/runtime/logs/*
 ai/runtime/sessions/*
 ai/runtime/cache/*
+ai/runtime/coordination/*
 !ai/runtime/locks/.gitkeep
 !ai/runtime/logs/.gitkeep
 !ai/runtime/sessions/.gitkeep

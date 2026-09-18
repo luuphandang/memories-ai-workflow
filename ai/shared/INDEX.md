@@ -5,6 +5,7 @@
 - `policies/security.md`
 - `policies/git-policy.md`
 - `policies/worktree-policy.md`
+- `workflows/concurrency-coordination.md`
 - `policies/agent-boundaries.md`
 
 ## Workflows

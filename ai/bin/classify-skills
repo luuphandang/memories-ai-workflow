@@ -25,6 +25,9 @@ REVIEW_RULES = {
 }
 
 
+from lib.ai_common import task_transactional
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Suggest required project skills from task scope")
     parser.add_argument("task_id")
@@ -63,5 +66,6 @@ def main() -> None:
         print("No files changed. Re-run with --apply after reviewing the suggestions.")
 
 
+main = task_transactional(main)
 if __name__ == "__main__":
     main()

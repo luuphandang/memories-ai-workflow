@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import subprocess, sys
+import contextlib, os, subprocess, sys
+from lib.coordination import CoordinationConflict, CoordinationStore
+from lib.ai_common import read_yaml, safe_workspace_path, task_dir
+from lib.registries import RegistryService
 BIN=Path(__file__).resolve().parent
 
 
@@ -29,6 +32,12 @@ def usage():
   ai indexes rebuild
   ai metrics <ID>
   ai infra-gc [--max-age-hours N]
+  ai dependency discover|list|graph [TASK-ID] [options]
+  ai capability propose|building|available|show|list [TASK-ID] [options]
+  ai resource read|write-intent|claim|release|list [TASK-ID] [options]
+  ai plan history|diff <TASK-ID>
+  ai impact analyze|apply <TASK-ID> --capability NAME --contract-file FILE
+  ai integration validate|status <TASK-ID> --repo NAME [--command CMD]
 """)
 
 
@@ -40,10 +49,68 @@ def main():
     elif args[:2]==["indexes","rebuild"]: script,rest="rebuild-indexes",args[2:]
     elif args[0]=="metrics": script,rest="metrics",args[1:]
     elif args[0]=="infra-gc": script,rest="infra-gc",args[1:]
+    elif args[0] in {"dependency", "capability", "resource", "plan", "impact", "integration"}:
+        script,rest="coordination-cli",args
     elif args[0]=="task" and len(args)>=2:
         mapping={"create":"create-task","register-worktree":"register-worktree","prepare-context":"prepare-context","prepare-plan":"prepare-plan","classify-skills":"classify-skills","codegraph":"manage-codegraph","infra":"manage-infra","implement":"run-claude","run":"run-task","validate-code":"validate","review":"run-codex-review","request-fixes":"request-fixes","report":"finalize-task","accept":"accept-task","request-change":"request-change","update-knowledge":"update-knowledge","consolidate-requirements":"consolidate-requirements","apply-requirements-consolidation":"apply-requirements-consolidation"}
         script=mapping.get(args[1]); rest=args[2:]
         if not script: usage(); raise SystemExit(2)
     else: usage(); raise SystemExit(2)
-    raise SystemExit(subprocess.call([str(BIN/script),*rest]))
+    command = [str(BIN/script), *rest]
+    # One top-level mutating transaction per task prevents concurrent CLI invocations from
+    # losing state.yaml/plan/progress updates. Internal scripts called by run-task inherit
+    # this transaction because they are not routed through this entrypoint again.
+    coordination_entities = {"dependency", "capability", "resource", "plan", "impact", "integration"}
+    task_lock_id = None
+    if args[0] == "task" and len(args) >= 3:
+        task_lock_id = args[2]
+    elif args[0] in coordination_entities and len(args) >= 3 and "-" in args[2]:
+        task_lock_id = args[2]
+    if task_lock_id:
+        timeout = float(os.environ.get("AI_TASK_LOCK_TIMEOUT_SECONDS", "30"))
+        try:
+            store = CoordinationStore()
+            task_id = task_lock_id
+            operation = args[1]
+            write_operations = {"implement", "run", "validate-code"}
+            read_operations = {"review", "report", "accept"}
+            with store.lock(f"task-state:{task_id}", timeout=timeout):
+                with contextlib.ExitStack() as leases:
+                    if args[0] == "task" and operation in write_operations | read_operations:
+                        task = read_yaml(task_dir(task_id) / "task.yaml")
+                        mode = "write" if operation in write_operations else "read"
+                        for item in sorted(task.get("worktrees", []), key=lambda value: value["path"]):
+                            if mode == "write" and not item.get("writable", True):
+                                continue
+                            canonical = safe_workspace_path(item["path"]).resolve()
+                            leases.enter_context(store.lease(
+                                f"worktree:{canonical}", f"{task_id}:{operation}", mode=mode,
+                            ))
+                        if mode == "write":
+                            registry = RegistryService(store)
+                            registry.renew_task_claims(task_id)
+                            registry.renew_task_resource_claims(task_id)
+                            snapshot = registry.snapshot()
+                            owned = [
+                                value for value in snapshot["capabilities"].values()
+                                if value.get("producer_task") == task_id
+                                and value.get("claim_lease_id")
+                            ] + [
+                                value for value in snapshot["resource_accesses"].values()
+                                if value.get("task") == task_id
+                                and value.get("status") == "CLAIMED"
+                                and value.get("lease_id")
+                            ]
+                            for claim in owned:
+                                leases.enter_context(store.maintain_lease(
+                                    claim.get("claim_lease_id", claim.get("lease_id")),
+                                    claim.get("claim_fencing_token", claim.get("fencing_token")),
+                                ))
+                    raise SystemExit(subprocess.call(
+                        command, env={**os.environ, "AI_TASK_LOCK_OWNER": task_id}
+                    ))
+        except CoordinationConflict as exc:
+            print(f"Task coordination conflict: {exc}", file=sys.stderr)
+            raise SystemExit(75)
+    raise SystemExit(subprocess.call(command))
 if __name__=="__main__": main()

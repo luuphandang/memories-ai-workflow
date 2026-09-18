@@ -8,6 +8,9 @@ from lib.ai_common import ensure_task, read_yaml, safe_workspace_path
 from lib.docker_infra import ensure_infra_up, status_infra, teardown_infra
 
 
+from lib.ai_common import task_transactional
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Manually manage a task's isolated validation infra stack")
     parser.add_argument("task_id")
@@ -33,5 +36,6 @@ def main() -> None:
     print(json.dumps(manifest, indent=2))
 
 
+main = task_transactional(main)
 if __name__ == "__main__":
     main()

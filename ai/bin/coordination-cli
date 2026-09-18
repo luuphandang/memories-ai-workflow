@@ -1,0 +1,223 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import os
+import hashlib
+import json
+from pathlib import Path
+import re
+import subprocess
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib.ai_common import ensure_task, read_json, read_yaml, runtime_dir, safe_workspace_path, write_yaml
+from lib.coordination import CoordinationStore
+from lib.discovery import DependencyDiscovery
+from lib.impact import classify_contract_change
+from lib.integration import IntegrationGate, IntegrationQueue, dependency_snapshot, integration_fingerprint, manifest_fresh
+from lib.plan_reconciler import PlanReconciler
+from lib.registries import RegistryService
+
+
+def output(value) -> None:
+    print(json.dumps(value, ensure_ascii=False, indent=2))
+
+
+def create_dynamic_producer(capability: str, consumer: dict) -> str:
+    existing = []
+    for path in (Path(__file__).resolve().parents[1] / "tasks").glob("AUTO-*"):
+        match = re.fullmatch(r"AUTO-(\d+)", path.name)
+        if match:
+            existing.append(int(match.group(1)))
+    task_id = f"AUTO-{max(existing, default=0) + 1:04d}"
+    jira = consumer.get("jira", {})
+    parent = jira.get("parent_id")
+    epic = jira.get("epic_id")
+    if not parent or not epic:
+        raise SystemExit("auto_create_in_scope requires consumer parent_id and epic_id")
+    repositories = ",".join(sorted({item["repo"] for item in consumer.get("worktrees", [])}))
+    command = [
+        str(Path(__file__).resolve().parent / "create-task"), task_id,
+        "--type", "task", "--parent", parent, "--epic", epic,
+        "--title", f"Provide capability {capability}",
+    ]
+    if repositories:
+        command.extend(["--repos", repositories])
+    result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
+    if result.returncode:
+        raise SystemExit(result.stdout)
+    producer_dir = Path(__file__).resolve().parents[1] / "tasks" / task_id
+    requirement_path = producer_dir / "task.md"
+    requirement_path.write_text(
+        requirement_path.read_text(encoding="utf-8")
+        + "\n\n## Dynamic capability requirement\n\n"
+        + f"- [ ] Implement and publish shared capability `{capability}`.\n"
+        + "- [ ] Provide a verified contract fingerprint, source snapshot and validation evidence.\n"
+        + "- [ ] Notify and revalidate registered consumers for breaking contract changes.\n",
+        encoding="utf-8",
+    )
+    return task_id
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Dynamic dependency and integration coordination")
+    parser.add_argument("entity", choices=["dependency", "capability", "resource", "plan", "impact", "integration"])
+    parser.add_argument("operation")
+    parser.add_argument("task_id", nargs="?")
+    parser.add_argument("--slice")
+    parser.add_argument("--capability")
+    parser.add_argument("--repo")
+    parser.add_argument("--path")
+    parser.add_argument("--symbol")
+    parser.add_argument("--access", choices=["READ", "WRITE"])
+    parser.add_argument("--visibility", choices=["LOCAL", "TASK_SCOPED", "SHARED"], default="SHARED")
+    parser.add_argument("--confirmed", action="store_true")
+    parser.add_argument("--access-id")
+    parser.add_argument("--contract-file")
+    parser.add_argument("--workspace")
+    parser.add_argument("--source-sha256")
+    parser.add_argument("--evidence")
+    parser.add_argument("--command", action="append", default=[])
+    args = parser.parse_args()
+    store = CoordinationStore()
+    if args.task_id and os.environ.get("AI_TASK_LOCK_OWNER") != args.task_id:
+        with store.lock(f"task-state:{args.task_id}", timeout=30):
+            previous = os.environ.get("AI_TASK_LOCK_OWNER")
+            os.environ["AI_TASK_LOCK_OWNER"] = args.task_id
+            try:
+                return main()
+            finally:
+                if previous is None:
+                    os.environ.pop("AI_TASK_LOCK_OWNER", None)
+                else:
+                    os.environ["AI_TASK_LOCK_OWNER"] = previous
+    registry = RegistryService(store)
+
+    if args.entity == "dependency" and args.operation in {"list", "graph"}:
+        snapshot = registry.snapshot()
+        output(snapshot["dependencies"] if args.operation == "list" else snapshot)
+        return
+    if args.entity == "capability" and args.operation == "list":
+        output(registry.snapshot()["capabilities"]); return
+    if args.entity == "capability" and args.operation == "show":
+        output(registry.capability(args.capability or "") or {}); return
+    if args.entity == "resource" and args.operation == "list":
+        output(registry.snapshot()["resource_accesses"]); return
+    if not args.task_id:
+        parser.error("task_id is required for this operation")
+    td = ensure_task(args.task_id)
+    task = read_yaml(td / "task.yaml")
+
+    if args.entity == "dependency" and args.operation == "discover":
+        result = DependencyDiscovery(registry, PlanReconciler(store), create_dynamic_producer).discover(
+            task=task, plan_path=td / "execution-plan.json", slice_id=args.slice or "",
+            capability=args.capability or "", actor=f"cli:{args.task_id}",
+        )
+        output(result); return
+    if args.entity == "capability" and args.operation == "propose":
+        result = registry.propose_and_claim(
+            args.capability or "", args.task_id,
+            {"repository": args.repo, "file": args.path, "symbol": args.symbol},
+            actor=f"cli:{args.task_id}",
+        )
+        output(result); return
+    if args.entity == "capability" and args.operation == "building":
+        output(registry.transition_capability(args.capability or "", "BUILDING", actor=f"cli:{args.task_id}", task_id=args.task_id)); return
+    if args.entity == "capability" and args.operation == "available":
+        output(registry.mark_available(
+            args.capability or "", actor=f"cli:{args.task_id}", task_id=args.task_id,
+            workspace=Path(args.workspace or "."), source_sha256=args.source_sha256 or "",
+            validation_evidence=args.evidence or "",
+        )); return
+    if args.entity == "resource" and args.operation in {"read", "write-intent"}:
+        access = "READ" if args.operation == "read" else "WRITE"
+        output(registry.register_resource_access(
+            args.task_id, args.repo or "", args.path or "", access, args.visibility,
+            actor=f"cli:{args.task_id}", symbol=args.symbol, confirmed=args.confirmed,
+        )); return
+    if args.entity == "resource" and args.operation == "claim":
+        output(registry.claim_resource(
+            args.task_id, args.repo or "", args.path or "", actor=f"cli:{args.task_id}",
+            symbol=args.symbol,
+        )); return
+    if args.entity == "resource" and args.operation == "release":
+        output(registry.release_resource(
+            args.access_id or "", args.task_id, actor=f"cli:{args.task_id}"
+        )); return
+    if args.entity == "plan" and args.operation == "history":
+        output([json.loads(path.read_text()) for path in sorted((td / "plan-history").glob("*.json"))]); return
+    if args.entity == "plan" and args.operation == "diff":
+        history = sorted((td / "plan-history").glob("*.json"))
+        output(json.loads(history[-1].read_text()) if history else {}); return
+    if args.entity == "impact" and args.operation == "analyze":
+        current = registry.capability(args.capability or "") or {}
+        proposed = json.loads(Path(args.contract_file or "").read_text())
+        output(classify_contract_change(current.get("contract", {}), proposed)); return
+    if args.entity == "impact" and args.operation == "apply":
+        proposed = json.loads(Path(args.contract_file or "").read_text())
+        result = registry.change_contract(
+            args.capability or "", proposed, actor=f"cli:{args.task_id}", task_id=args.task_id
+        )
+        for consumer in result["affected_consumers"]:
+            consumer_dir = ensure_task(consumer)
+            consumer_state = read_yaml(consumer_dir / "state.yaml")
+            consumer_state["revalidation_state"] = "required"
+            consumer_state["dependency_state"] = "blocked" if result["impact_level"] == "LEVEL_3" else "partially_blocked"
+            consumer_state["integration_state"] = "stale"
+            write_yaml(consumer_dir / "state.yaml", consumer_state)
+        output(result); return
+    if args.entity == "integration" and args.operation == "status":
+        path = runtime_dir(args.task_id) / "integration" / f"{args.repo}.json"
+        if not path.exists(): output({"status": "NOT_EVALUATED"}); return
+        manifest = json.loads(path.read_text())
+        worktree = next(item for item in task["worktrees"] if item["repo"] == args.repo)
+        plan = read_json(td / "execution-plan.json")
+        current = integration_fingerprint(
+            safe_workspace_path(worktree["path"]), worktree.get("target_ref", worktree["base_ref"]),
+            plan_version=int(plan.get("plan_version", 1)), dependency_versions=manifest.get("dependency_versions", {}),
+        )
+        freshness = manifest_fresh(manifest, current)
+        effective = manifest["status"] if freshness["fresh"] else "STALE"
+        if not freshness["fresh"]:
+            state_path = td / "state.yaml"
+            state = read_yaml(state_path)
+            state["integration_state"] = "stale"
+            write_yaml(state_path, state)
+        output({**manifest, "freshness": freshness, "effective_status": effective}); return
+    if args.entity == "integration" and args.operation == "validate":
+        worktree = next(item for item in task["worktrees"] if item["repo"] == args.repo)
+        repo_state = read_yaml(td / "state.yaml")["repositories"][args.repo]
+        plan = read_json(td / "execution-plan.json")
+        dependencies = dependency_snapshot(args.task_id)
+        path = runtime_dir(args.task_id) / "integration" / f"{args.repo}.json"
+        source = safe_workspace_path(worktree["path"])
+        state_path = td / "state.yaml"
+        state = read_yaml(state_path)
+        state["integration_state"] = "validating"
+        write_yaml(state_path, state)
+        queue_resource = repo_state.get("repository_id", f"{args.repo}:{source.resolve()}")
+        try:
+            with IntegrationQueue(store).claim(f"{args.task_id}:integration", [queue_resource]):
+                with store.lease(f"worktree:{source.resolve()}", f"{args.task_id}:integration", mode="read"):
+                    result = IntegrationGate().validate(
+                        task_id=args.task_id, repository=args.repo or "", source=source,
+                        base_sha=repo_state["base_sha"], target_ref=worktree.get("target_ref", worktree["base_ref"]),
+                        plan_version=int(plan.get("plan_version", 1)), dependency_versions=dependencies,
+                        validation_commands=args.command, manifest_path=path,
+                    )
+        except Exception:
+            state = read_yaml(state_path)
+            state["integration_state"] = "conflicted"
+            write_yaml(state_path, state)
+            raise
+        state = read_yaml(state_path)
+        state["integration_state"] = "merge_ready" if result["status"] == "MERGE_READY" else "conflicted"
+        write_yaml(state_path, state)
+        output(result)
+        return
+    parser.error(f"Unsupported operation: {args.entity} {args.operation}")
+
+
+if __name__ == "__main__":
+    main()

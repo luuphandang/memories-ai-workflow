@@ -21,6 +21,10 @@
 12. Ghi `implementation.json`, nêu rõ change cycle đang xử lý.
 13. Ghi `applied_skills` cùng hash đã khóa và deterministic checks đã hoàn tất.
 
+Trong mỗi slice: ANALYZE → checkpoint → publish/claim shared intent → IMPLEMENT → checkpoint
+→ TEST → checkpoint → HANDOFF_READY. Agent chỉ đề xuất dependency/plan patch qua CLI; plan
+reconciler là writer duy nhất của master plan. Agent không tự tích hợp branch producer.
+
 Kiến trúc/module/convention cụ thể: chỉ dùng đúng các tài liệu repo/domain và hash đã khóa
 trong `context.lock.json`; mở rộng on-demand qua resolver rồi khóa lại context trước khi áp dụng.
 Luồng nghiệp vụ và trường hợp biên: `[BỔ SUNG THEO TÍNH NĂNG]`.

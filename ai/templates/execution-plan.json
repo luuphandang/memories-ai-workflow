@@ -2,12 +2,16 @@
   "task_id": "{{TASK_ID}}",
   "implementation_cycle": 1,
   "change_cycle": 0,
+  "plan_version": 1,
+  "applied_patches": [],
   "status": "draft",
   "slices": [
     {
       "id": "complete-task",
       "title": "Complete the effective task requirements",
       "depends_on": [],
+      "external_dependencies": [],
+      "resource_accesses": [],
       "acceptance_criteria": ["All effective acceptance criteria"],
       "requirement_details": {"All effective acceptance criteria": []},
       "deliverables": ["Implementation and required wiring"],

@@ -27,6 +27,7 @@ from lib.ai_common import (
     write_json,
     write_yaml,
 )
+from lib.integration import verify_integration_ready
 
 
 def bullets(items: list[str], empty_text: str) -> str:
@@ -35,6 +36,9 @@ def bullets(items: list[str], empty_text: str) -> str:
 
 def section(title: str, body: str) -> str:
     return f"## {title}\n\n{body}" if body.strip() else ""
+
+
+from lib.ai_common import task_transactional
 
 
 def main() -> None:
@@ -73,6 +77,7 @@ def main() -> None:
     # Normal finalization still runs every delivery gate before opening acceptance.
     if not args.report_only:
         run_delivery_quality_gates(args.task_id, implementation, review_data)
+        verify_integration_ready(args.task_id)
 
     summary_path = runtime_dir(args.task_id) / "validation" / "summary.json"
     if not summary_path.exists() and not (args.report_only or args.force):
@@ -335,5 +340,6 @@ def main() -> None:
     print(td / "final-report.md")
 
 
+main = task_transactional(main)
 if __name__ == "__main__":
     main()

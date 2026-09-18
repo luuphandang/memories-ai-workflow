@@ -24,6 +24,9 @@ MANIFEST_NAME = "requirements-consolidation-manifest.json"
 DRAFT_NAME = "requirements-consolidation-draft.md"
 
 
+from lib.ai_common import task_transactional
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Apply a reviewed, manifest-verified requirements-consolidation draft, replacing task.md"
@@ -134,5 +137,6 @@ def main() -> None:
     print(f"Previous task.md, draft and manifest preserved in: {history_dir.relative_to(ROOT)}")
 
 
+main = task_transactional(main)
 if __name__ == "__main__":
     main()

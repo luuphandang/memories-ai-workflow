@@ -21,6 +21,9 @@ def proposal_path(task_dir: Path, item: dict, index: int) -> Path:
     return task_dir / "knowledge-proposals" / f"{index:03d}__{target_name}.md"
 
 
+from lib.ai_common import task_transactional
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description="Apply approved durable knowledge updates")
     p.add_argument("task_id")
@@ -115,4 +118,5 @@ def main() -> None:
                 shutil.copy2(target, backup)
         atomic_write(target, new)
 
+main = task_transactional(main)
 if __name__ == "__main__": main()

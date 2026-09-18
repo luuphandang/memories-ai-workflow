@@ -99,6 +99,19 @@
         "null"
       ]
     },
+    "dependency_state": {
+      "enum": ["ready", "partially_blocked", "blocked"]
+    },
+    "revalidation_state": {
+      "enum": ["current", "required", "stale"]
+    },
+    "integration_state": {
+      "enum": ["not_evaluated", "queued", "validating", "merge_ready", "stale", "conflicted", "merged"]
+    },
+    "dependency_blockers": {
+      "type": "array",
+      "items": {"type": "object"}
+    },
     "automation": {
       "type": "object",
       "properties": {

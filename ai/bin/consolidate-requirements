@@ -46,6 +46,9 @@ def archive_stale_files(td: Path, draft_path: Path, manifest_path: Path) -> None
         manifest_path.replace(history_dir / MANIFEST_NAME)
 
 
+from lib.ai_common import task_transactional
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
@@ -177,5 +180,6 @@ Do not modify task.md or any other file. Do not commit, push, or touch Git.
     print(f"  ./ai/bin/ai task apply-requirements-consolidation {args.task_id} --approved-by <name>")
 
 
+main = task_transactional(main)
 if __name__ == "__main__":
     main()

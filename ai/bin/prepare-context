@@ -33,6 +33,9 @@ def iter_context_items(context: dict):
     yield from context.get("domains", [])
 
 
+from lib.ai_common import task_transactional
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Validate and lock task context")
     parser.add_argument("task_id")
@@ -238,5 +241,6 @@ def main() -> None:
     )
 
 
+main = task_transactional(main)
 if __name__ == "__main__":
     main()

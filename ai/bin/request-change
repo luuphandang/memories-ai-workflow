@@ -55,6 +55,9 @@ def reset_generated_outputs(
         directory.mkdir(parents=True, exist_ok=True)
 
 
+from lib.ai_common import task_transactional
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
@@ -219,5 +222,6 @@ def main() -> None:
     )
 
 
+main = task_transactional(main)
 if __name__ == "__main__":
     main()

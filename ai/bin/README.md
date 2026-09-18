@@ -42,6 +42,12 @@
   gộp trong `state.yaml`.
 - `rebuild-indexes`: sinh chỉ mục trạng thái.
 - `metrics`: tổng hợp attempt, resume, duration và token usage do CLI cung cấp.
+- `dependency discover|list|graph`: publish runtime dependency và xem dependency graph.
+- `capability propose|building|available|show|list`: quản lý semantic capability lifecycle.
+- `resource read|write-intent|claim|release|list`: publish access và quản lý resource lease.
+- `plan history|diff`: xem versioned plan-patch audit.
+- `impact analyze|apply`: phân loại hoặc áp dụng versioned contract change và mark consumer revalidation.
+- `integration validate|status`: dựng combined tree tạm, chạy validation và kiểm tra merge-ready freshness.
 
 Chạy `./ai/bin/ai --help` để xem command.
 

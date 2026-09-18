@@ -16,6 +16,9 @@ Codex review theo thứ tự:
 10. Đánh giá cross-repo contract, từng acceptance criterion hiệu lực và các risk area áp dụng được.
 11. Với mỗi finding chặn, đưa ra phương hướng sửa có code location, test cần bổ sung và
     tiêu chí hoàn tất; sau đó mới tổng hợp toàn bộ finding thành một `review.json`.
+12. Với task dùng coordination registry, kiểm tra capability/resource claim, producer/consumer,
+    dependency version, impact decision và checkpoint freshness. Review pass không được mô tả
+    là merge-ready nếu chưa có integration manifest current trên exact target SHA.
 
 Nếu bất kỳ file/pass/risk/finding cũ nào chưa được kiểm tra, verdict phải là `blocked`. `changes_requested` có nghĩa review đã hoàn tất và danh sách finding là danh sách tổng hợp của vòng hiện tại, không phải danh sách tạm thời.
 

@@ -6,6 +6,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib.ai_common import AI_ROOT, now_iso, render, task_dir, validate_task_id, read_yaml, write_yaml, runtime_dir
+from lib.ai_common import task_transactional
 
 
 def main() -> None:
@@ -53,4 +54,5 @@ def main() -> None:
     print(f"Created {args.type}: {td}")
     print(f"Next: edit {td/'task.md'} and register worktrees when applicable.")
 
+main = task_transactional(main)
 if __name__ == "__main__": main()

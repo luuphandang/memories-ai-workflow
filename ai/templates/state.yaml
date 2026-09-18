@@ -19,3 +19,7 @@ user_acceptance:
   accepted_by: null
   accepted_change_cycle: null
 last_error: null
+dependency_state: ready
+revalidation_state: current
+integration_state: not_evaluated
+dependency_blockers: []

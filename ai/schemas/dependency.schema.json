@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["id", "consumer_task", "type", "source", "blocking", "status"],
+  "properties": {
+    "id": {"type": "string"},
+    "consumer_task": {"type": "string"},
+    "type": {"enum": ["capability", "resource", "symbol", "contract", "schema", "artifact"]},
+    "source": {"enum": ["planned", "runtime_discovered"]},
+    "blocking": {"type": "boolean"},
+    "status": {"enum": ["WAITING", "ACTIVE", "RESOLVED", "STALE", "FAILED"]}
+  },
+  "additionalProperties": true
+}

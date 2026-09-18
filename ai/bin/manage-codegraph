@@ -11,6 +11,9 @@ from lib.ai_common import ROOT, ensure_task, read_yaml
 from lib.codegraph import inspect_task_repositories
 
 
+from lib.ai_common import task_transactional
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Prepare or inspect CodeGraph indexes for a task")
     parser.add_argument("task_id")
@@ -26,5 +29,6 @@ def main() -> None:
         raise SystemExit(1)
 
 
+main = task_transactional(main)
 if __name__ == "__main__":
     main()

@@ -100,6 +100,37 @@ thay đổi.
 
 ## 5. Chạy pipeline tự động
 
+### 5.1 Coordination khi có shared dependency
+
+Initial plan không cần biết trước mọi dependency. Khi Agent phát hiện dependency hoặc
+chuẩn bị sửa shared resource, phải publish trước mutation:
+
+```bash
+# Consumer phát hiện dependency trong runtime
+./ai/bin/ai dependency discover MEMORIES-ID \
+  --slice <SLICE-ID> --capability <CAPABILITY-NAME>
+
+# Producer claim capability và resource trước khi sửa
+./ai/bin/ai capability propose MEMORIES-ID --capability <CAPABILITY-NAME> \
+  --repo <repo> --path <relative-path> --symbol <SYMBOL>
+./ai/bin/ai capability building MEMORIES-ID --capability <CAPABILITY-NAME>
+./ai/bin/ai resource claim MEMORIES-ID --repo <repo> \
+  --path <relative-path> --symbol <SYMBOL>
+```
+
+Nếu capability đang được task khác build, chỉ slice phụ thuộc bị chặn. `task run` kết thúc
+an toàn với automation status `waiting_dependency`; các slice độc lập vẫn được chạy trước.
+Sau event dependency-ready, chạy lại `task run` để scheduler revalidate và tiếp tục. Agent
+không tự merge, cherry-pick hoặc rebase branch producer.
+
+Khi producer hoàn tất và validation evidence đã tồn tại:
+
+```bash
+./ai/bin/ai capability available MEMORIES-ID --capability <CAPABILITY-NAME> \
+  --workspace worktrees/MEMORIES-ID/<repo> \
+  --source-sha256 <SHA256> --evidence <VALIDATION-EVIDENCE-PATH>
+```
+
 Xem trước:
 
 ```bash
@@ -118,6 +149,9 @@ Luồng tự động:
 implement → implementation_ready_for_validation → validate-code → review
    ↑                                                               │
    └──────────────── request-fixes/checklist ──────────────────────┘
+                                      │
+                                      ▼
+                    integration validate → report → user accept
 ```
 
 - Validation fail được ghi thành fix request cho attempt tiếp theo.
@@ -131,6 +165,8 @@ implement → implementation_ready_for_validation → validate-code → review
   correction không được sửa source vì sẽ tự làm stale evidence vừa tạo.
 - Vòng lặp dừng tối đa theo `review.max_fix_cycles` (mặc định `5`) và giới hạn attempt.
 - Full review đầu tiên khóa `review-baseline.json`; review sau không được âm thầm mở rộng contract.
+- Với task đã dùng coordination, report/accept chỉ mở sau khi từng repository có manifest
+  `MERGE_READY` còn fresh theo source, target SHA, plan và dependency versions.
 - Khi pass, report được sinh và task dừng ở `awaiting_user_acceptance`.
 - Pipeline không tự accept thay người dùng.
 
@@ -172,6 +208,8 @@ git -C worktrees/MEMORIES-ID/<repo> status --short
 ./ai/bin/ai task validate-code MEMORIES-ID --tier full
 ./ai/bin/ai task review MEMORIES-ID --mode auto
 ./ai/bin/ai task request-fixes MEMORIES-ID  # chỉ khi review yêu cầu sửa
+./ai/bin/ai integration validate MEMORIES-ID --repo <repo> \
+  --command "<TYPECHECK-COMMAND>" --command "<TEST-COMMAND>"
 ./ai/bin/ai task report MEMORIES-ID         # chỉ khi validation/review pass
 ```
 
@@ -237,6 +275,13 @@ Dừng pipeline và kiểm tra artifact khi task ở một trong các trạng th
 
 - `needs_input`: bổ sung thông tin còn thiếu.
 - `blocked`: đã chạm policy/giới hạn hoặc không thể tiếp tục an toàn.
+- `automation.status: waiting_dependency`: không còn slice runnable; chờ producer publish
+  capability rồi chạy lại `task run`.
+- `dependency_state: partially_blocked|blocked`: xem dependency graph và blocker; không
+  tự lấy code từ branch task khác.
+- `revalidation_state: required`: dependency contract đã đổi; chạy lại checkpoint,
+  validation/review và integration.
+- `integration_state: stale|conflicted`: chạy lại integration validation trên target hiện hành.
 - `interrupted`: xử lý quota, timeout hoặc availability trước khi resume.
 - `implementation_ready_for_validation`: không cần Claude; resume từ validation.
 - `changes_requested_by_validation`: lỗi validation đã được đưa vào checklist cho attempt kế tiếp.
@@ -318,6 +363,35 @@ source .env.ai
 `quick` chỉ dùng để phản hồi sớm giữa các slice. Trước Codex review phải có full
 validation. `--mode auto` là lựa chọn mặc định; pipeline tự quyết định delta/full theo
 rủi ro và luôn yêu cầu final full review trước report.
+
+### Dynamic dependency, shared resource và integration
+
+```bash
+./ai/bin/ai dependency discover MEMORIES-ID \
+  --slice <SLICE-ID> --capability <CAPABILITY-NAME>
+./ai/bin/ai dependency list
+./ai/bin/ai dependency graph
+
+./ai/bin/ai capability propose MEMORIES-ID --capability <CAPABILITY-NAME> \
+  --repo <repo> --path <relative-path> --symbol <SYMBOL>
+./ai/bin/ai capability building MEMORIES-ID --capability <CAPABILITY-NAME>
+./ai/bin/ai capability show --capability <CAPABILITY-NAME>
+
+./ai/bin/ai resource read MEMORIES-ID --repo <repo> --path <relative-path> \
+  --symbol <SYMBOL> --confirmed
+./ai/bin/ai resource claim MEMORIES-ID --repo <repo> --path <relative-path> \
+  --symbol <SYMBOL>
+
+./ai/bin/ai plan history MEMORIES-ID
+./ai/bin/ai impact analyze MEMORIES-ID --capability <CAPABILITY-NAME> \
+  --contract-file <CONTRACT-JSON>
+./ai/bin/ai integration validate MEMORIES-ID --repo <repo> \
+  --command "<TYPECHECK-COMMAND>" --command "<TEST-COMMAND>"
+./ai/bin/ai integration status MEMORIES-ID --repo <repo>
+```
+
+Integration validation không chấp nhận command matrix rỗng. Nếu source, target, plan hoặc
+dependency version đổi sau đó, manifest tự stale và phải chạy lại trước report/accept.
 
 ### Nghiệm thu và thay đổi yêu cầu
 

@@ -20,6 +20,9 @@ def slug(value: str) -> str:
     return value[:60].rstrip("-") or "slice"
 
 
+from lib.ai_common import task_transactional
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate a deterministic vertical-slice execution plan")
     parser.add_argument("task_id")
@@ -62,6 +65,8 @@ def main() -> None:
             "id": identifier,
             "title": title,
             "depends_on": [],
+            "external_dependencies": [],
+            "resource_accesses": [],
             "acceptance_criteria": [title],
             "requirement_details": {title: criteria},
             "deliverables": ["Complete implementation across every applicable architecture layer"],
@@ -74,6 +79,8 @@ def main() -> None:
         "task_id": args.task_id,
         "implementation_cycle": int(state.get("implementation_cycle", 1)),
         "change_cycle": int(state.get("change_cycle", 0)),
+        "plan_version": 1,
+        "applied_patches": [],
         "status": "ready",
         "slices": slices,
     })
@@ -99,5 +106,6 @@ def main() -> None:
     print(f"Execution plan ready: {len(slices)} slices, {len(slices)} primary criteria, {detail_count} detailed requirements")
 
 
+main = task_transactional(main)
 if __name__ == "__main__":
     main()

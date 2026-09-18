@@ -4,11 +4,13 @@ from pathlib import Path
 from datetime import datetime, timezone
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
 import tempfile
 from typing import Any
+from functools import wraps
 
 try:
     import yaml
@@ -18,6 +20,8 @@ except ImportError as exc:
 ROOT = Path(__file__).resolve().parents[3]
 AI_ROOT = ROOT / "ai"
 TASK_ID_RE = re.compile(r"^[A-Z][A-Z0-9]+-[0-9]+$")
+CAPABILITY_NAME_RE = re.compile(r"^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$")
+DEFAULT_BASE_REF = "origin/master"
 
 # Shared with run-codex-review's delta-safety check and request-fixes' correction-scope
 # sidecar so both use the identical vocabulary for "this change is too sensitive to
@@ -61,8 +65,15 @@ def atomic_write(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False) as f:
         f.write(content)
+        f.flush()
+        os.fsync(f.fileno())
         temp = Path(f.name)
     temp.replace(path)
+    directory_fd = os.open(path.parent, os.O_RDONLY)
+    try:
+        os.fsync(directory_fd)
+    finally:
+        os.close(directory_fd)
 
 
 def task_dir(task_id: str) -> Path:
@@ -73,6 +84,110 @@ def task_dir(task_id: str) -> Path:
 def validate_task_id(task_id: str) -> None:
     if not TASK_ID_RE.fullmatch(task_id):
         raise SystemExit(f"Invalid Jira ID: {task_id}")
+
+
+def task_transactional(function):
+    """Serialize a task command even when its internal script is invoked directly."""
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        import contextlib
+        import os
+        import sys
+        task_id = sys.argv[1] if len(sys.argv) > 1 else ""
+        validate_task_id(task_id)
+        if os.environ.get("AI_TASK_LOCK_OWNER") == task_id:
+            return function(*args, **kwargs)
+        from .coordination import CoordinationStore
+        previous = os.environ.get("AI_TASK_LOCK_OWNER")
+        store = CoordinationStore()
+        with store.lock(f"task-state:{task_id}", timeout=30):
+            os.environ["AI_TASK_LOCK_OWNER"] = task_id
+            try:
+                with contextlib.ExitStack() as leases:
+                    command = Path(sys.argv[0]).name
+                    write_commands = {"run-claude", "run-task", "validate"}
+                    read_commands = {"run-codex-review", "finalize-task", "accept-task"}
+                    task_path = task_dir(task_id) / "task.yaml"
+                    if task_path.exists() and command in write_commands | read_commands:
+                        task = read_yaml(task_path)
+                        mode = "write" if command in write_commands else "read"
+                        for item in sorted(task.get("worktrees", []), key=lambda value: value["path"]):
+                            if mode == "write" and not item.get("writable", True):
+                                continue
+                            canonical = safe_workspace_path(item["path"]).resolve()
+                            leases.enter_context(store.lease(
+                                f"worktree:{canonical}", f"{task_id}:{command}", mode=mode,
+                            ))
+                        if mode == "write":
+                            from .registries import RegistryService
+                            registry = RegistryService(store)
+                            registry.renew_task_claims(task_id)
+                            registry.renew_task_resource_claims(task_id)
+                            snapshot = registry.snapshot()
+                            owned = [
+                                value for value in snapshot["capabilities"].values()
+                                if value.get("producer_task") == task_id and value.get("claim_lease_id")
+                            ] + [
+                                value for value in snapshot["resource_accesses"].values()
+                                if value.get("task") == task_id and value.get("status") == "CLAIMED"
+                                and value.get("lease_id")
+                            ]
+                            for claim in owned:
+                                leases.enter_context(store.maintain_lease(
+                                    claim.get("claim_lease_id", claim.get("lease_id")),
+                                    claim.get("claim_fencing_token", claim.get("fencing_token")),
+                                ))
+                    return function(*args, **kwargs)
+            finally:
+                if previous is None:
+                    os.environ.pop("AI_TASK_LOCK_OWNER", None)
+                else:
+                    os.environ["AI_TASK_LOCK_OWNER"] = previous
+    return wrapped
+
+
+def coordination_policy(task: dict[str, Any]) -> dict[str, Any]:
+    """Return concurrency defaults without requiring legacy task files to migrate.
+
+    Dynamic producer creation is intentionally opt-in: discovering a missing shared
+    capability may always create a proposal, but creating a new task can broaden product
+    scope and therefore requires an explicit task policy.
+    """
+    configured = task.get("coordination", {})
+    return {
+        "dynamic_producer": configured.get("dynamic_producer", "proposal_only"),
+        "target_ref": configured.get("target_ref", DEFAULT_BASE_REF),
+    }
+
+
+def repository_identity(repo: Path, configured_name: str) -> str:
+    """Canonical identity shared by all worktrees of one configured repository."""
+    common_dir = git_value(repo, ["rev-parse", "--git-common-dir"])
+    common_path = Path(common_dir)
+    if not common_path.is_absolute():
+        common_path = repo / common_path
+    canonical = common_path.resolve()
+    digest = hashlib.sha256(str(canonical).encode("utf-8")).hexdigest()[:16]
+    return f"{configured_name}:{digest}"
+
+
+def canonical_resource_id(repo_name: str, path: str, symbol: str | None = None) -> str:
+    """Build a stable logical resource ID; reject absolute or escaping paths."""
+    candidate = Path(path)
+    if candidate.is_absolute() or ".." in candidate.parts:
+        raise ValueError(f"Resource path must be repository-relative: {path}")
+    normalized = candidate.as_posix().lstrip("./")
+    if not repo_name or not normalized:
+        raise ValueError("Resource ID requires repository name and path")
+    return f"{repo_name}:{normalized}" + (f"#{symbol}" if symbol else "")
+
+
+def validate_capability_name(name: str) -> str:
+    if not CAPABILITY_NAME_RE.fullmatch(name):
+        raise ValueError(
+            "Capability name must be a lowercase semantic namespace, for example user.create"
+        )
+    return name
 
 
 def ensure_task(task_id: str) -> Path:
@@ -328,18 +443,33 @@ def active_execution_slice(task_id: str) -> dict[str, Any] | None:
     task = read_yaml(td / "task.yaml")
     if not task.get("scope", {}).get("execution_plan_required", False):
         return None
-    plan = read_json(td / "execution-plan.json")
+    plan_path = td / "execution-plan.json"
+    from .plan_reconciler import PlanReconciler
+    from .coordination import CoordinationStore
+    plan = PlanReconciler(CoordinationStore()).recover(plan_path)
     slices = plan.get("slices", [])
     by_id = {item["id"]: item for item in slices}
+    # Import locally to keep the foundational helpers free of coordination import cycles.
+    from .registries import RegistryService
+    from .scheduler import schedule
+    registry = RegistryService(CoordinationStore())
+    registry.renew_task_claims(task_id)
+    scheduling = schedule(
+        plan, registry.snapshot(),
+        active_resource_accesses=registry.active_resource_claims(exclude_task=task_id),
+    )
+    state_path = td / "state.yaml"
+    state = read_yaml(state_path)
+    state["dependency_state"] = scheduling["dependency_state"]
+    state["dependency_blockers"] = scheduling["dependency_blockers"]
+    write_yaml(state_path, state)
+    runnable = set(scheduling["runnable_slices"])
     progress_path = td / "implementation-progress.json"
     selected = read_json(progress_path).get("current_slice") if progress_path.exists() else None
-    if selected and selected in by_id and by_id[selected].get("status") != "completed":
+    if selected and selected in by_id and selected in runnable:
         return by_id[selected]
-    completed = {item["id"] for item in slices if item.get("status") == "completed"}
     for item in slices:
-        if item.get("status") not in {"pending", "in_progress", "blocked"}:
-            continue
-        if set(item.get("depends_on", [])).issubset(completed):
+        if item["id"] in runnable:
             return item
     # A post-review correction happens after the plan is complete. The finding can be
     # in any slice, so the caller falls back to a full-plan scope instead of picking one.

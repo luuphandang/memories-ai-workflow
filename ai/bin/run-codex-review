@@ -37,6 +37,9 @@ from lib.ai_common import (
     task_risk_level,
 )
 from lib.codegraph import codex_mcp_overrides, prompt_guidance
+from lib.integration import coordination_required
+from lib.lifecycle_checkpoint import verify_checkpoint
+from lib.registries import verify_task_coordination
 
 
 def timeout_output(exc: subprocess.TimeoutExpired) -> str:
@@ -83,6 +86,9 @@ def codex_stream_metadata(output: str) -> tuple[dict, str]:
     return usage, final_text
 
 
+from lib.ai_common import task_transactional
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run Codex read-only review")
     parser.add_argument("task_id")
@@ -90,6 +96,12 @@ def main() -> None:
     parser.add_argument("--print-command", action="store_true")
     parser.add_argument("--mode", choices=("auto", "full", "delta"), default="auto")
     args = parser.parse_args()
+    if not args.dry_run and (
+        coordination_required(args.task_id)
+        or (runtime_dir(args.task_id) / "checkpoints" / "latest.json").exists()
+    ):
+        verify_checkpoint(args.task_id, {"POST_TEST"})
+        verify_task_coordination(args.task_id)
 
     td = ensure_task(args.task_id)
     task = read_yaml(td / "task.yaml")
@@ -578,5 +590,6 @@ approve proposal-only or empty-content entries; they cannot be deferred to human
     raise SystemExit(effective_returncode)
 
 
+main = task_transactional(main)
 if __name__ == "__main__":
     main()

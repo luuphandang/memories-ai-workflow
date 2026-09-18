@@ -96,6 +96,10 @@
           "base_ref": {
             "type": "string"
           },
+          "target_ref": {
+            "type": "string",
+            "description": "Explicit integration target; optional for legacy task records and equal to base_ref for new registrations."
+          },
           "writable": {
             "type": "boolean"
           }
@@ -155,6 +159,19 @@
     },
     "validation": {
       "type": "object"
+    },
+    "coordination": {
+      "type": "object",
+      "properties": {
+        "dynamic_producer": {
+          "enum": ["proposal_only", "auto_create_in_scope"]
+        },
+        "target_ref": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
     },
     "git": {
       "type": "object",

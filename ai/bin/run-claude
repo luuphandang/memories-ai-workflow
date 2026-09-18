@@ -33,6 +33,7 @@ from lib.ai_common import (
     active_execution_slice,
     reconcile_execution_plan_evidence,
 )
+from lib.lifecycle_checkpoint import write_checkpoint
 from lib.codegraph import claude_mcp_config, prompt_guidance
 
 
@@ -170,6 +171,9 @@ def restore_orchestrator_checkpoint_slice(checkpoint_path: Path, slice_id: str |
     checkpoint = read_json(checkpoint_path)
     checkpoint["current_slice"] = slice_id
     write_json(checkpoint_path, checkpoint)
+
+
+from lib.ai_common import task_transactional
 
 
 def main() -> None:
@@ -345,6 +349,13 @@ def main() -> None:
                     f"ai/tasks/{args.task_id}/implementation.json`; do not finish while it reports missing criteria."
                 )
         elif active_slice is None:
+            waiting_state = read_yaml(td / "state.yaml")
+            if waiting_state.get("dependency_state") == "blocked":
+                waiting_state["status"] = "prepared"
+                waiting_state["last_error"] = "Waiting for external dependencies; rerun when a dependency becomes ready"
+                write_yaml(td / "state.yaml", waiting_state)
+                print(waiting_state["last_error"])
+                raise SystemExit(75)
             raise SystemExit("No runnable execution-plan slice remains; reconcile completed evidence before implementing")
         else:
             evidence_key_lines = f"- `slice:{active_slice['id']}`"
@@ -643,10 +654,13 @@ Use these exact slice evidence keys for completed execution-plan slices:
             "full_plan_fallback_reason": correction_scope_reason,
         }
     write_yaml(td / "state.yaml", state)
+    if result.returncode == 0 and state.get("status") == "implementation_ready_for_validation":
+        write_checkpoint(args.task_id, "HANDOFF_READY")
     append_agent_metric(args.task_id, {"generated_at": now_iso(), "agent": "claude", "phase": "implement", "attempt": attempt, "implementation_cycle": int(state.get("implementation_cycle", 1)), "change_cycle": int(state.get("change_cycle", 0)), "status": state["status"], "duration_seconds": round(time.monotonic() - started_monotonic, 2), "resumed": bool(session_id), "session_id": detected_session_id or session_id, "slice_id": slice_id, "usage": usage, "correction_scope_mode": correction_scope_mode, "correction_scope_slices": correction_scope_slices, "correction_scope_fallback_reason": correction_scope_reason})
     print(final_text or result.stdout)
     raise SystemExit(result.returncode)
 
 
+main = task_transactional(main)
 if __name__ == "__main__":
     main()

@@ -35,6 +35,21 @@
 
 Task không `completed` chỉ vì Codex pass; phải có user acceptance.
 
+## Multi-agent coordination
+
+Worktree writable có single-writer lease. Shared capability/resource phải được publish và
+claim trước mutation; dependency phát hiện trong runtime được thêm vào execution plan bằng
+versioned Plan Patch. Event JSONL là audit history, còn capability/dependency/resource graph
+là projection có thể rebuild.
+
+Task có dependency chưa ready có thể ở trạng thái `partially_blocked`: scheduler tiếp tục
+slice độc lập và chỉ resume slice phụ thuộc khi capability/version đã sẵn sàng. Breaking
+contract change làm confirmed consumer stale/revalidation-required theo impact graph.
+
+Codex pass chỉ chứng minh review trên task snapshot. `ai integration validate` dựng clone tạm
+trên exact target SHA, áp dụng task diff từ registered base và chạy combined validation; chỉ
+manifest current có trạng thái `MERGE_READY`. Agent không tự merge/cherry-pick/rebase.
+
 Skill lock dùng aggregate SHA-256 của `SKILL.md`, references, scripts và `agents/openai.yaml`; sửa bất kỳ file skill nào đều yêu cầu chạy lại `prepare-context`.
 
 Chạy pipeline tự động bằng `./ai/bin/ai task run <ID>`. Command không tự accept và không thay

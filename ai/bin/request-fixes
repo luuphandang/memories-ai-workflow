@@ -132,6 +132,9 @@ def build_correction_scope(
     return scope
 
 
+from lib.ai_common import task_transactional
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Create a concise fix request from Codex findings"
@@ -302,5 +305,6 @@ def main() -> None:
     print(scope_path)
 
 
+main = task_transactional(main)
 if __name__ == "__main__":
     main()

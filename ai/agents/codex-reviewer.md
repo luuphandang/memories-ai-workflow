@@ -20,6 +20,12 @@ Review độc lập kết quả do Claude tạo. Không triển khai thay Claude
 - Tính đầy đủ xuyên layer: port → adapter → DI/module wiring → migration/constraint → presentation → test.
 - Toàn bộ file thay đổi và file phụ thuộc trực tiếp; không dừng review ngay khi tìm thấy finding đầu tiên.
 - Mọi finding từ các review cycle trước phải được retest và đánh dấu `resolved`, `regressed` hoặc `not_applicable` với bằng chứng mới.
+- Shared mutation có resource intent/capability claim hợp lệ; không có duplicate hoặc
+  undocumented capability/dependency.
+- Dependency version/fingerprint còn current; breaking contract change có impact analysis
+  và downstream stale/revalidation state phù hợp.
+- Không có registry bypass, unregistered confirmed resource access hoặc review dựa trên
+  source/plan/dependency snapshot đã stale.
 
 ## Hai contract riêng biệt: full review và delta review
 

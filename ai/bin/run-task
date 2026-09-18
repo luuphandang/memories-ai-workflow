@@ -261,6 +261,9 @@ def implementation_contract_fix_request(task_id: str, attempt: int, error: str) 
     return path
 
 
+from lib.ai_common import task_transactional
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Autonomously run implement/validate/review/fix cycles")
     parser.add_argument("task_id")
@@ -315,6 +318,13 @@ def main() -> None:
             after_fingerprint = repository_fingerprint(task, td)
             after_source_fingerprint = source_fingerprint(task)
             state = read_yaml(td / "state.yaml")
+            if code == 75 and state.get("dependency_state") == "blocked":
+                state.setdefault("automation", {}).update({
+                    "status": "waiting_dependency", "finished_at": now_iso()
+                })
+                write_yaml(td / "state.yaml", state)
+                print("Automation paused with no runnable slice; rerun after dependency readiness notification.")
+                return
             if state.get("status") == "interrupted":
                 if args.resume_interrupted and interrupted_retries < args.max_interrupted_retries:
                     interrupted_retries += 1
@@ -470,5 +480,6 @@ def main() -> None:
     raise SystemExit(state["last_error"])
 
 
+main = task_transactional(main)
 if __name__ == "__main__":
     main()

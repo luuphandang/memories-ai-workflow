@@ -27,6 +27,13 @@ luôn dùng đúng danh sách requirement đã khóa trong `context.lock.json`.
   tạo manifest chuẩn trong task evidence, rồi dùng bước sync của `validate-evidence-provenance`
   để kiểm tra và publish atomically sang runtime. Không sửa đồng thời hai bản manifest.
 - Theo `execution-plan.json`, chỉ xử lý một vertical slice tại một thời điểm và cập nhật checkpoint.
+- Trước shared mutation, phân loại LOCAL/TASK_SCOPED/SHARED. Với SHARED, publish write
+  intent và claim resource/capability qua orchestrator trước khi sửa.
+- Dependency mới phát hiện trong runtime phải publish qua `ai dependency discover`; agent
+  không trực tiếp sửa registry hoặc master execution plan. Exploratory file reads không phải
+  dependency; chỉ publish confirmed dependency/contract consumption.
+- Capability dùng chung đi qua PROPOSED → CLAIMED → BUILDING → AVAILABLE với source snapshot
+  và validation evidence. Trước handoff phải kiểm tra plan/context/dependency/checkpoint freshness.
 - Chỉ đọc tài liệu được liệt kê/khóa trong context, sau đó mở rộng on-demand khi thực sự liên quan.
 - Khi `context.lock.json.codegraph.repositories.<repo>.ready` là `true`, dùng MCP
   `codegraph_<repo>` trước cho câu hỏi kiến trúc, symbol flow, caller/callee và impact.

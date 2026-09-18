@@ -17,6 +17,9 @@ skills:
   review: [review-code-change, review-vertical-slice-completeness]
 scope:
   execution_plan_required: true
+coordination:
+  dynamic_producer: proposal_only
+  target_ref: origin/master
 review:
   max_cycles: 5
   fail_on: [blocker, major]

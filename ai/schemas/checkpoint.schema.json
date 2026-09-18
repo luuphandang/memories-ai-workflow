@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["schema_version", "phase", "plan_version", "context_version", "dependencies", "source_snapshots", "fencing_tokens"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "phase": {"enum": ["ANALYZE", "PRE_SHARED_MUTATION", "IMPLEMENT", "PRE_TEST", "POST_TEST", "HANDOFF_READY", "INTEGRATION"]},
+    "plan_version": {"type": "integer", "minimum": 1},
+    "context_version": {"type": ["integer", "string"]},
+    "dependencies": {"type": "object"},
+    "source_snapshots": {"type": "object", "additionalProperties": {"type": "string"}},
+    "fencing_tokens": {"type": "object", "additionalProperties": {"type": "integer"}},
+    "target_sha": {"type": ["string", "null"]}
+  },
+  "additionalProperties": false
+}

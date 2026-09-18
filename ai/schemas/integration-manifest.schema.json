@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["schema_version", "task_id", "repository", "source_head", "source_dirty_snapshot", "target_ref", "target_sha", "base_sha", "plan_version", "dependency_versions", "integration_tree_sha", "validation_snapshot_sha256", "validation", "status"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "task_id": {"type": "string"},
+    "repository": {"type": "string"},
+    "source_head": {"type": "string"},
+    "source_dirty_snapshot": {"type": "string"},
+    "target_ref": {"type": "string"},
+    "target_sha": {"type": "string"},
+    "base_sha": {"type": "string"},
+    "plan_version": {"type": "integer", "minimum": 1},
+    "dependency_versions": {"type": "object"},
+    "integration_tree_sha": {"type": "string"},
+    "merge_order": {"type": "integer", "minimum": 1},
+    "validation_snapshot_sha256": {"type": "string"},
+    "validation": {"type": "array"},
+    "status": {"enum": ["MERGE_READY", "CONFLICTED", "STALE"]}
+  },
+  "additionalProperties": true
+}

@@ -7,9 +7,11 @@ Bộ workspace điều phối quy trình:
 ```text
 Jira requirement
 → developer tạo worktree
+→ runtime dependency/capability coordination
 → Claude triển khai
 → validation deterministic
 → Codex review kỹ thuật
+→ integration gate trên target SHA hiện hành
 → người dùng nghiệm thu
 → completed
 ```
@@ -148,6 +150,80 @@ một lần**, mục **11 Chuẩn bị CodeGraph, plan, skill và context**, và
 | Full review | Review đầy đủ bảy lượt trên toàn bộ implementation hiện hành |
 | Review baseline | Contract requirement/risk/test được khóa từ full review đầu tiên để review sau không âm thầm mở rộng goalpost |
 | Implementation checklist | Danh sách machine-readable trong `implementation-progress.json`, mỗi item có trạng thái và evidence |
+| Capability | Chức năng semantic dùng chung, ví dụ `user.create`, có producer, consumer và version |
+| Resource lock | Quyền READ/WRITE trên file/symbol/resource; khác với capability ownership |
+| Plan Patch | Thay đổi có `base_version` do agent đề xuất và orchestrator reconcile vào execution plan |
+| Partial blocking | Chỉ slice phụ thuộc bị chặn; slice độc lập vẫn tiếp tục |
+| Integration manifest | Bằng chứng combined tree trên exact target SHA đã vượt validation |
+
+## 2.1 Dependency động và checkpoint
+
+Khi implementer phát hiện shared dependency ngoài initial plan:
+
+```bash
+./ai/bin/ai dependency discover TASK-B --slice order-create --capability user.create
+./ai/bin/ai dependency graph
+```
+
+Producer đăng ký capability trước shared mutation:
+
+```bash
+./ai/bin/ai capability propose TASK-A --capability user.create \
+  --repo backend --path src/user/user.service.ts --symbol UserService.createUser
+./ai/bin/ai capability building TASK-A --capability user.create
+```
+
+Sau khi source và validation evidence đã sẵn sàng, producer publish capability:
+
+```bash
+./ai/bin/ai capability available TASK-A --capability user.create \
+  --workspace worktrees/TASK-A/backend \
+  --source-sha256 <SHA256> --evidence <VALIDATION-EVIDENCE-PATH>
+```
+
+Không được chuyển capability sang `AVAILABLE` nếu thiếu source snapshot hoặc validation
+evidence. Claim capability và resource có lease/heartbeat; task hoàn tất sẽ release resource
+claim và freeze capability đã publish.
+
+Observed exploratory read không tự trở thành dependency. Chỉ dùng `--confirmed` khi task
+thực sự dựa vào resource/contract:
+
+```bash
+./ai/bin/ai resource read TASK-B --repo backend --path src/user/user.service.ts \
+  --symbol UserService.createUser --confirmed
+```
+
+Shared writer phải claim resource trước mutation và release khi slice hoàn tất:
+
+```bash
+./ai/bin/ai resource claim TASK-A --repo backend --path src/user/user.service.ts \
+  --symbol UserService.createUser
+./ai/bin/ai resource release TASK-A --access-id ACCESS-...
+```
+
+Breaking contract change được apply qua orchestrator để downstream task nhận
+`revalidation_state: required`:
+
+```bash
+./ai/bin/ai impact analyze TASK-A --capability user.create --contract-file contract-v2.json
+./ai/bin/ai impact apply TASK-A --capability user.create --contract-file contract-v2.json
+```
+
+Tại checkpoint, agent đối chiếu plan/context/dependency versions, source snapshot và lease
+fencing token. Agent không tự sửa master plan hoặc tích hợp branch producer.
+
+Nếu capability đang `BUILDING`, scheduler đánh dấu slice phụ thuộc blocked nhưng tiếp tục
+slice độc lập. Khi không còn slice runnable, `task run` dừng với
+`automation.status: waiting_dependency`. Sau khi producer publish và workflow phát event
+`TASK_DEPENDENCY_READY`, chạy lại `task run`; không tự merge/cherry-pick branch producer.
+
+Trước bàn giao merge, developer/integration layer chạy:
+
+```bash
+./ai/bin/ai integration validate TASK-B --repo backend \
+  --command "npm run typecheck" --command "npm test"
+./ai/bin/ai integration status TASK-B --repo backend
+```
 
 ## 3. Quy ước placeholder
 
@@ -539,6 +615,7 @@ chọn một runnable slice
 → correction bằng bounded implement session
 → delta review khi an toàn
 → final full review
+→ integration validation trên current target SHA (khi task dùng coordination)
 → report
 ```
 
@@ -560,6 +637,12 @@ Validation failure được chuyển thành structured checklist và fix request
 hoặc `validation`; evidence-only correction bị cấm sửa source để tránh tự làm stale evidence.
 Khi Codex pass, reviewer vẫn giữ trạng thái `reviewing`; chỉ `report` sinh thành công mới
 chuyển sang `awaiting_user_acceptance`. Pipeline không tự accept task.
+
+Với task có capability/dependency/shared resource coordination, `report` và `accept` còn
+kiểm tra integration manifest. Vì validation command phụ thuộc từng repository, chạy
+`ai integration validate` sau review và trước report. Manifest phải là `MERGE_READY` và còn
+fresh theo source SHA, target SHA, plan version và dependency version. Validation snapshot
+được lưu trong manifest để audit. Task legacy không dùng coordination giữ flow cũ.
 
 Tuỳ chọn kiểm soát:
 
@@ -597,6 +680,8 @@ Khi đánh giá chi phí, không chỉ nhìn `input_tokens`: với session dài,
 ./ai/bin/ai task validate-code PROJ-1002 --tier full
 ./ai/bin/ai task review PROJ-1002 --mode auto
 ./ai/bin/ai task request-fixes PROJ-1002  # khi review yêu cầu sửa
+./ai/bin/ai integration validate PROJ-1002 --repo backend \
+  --command "npm run typecheck" --command "npm test"
 ./ai/bin/ai task report PROJ-1002         # khi validation và review đã pass
 ```
 
@@ -944,6 +1029,14 @@ Nếu task được reopened, knowledge phát sinh từ cycle mới chỉ áp d�
 | `blocked` | Không thể tiếp tục an toàn |
 | `failed` | Pipeline hoặc dữ liệu task lỗi |
 
+Ba trạng thái coordination trực giao được lưu cạnh lifecycle chính:
+
+| Trường | Giá trị quan trọng | Cách xử lý |
+|---|---|---|
+| `dependency_state` | `ready`, `partially_blocked`, `blocked` | Chạy slice độc lập; khi blocked hoàn toàn, chờ dependency-ready rồi chạy lại `task run` |
+| `revalidation_state` | `clean`, `required` | Contract dependency đã đổi; checkpoint, validation, review và integration lại |
+| `integration_state` | `not_required`, `validating`, `merge_ready`, `stale`, `conflicted` | Chỉ report/accept khi task coordination có manifest fresh `MERGE_READY` |
+
 ## 20. Cấu trúc change cycle
 
 ```text
@@ -1029,6 +1122,22 @@ detail. Xem danh sách ngắn bằng `./ai/bin/ai --help`. Bảng dưới đây 
 | `ai task apply-requirements-consolidation <ID> --approved-by <NAME>` | Kiểm hash/cycle/manifest rồi áp dụng draft đã được người duyệt xác nhận; backup lịch sử để audit. |
 | `ai task update-knowledge <ID>` | Hiển thị kế hoạch cập nhật knowledge đã approved. `--apply` mới ghi vào `ai/shared`, `ai/repos`, `ai/domains`; `--force` là escape hatch có kiểm soát khi cần vượt guard trạng thái. |
 
+### 21.5 Coordination, dependency và integration
+
+| Lệnh | Chức năng |
+|---|---|
+| `ai dependency discover <ID> --slice <SLICE> --capability <NAME>` | Publish dependency runtime, đăng ký consumer, tạo versioned Plan Patch và resolve producer theo policy. |
+| `ai dependency list` / `ai dependency graph` | Xem registry hoặc toàn bộ runtime graph. |
+| `ai capability propose|building <ID> --capability <NAME> ...` | Claim producer duy nhất và chuyển capability sang BUILDING trước shared mutation. |
+| `ai capability available <ID> --capability <NAME> --workspace <PATH> --source-sha256 <SHA> --evidence <PATH>` | Publish capability sau khi xác minh source snapshot và validation evidence. |
+| `ai capability show --capability <NAME>` / `ai capability list` | Xem capability lifecycle, producer, consumers và version. |
+| `ai resource read|write-intent <ID> --repo <REPO> --path <PATH> [--symbol <SYMBOL>] [--confirmed]` | Ghi runtime READ/WRITE discovery; confirmed read mới tham gia dependency impact. |
+| `ai resource claim|release <ID> ...` | Claim/release shared writer ownership; tách biệt với capability claim. |
+| `ai plan history|diff <ID>` | Xem versioned Plan Patch và lịch sử reconciliation. |
+| `ai impact analyze|apply <ID> --capability <NAME> --contract-file <JSON>` | Phân loại contract change và đánh dấu downstream revalidation/stale khi cần. |
+| `ai integration validate <ID> --repo <REPO> --command <CMD> ...` | Dựng combined tree tạm trên current target, chạy command matrix và tạo manifest `MERGE_READY`; không chấp nhận matrix rỗng. |
+| `ai integration status <ID> --repo <REPO>` | Kiểm tra manifest và freshness hiện hành. |
+
 Ví dụ vận hành hằng ngày:
 
 ```bash
@@ -1074,6 +1183,9 @@ find worktrees/<ID>/.ai -maxdepth 3 -type f | sort
 | Review yêu cầu sửa | Ưu tiên `task run`; correction được tự phân loại code/evidence/validation. Khi đạt `review.max_fix_cycles`, task block. Finding mở rộng contract ngoài `review-baseline.json` phải được xử lý như requirement gap. |
 | Delta review bị từ chối | Chạy `ai task review <ID> --mode full`; đây là bắt buộc với auth/security/API/database/migration/transaction/concurrency. |
 | Report/accept bị chặn | Kiểm `state.yaml`, cycle trong implementation/review/validation, verdict, `review.fail_on`, và full-validation không phải dry-run. Không dùng `--force` chỉ để vượt nghiệm thu. |
+| Pipeline dừng ở `waiting_dependency` | Chạy `ai dependency graph`, xác định producer/status/version. Tiếp tục phần độc lập nếu còn; sau `TASK_DEPENDENCY_READY`, chạy lại `ai task run <ID>`. Không tự merge branch producer. |
+| Review bị chặn bởi coordination gate | Kiểm shared WRITE đã register/claim, dependency đã resolved đúng version, produced capability đã AVAILABLE/FROZEN và `revalidation_state` không còn required. |
+| Report/accept báo integration chưa ready hoặc stale | Chạy `ai integration status`; sau khi source/target/plan/dependency đổi, chạy lại `ai integration validate` với command matrix thật cho từng repository. |
 | Requirement consolidation báo hash/cycle mismatch | Không sửa manifest. Tạo lại draft bằng `consolidate-requirements`, review lại rồi apply với người duyệt. |
 | Index trạng thái sai | Chạy `ai indexes rebuild`; index là dữ liệu sinh, `state.yaml` mới là nguồn thật. |
 
@@ -1126,6 +1238,8 @@ Toàn bộ nội dung ví dụ là trung lập và không dùng dữ liệu dự
 - [ ] `context.lock.json.codegraph.repositories.<repo>.ready` là `true` khi chạy ở mode
   `required`.
 - [ ] `context.lock.json` được tạo sau lần sửa requirements/skill/plan cuối cùng.
+- [ ] Mọi shared capability/resource intent đã publish và claim trước mutation.
+- [ ] Runtime dependency đã được discover; Agent không tự merge/cherry-pick branch producer.
 
 ### Trước Codex
 
@@ -1136,6 +1250,7 @@ Toàn bộ nội dung ví dụ là trung lập và không dùng dữ liệu dự
 - [ ] Mọi checklist item được giao đã `completed` với evidence; không tự sửa execution-plan status.
 - [ ] `review-baseline.json` đã được tạo từ full review đầu tiên và không bị mở rộng âm thầm.
 - [ ] Nếu đã dùng delta review, final full review cũng đã pass.
+- [ ] Coordination gate không còn dependency stale, shared WRITE chưa đăng ký hoặc capability chưa publish.
 
 ### Trước accept
 
@@ -1143,6 +1258,7 @@ Toàn bộ nội dung ví dụ là trung lập và không dùng dữ liệu dự
 - [ ] Validation pass.
 - [ ] Pipeline đang ở `awaiting_user_acceptance`, không phải `interrupted` hoặc `blocked`.
 - [ ] `final-report.md` và finalized implementation/change/review cycle khớp trạng thái hiện hành.
+- [ ] Với task dùng coordination, mọi repository có integration manifest fresh `MERGE_READY`.
 - [ ] Người dùng đã test kết quả.
 - [ ] Không còn correction cần thực hiện.
 

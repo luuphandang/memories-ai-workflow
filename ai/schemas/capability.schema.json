@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["name", "type", "producer_task", "implementation", "version", "status", "consumers"],
+  "properties": {
+    "name": {"type": "string", "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$"},
+    "type": {"type": "string"},
+    "producer_task": {"type": "string"},
+    "implementation": {"type": "object"},
+    "version": {"type": "integer", "minimum": 1},
+    "status": {"enum": ["PROPOSED", "CLAIMED", "BUILDING", "AVAILABLE", "FROZEN", "DEPRECATED", "INVALID"]},
+    "consumers": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["id", "task", "resource", "access", "visibility", "classification"],
+  "properties": {
+    "id": {"type": "string"},
+    "task": {"type": "string"},
+    "resource": {"type": "string"},
+    "access": {"enum": ["READ", "WRITE"]},
+    "visibility": {"enum": ["LOCAL", "TASK_SCOPED", "SHARED"]},
+    "classification": {"enum": ["observed", "confirmed_dependency"]}
+  },
+  "additionalProperties": true
+}

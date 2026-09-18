@@ -6,6 +6,11 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib.ai_common import AI_ROOT, enforce_global_git_policy, ensure_task, read_yaml, write_yaml, write_json, safe_workspace_path, run, git_value, dirty_worktree_hash, runtime_dir, now_iso
 from lib.docker_infra import acquire_heavy_validation_slot, ensure_infra_up, infra_env_for_manifest, infra_gc
+from lib.lifecycle_checkpoint import verify_checkpoint, write_checkpoint
+from lib.integration import coordination_required
+
+
+from lib.ai_common import task_transactional
 
 
 def main() -> None:
@@ -18,6 +23,8 @@ def main() -> None:
     args = p.parse_args()
     td = ensure_task(args.task_id)
     task = read_yaml(td / "task.yaml")
+    if not args.dry_run and (coordination_required(args.task_id) or (runtime_dir(args.task_id) / "checkpoints" / "latest.json").exists()):
+        verify_checkpoint(args.task_id, {"HANDOFF_READY", "POST_TEST"})
     enforce_global_git_policy(task)
     try:
         infra_gc(best_effort=True)
@@ -150,12 +157,17 @@ def main() -> None:
     state = read_yaml(td / "state.yaml")
     ready_for_review = overall and provenance_ok and not args.dry_run
     state["status"] = "reviewing" if ready_for_review else ("prepared" if overall else "failed")
+    if ready_for_review:
+        state["revalidation_state"] = "current"
     state.setdefault("timestamps", {})["validation_finished_at"] = now_iso()
     if not overall: state["last_error"] = "One or more required validations failed"
     elif not provenance_ok:
         state["last_error"] = "Validation commands passed, but evidence provenance is stale"
     write_yaml(td / "state.yaml", state)
+    if ready_for_review:
+        write_checkpoint(args.task_id, "POST_TEST")
     print(f"Validation {'PASSED' if overall else 'FAILED'}; see {validation_dir / 'summary.json'}")
     if (not overall or not provenance_ok) and not args.dry_run: raise SystemExit(1)
 
+main = task_transactional(main)
 if __name__ == "__main__": main()
