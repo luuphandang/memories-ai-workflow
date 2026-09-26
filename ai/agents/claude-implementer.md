@@ -2,6 +2,8 @@
 
 ## Trách nhiệm
 
+- Đọc requirement tại `worktrees/<TASK-ID>/docs/`, rồi tạo/cập nhật
+  `ai/tasks/<TASK-ID>/task.md`, `task.yaml`, `context.yaml` trước khi implement code.
 - Hiểu yêu cầu gốc (`task.md`) và mọi requirement addendum **chưa được gộp** (unconsolidated)
   còn hiệu lực, theo đúng danh sách trong `context.lock.json.requirements`. Addendum của
   cycle đã gộp (`cycle ≤ requirements_consolidated_through_cycle`) đã nằm trong `task.md`;
@@ -29,7 +31,8 @@
 
 ## Không được làm
 
-- Không sửa `ai/shared`, `ai/repos` hoặc `ai/domains` trực tiếp.
+- Không sửa `ai/shared`, `ai/repos` hoặc `ai/domains` trực tiếp. Ngoài registered worktree,
+  chỉ được sửa ba tài liệu task nêu trên và các artifact handoff được workflow yêu cầu.
 - Không tự đánh dấu task completed hoặc tự xác nhận thay người dùng.
 - Không bỏ qua lỗi chỉ vì lỗi có vẻ đã tồn tại từ trước; phải ghi rõ bằng chứng.
 - Không mở rộng scope nếu chưa có trong task/addendum.

@@ -222,6 +222,8 @@ def create_repo(root: Path) -> None:
     worktree = root / "worktrees" / "TEST-1002" / "example-repo"
     worktree.parent.mkdir(parents=True)
     run(["git", "worktree", "add", "-b", "feature/TEST-1002-smoke", str(worktree), "HEAD"], repo)
+    docs = worktree.parent / "docs"; docs.mkdir()
+    (docs / "README.md").write_text("# Smoke requirements\n", encoding="utf-8")
 
     knowledge = root / "ai" / "repos" / "example-repo"
     shutil.copytree(root / "ai" / "repos" / "backend", knowledge)
@@ -239,11 +241,17 @@ commands:
 
 def create_hierarchy(root: Path) -> Path:
     ai = root / "ai" / "bin" / "ai"
-    run([
-        str(ai), "task", "create", "TEST-1002", "--type", "task", "--parent", "TEST-1001", "--epic", "TEST-1000",
-        "--repos", "example-repo", "--title", "Smoke task",
-    ], root)
     task_dir = root / "ai" / "tasks" / "TEST-1002"
+    task_dir.mkdir(); (task_dir / "changes").mkdir()
+    values = {"TASK_ID":"TEST-1002","TITLE":"Smoke task","JIRA_TYPE":"task",
+              "PARENT_ID":"TEST-1001","EPIC_ID":"TEST-1000","PARENT_ID_YAML":"TEST-1001",
+              "EPIC_ID_YAML":"TEST-1000","NOW":"2026-01-01T00:00:00+00:00",
+              "IMPLEMENTATION_CYCLE":"1","CHANGE_CYCLE":"0"}
+    for template in (root / "ai" / "templates").iterdir():
+        if template.is_file() and template.suffix in {".md", ".yaml", ".json"}:
+            text = template.read_text(encoding="utf-8")
+            for key, value in values.items(): text = text.replace("{{" + key + "}}", value)
+            (task_dir / template.name).write_text(text, encoding="utf-8")
     configure_task(task_dir / "task.yaml")
     assert __import__("yaml").safe_load((task_dir / "task.yaml").read_text(encoding="utf-8"))["review"]["max_cycles"] == 5
     import yaml

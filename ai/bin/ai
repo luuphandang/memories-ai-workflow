@@ -11,7 +11,7 @@ def usage():
     print("""Usage:
   ai bootstrap
   ai self-check [--smoke]
-  ai task create <ID> --type epic|story|task --title <TITLE> [options]
+  ai task create <ID> --type epic|story|task --title <TITLE> --repos backend,frontend [options]
   ai task register-worktree <ID> --repo <NAME> --path <PATH> [--base-ref REF]
   ai task prepare-context <ID>
   ai task prepare-plan <ID> [--force]

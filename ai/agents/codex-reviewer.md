@@ -6,6 +6,8 @@ Review độc lập kết quả do Claude tạo. Không triển khai thay Claude
 
 ## Bắt buộc kiểm tra
 
+- Đối chiếu nguồn requirement trong `worktrees/<TASK-ID>/docs/` với `task.md`, `task.yaml`,
+  `context.yaml`; trả `blocked` nếu thiếu, sai hoặc tự mở rộng requirement.
 - Mức độ đáp ứng từng acceptance criterion hiệu lực từ `task.md` và mọi requirement addendum
   **chưa được gộp** (unconsolidated) theo danh sách trong `context.lock.json.requirements`.
   Addendum của cycle đã gộp vào `task.md` là audit artifact lịch sử, không áp dụng lại.

@@ -7,18 +7,20 @@ Read in order:
 1. `ai/agents/common.md`
 2. `ai/agents/claude-implementer.md`
 3. `ai/tasks/<TASK-ID>/task.yaml`
-4. `ai/tasks/<TASK-ID>/task.md`
-5. Only the unconsolidated addenda listed in `context.lock.json.requirements` (the active
+4. All user-provided requirement documents under `worktrees/<TASK-ID>/docs/`; create or
+   update `task.md`, `task.yaml`, and `context.yaml` from them before implementation.
+5. `ai/tasks/<TASK-ID>/task.md`
+6. Only the unconsolidated addenda listed in `context.lock.json.requirements` (the active
    requirement set from the shared `requirement_documents()` resolver), in ascending cycle
    order. Do not independently glob or reload every historical
    `changes/cycle-*/requirement-addendum.md` file. Addenda from cycles at or below
    `requirements_consolidated_through_cycle` are already folded into `task.md` — they
    remain on disk only as audit artifacts and must never be re-applied.
-6. The active cycle's `user-request.md`
-7. `ai/tasks/<TASK-ID>/context.yaml`
-8. `ai/tasks/<TASK-ID>/context.lock.json`
-9. Every required implementation skill listed and hashed by the context lock
-10. `ai/tasks/<TASK-ID>/execution-plan.json`
+7. The active cycle's `user-request.md`
+8. `ai/tasks/<TASK-ID>/context.yaml`
+9. `ai/tasks/<TASK-ID>/context.lock.json`
+10. Every required implementation skill listed and hashed by the context lock
+11. `ai/tasks/<TASK-ID>/execution-plan.json`
 
 When a task's context lock marks a repository CodeGraph-ready, query its
 `codegraph_<repo>` MCP server first for architecture, symbol flow and impact analysis.

@@ -1,58 +1,104 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse
+import argparse, re, shutil, subprocess, sys, unicodedata
 from pathlib import Path
-import sys
-
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib.ai_common import AI_ROOT, now_iso, render, task_dir, validate_task_id, read_yaml, write_yaml, runtime_dir
-from lib.ai_common import task_transactional
+from lib.ai_common import AI_ROOT, ROOT, now_iso, read_yaml, render, repository_identity, runtime_dir, task_dir, task_transactional, validate_task_id, write_yaml
 
+REPOSITORIES = ("backend", "frontend")
+
+def kebab_case(value: str) -> str:
+    value = value.replace("đ", "d").replace("Đ", "D")
+    normalized = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
+    result = re.sub(r"[^a-z0-9]+", "-", normalized.lower()).strip("-")
+    if not result: raise SystemExit("Title must contain at least one letter or number")
+    return result
+
+def run(command: list[str], cwd: Path) -> str:
+    return subprocess.run(command, cwd=cwd, check=True, text=True, capture_output=True).stdout.strip()
+
+def parent_branch(parent_id: str, expected_type: str) -> str:
+    parent_path = task_dir(parent_id) / "task.yaml"
+    if not parent_path.is_file(): raise SystemExit(f"Parent task not found: {parent_id}")
+    if read_yaml(parent_path).get("jira", {}).get("type") != expected_type:
+        raise SystemExit(f"{expected_type.title()} parent required: {parent_id}")
+    branches = {v.get("branch") for v in read_yaml(task_dir(parent_id) / "state.yaml").get("repositories", {}).values() if v.get("branch")}
+    if len(branches) != 1: raise SystemExit(f"Parent {parent_id} must have one consistent registered branch")
+    return branches.pop()
+
+def base_ref_for(task_type: str, parent_id: str | None) -> str:
+    if task_type == "epic": return "origin/master"
+    assert parent_id
+    return f"origin/{parent_branch(parent_id, 'epic' if task_type == 'story' else 'story')}"
+
+def create_worktree(repo: str, destination: Path, branch: str, base_ref: str) -> dict:
+    source = ROOT / "apps" / repo
+    if run(["git", "rev-parse", "--is-inside-work-tree"], source) != "true":
+        raise SystemExit(f"Source repository is not a Git worktree: {source}")
+    run(["git", "rev-parse", "--verify", base_ref], source)
+    run(["git", "worktree", "add", "-b", branch, str(destination), base_ref], source)
+    try:
+        env_source = source / ".env"
+        if env_source.is_file(): shutil.copy2(env_source, destination / ".env")
+        subprocess.run(["npm", "install"], cwd=destination, check=True)
+        return {"repo": repo, "path": str(destination.relative_to(ROOT)), "base_ref": base_ref,
+                "target_ref": base_ref, "writable": True, "branch": branch,
+                "base_sha": run(["git", "rev-parse", "HEAD"], destination),
+                "repository_id": repository_identity(destination, repo)}
+    except BaseException:
+        subprocess.run(["git", "worktree", "remove", "--force", str(destination)], cwd=source, check=False)
+        subprocess.run(["git", "branch", "-D", branch], cwd=source, check=False)
+        raise
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="Create an AI task folder for a Jira epic/story/task")
-    p.add_argument("task_id")
-    p.add_argument("--title", required=True)
+    p = argparse.ArgumentParser(description="Create an AI task and backend/frontend worktrees")
+    p.add_argument("task_id"); p.add_argument("--title", required=True)
     p.add_argument("--type", choices=["epic", "story", "task"], required=True)
-    p.add_argument("--parent")
-    p.add_argument("--epic")
+    p.add_argument("--parent"); p.add_argument("--epic")
     p.add_argument("--priority", default="medium", choices=["lowest","low","medium","high","highest","critical"])
-    p.add_argument("--repos", default="", help="Comma-separated repo names registered later as worktrees")
-    args = p.parse_args()
-    validate_task_id(args.task_id)
-
+    p.add_argument("--repos", required=True, help="Required fixed list: backend,frontend")
+    args = p.parse_args(); validate_task_id(args.task_id)
+    if tuple(x.strip() for x in args.repos.split(",") if x.strip()) != REPOSITORIES:
+        p.error("--repos must be exactly backend,frontend")
     if args.type == "epic" and (args.parent or args.epic): p.error("Epic must not have --parent or --epic")
     if args.type == "story" and not args.parent: p.error("Story requires --parent <EPIC-ID>")
     if args.type == "task" and not args.parent: p.error("Task requires --parent <STORY-ID>")
     epic_id = args.task_id if args.type == "epic" else (args.epic or (args.parent if args.type == "story" else None))
     if args.type == "task" and not epic_id: p.error("Task requires --epic <EPIC-ID>")
-
-    td = task_dir(args.task_id)
+    td, workspace = task_dir(args.task_id), ROOT / "worktrees" / args.task_id
     if td.exists(): raise SystemExit(f"Task already exists: {td}")
-    td.mkdir(parents=True)
-    (td / "changes").mkdir()
-
-    values = {"TASK_ID":args.task_id,"TITLE":args.title,"JIRA_TYPE":args.type,"PARENT_ID":args.parent or "-","EPIC_ID":epic_id or "-","PARENT_ID_YAML":"null" if not args.parent else args.parent,"EPIC_ID_YAML":"null" if not epic_id else epic_id,"NOW":now_iso(),"IMPLEMENTATION_CYCLE":"1","CHANGE_CYCLE":"0"}
-    templates = AI_ROOT / "templates"
-    for name in ["task.md","task.yaml","context.yaml","state.yaml","final-report.md","acceptance.yaml"]:
-        (td/name).write_text(render((templates/name).read_text(encoding="utf-8"), values), encoding="utf-8")
-    for name in ["context.lock.json","implementation.json","review.json","knowledge-updates.json","implementation-progress.json","execution-plan.json"]:
-        (td/name).write_text(render((templates/name).read_text(encoding="utf-8"), values), encoding="utf-8")
-
-    task = read_yaml(td/"task.yaml"); task["priority"] = args.priority
-    repos=[r.strip() for r in args.repos.split(",") if r.strip()]
-    task["validation"]={repo:["lint","typecheck","test","build"] for repo in repos}; write_yaml(td/"task.yaml",task)
-    context=read_yaml(td/"context.yaml")
-    context["repositories"]={repo:[{"path":f"ai/repos/{repo}/INDEX.md","reason":"Repository knowledge index","load":"initial"},{"path":f"ai/repos/{repo}/architecture.md","reason":"Architecture when needed","load":"on-demand"},{"path":f"ai/repos/{repo}/testing.md","reason":"Testing rules","load":"on-demand"}] for repo in repos}
-    write_yaml(td/"context.yaml",context); runtime_dir(args.task_id)
-
-    if args.parent:
-        parent_dir=task_dir(args.parent)
-        if parent_dir.exists():
-            parent=read_yaml(parent_dir/"task.yaml"); children=parent.setdefault("children",[])
-            if args.task_id not in children: children.append(args.task_id); write_yaml(parent_dir/"task.yaml",parent)
-    print(f"Created {args.type}: {td}")
-    print(f"Next: edit {td/'task.md'} and register worktrees when applicable.")
+    if workspace.exists(): raise SystemExit(f"Task workspace already exists: {workspace}")
+    branch, base_ref = f"{args.type}/{args.task_id}-{kebab_case(args.title)}", base_ref_for(args.type, args.parent)
+    td.mkdir(parents=True); (td / "changes").mkdir(); (workspace / "docs").mkdir(parents=True)
+    (workspace / "docs" / "README.md").write_text("# Task requirements\n\nPlace all user-provided requirement documents in this directory.\n", encoding="utf-8")
+    created = []
+    try:
+        values = {"TASK_ID":args.task_id,"TITLE":args.title,"JIRA_TYPE":args.type,"PARENT_ID":args.parent or "-","EPIC_ID":epic_id or "-","PARENT_ID_YAML":"null" if not args.parent else args.parent,"EPIC_ID_YAML":"null" if not epic_id else epic_id,"NOW":now_iso(),"IMPLEMENTATION_CYCLE":"1","CHANGE_CYCLE":"0"}
+        templates = AI_ROOT / "templates"
+        names = ["task.md","task.yaml","context.yaml","state.yaml","final-report.md","acceptance.yaml","context.lock.json","implementation.json","review.json","knowledge-updates.json","implementation-progress.json","execution-plan.json"]
+        for name in names: (td/name).write_text(render((templates/name).read_text(encoding="utf-8"), values), encoding="utf-8")
+        entries, states = [], {}
+        for repo in REPOSITORIES:
+            destination = workspace / repo
+            entry = create_worktree(repo, destination, branch, base_ref); created.append((ROOT/"apps"/repo, destination))
+            entries.append({k:entry[k] for k in ("repo","path","base_ref","target_ref","writable")})
+            states[repo] = {k:entry[k] for k in ("path","repository_id","base_ref","target_ref","base_sha","branch")}
+            states[repo]["registered_branch"] = branch
+        task = read_yaml(td/"task.yaml"); task["priority"] = args.priority; task["worktrees"] = entries
+        task["coordination"]["target_ref"] = base_ref; task["validation"] = {r:["lint","typecheck","test","build"] for r in REPOSITORIES}; write_yaml(td/"task.yaml",task)
+        context = read_yaml(td/"context.yaml")
+        context["repositories"] = {r:[{"path":f"ai/repos/{r}/INDEX.md","reason":"Repository knowledge index","load":"initial"},{"path":f"ai/repos/{r}/architecture.md","reason":"Architecture when needed","load":"on-demand"},{"path":f"ai/repos/{r}/testing.md","reason":"Testing rules","load":"on-demand"}] for r in REPOSITORIES}; write_yaml(td/"context.yaml",context)
+        state = read_yaml(td/"state.yaml"); state["repositories"] = states; write_yaml(td/"state.yaml",state); runtime_dir(args.task_id)
+        if args.parent:
+            parent = read_yaml(task_dir(args.parent)/"task.yaml")
+            if args.task_id not in parent.setdefault("children",[]): parent["children"].append(args.task_id)
+            write_yaml(task_dir(args.parent)/"task.yaml",parent)
+    except BaseException:
+        for source, destination in reversed(created):
+            subprocess.run(["git","worktree","remove","--force",str(destination)], cwd=source, check=False)
+            subprocess.run(["git","branch","-D",branch], cwd=source, check=False)
+        shutil.rmtree(workspace, ignore_errors=True); shutil.rmtree(td, ignore_errors=True); raise
+    print(f"Created {args.type}: {td}\nBranch: {branch} (base: {base_ref})\nRequirements: {workspace/'docs'}")
 
 main = task_transactional(main)
 if __name__ == "__main__": main()

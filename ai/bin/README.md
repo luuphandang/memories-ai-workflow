@@ -3,7 +3,8 @@
 - `ai`: CLI tổng hợp.
 - `bootstrap`: liên kết cấu hình local.
 - `self-check`: xác thực cấu hình; `--smoke` chạy pipeline mô phỏng trong workspace tạm.
-- `create-task`: tạo bộ file Jira epic/story/task, acceptance và thư mục changes.
+- `create-task`: bắt buộc `--repos backend,frontend`; tạo hồ sơ, branch/worktree theo
+  hierarchy, sao chép `.env`, chạy `npm install`, tạo `docs/` và đăng ký worktree.
 - `register-worktree`: đăng ký worktree do developer đã tạo.
 - `prepare-context`: kiểm tra tài liệu/worktree, nạp các requirement addendum và tạo context lock.
 - `prepare-plan`: phân rã checkbox requirement thành vertical slices và tạo `execution-plan.json` cho cycle hiện hành.

@@ -22,7 +22,8 @@
 
 ## Source of truth
 
-1. Yêu cầu gốc: `tasks/<ID>/task.md`.
+1. Nguồn yêu cầu user: `worktrees/<ID>/docs/`; implementer chuẩn hóa thành
+   `tasks/<ID>/{task.md,task.yaml,context.yaml}` và reviewer đối chiếu độc lập.
 2. Yêu cầu thay đổi: `tasks/<ID>/changes/cycle-NNN/requirement-addendum.md`.
 3. Context: `context.yaml`, `context.lock.json`.
 4. Kế hoạch vertical slice: `execution-plan.json`.
